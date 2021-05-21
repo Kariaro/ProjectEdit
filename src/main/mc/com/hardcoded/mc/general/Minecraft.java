@@ -9,7 +9,6 @@ import org.apache.logging.log4j.Logger;
  * This class provies information about where the game is located and more.
  * 
  * @author HardCoded
- * @since v0.1
  */
 public class Minecraft {
 	private static final Logger LOGGER = LogManager.getLogger(Minecraft.class);
