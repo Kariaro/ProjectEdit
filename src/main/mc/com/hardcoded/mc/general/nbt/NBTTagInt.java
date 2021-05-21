@@ -1,6 +1,6 @@
 package com.hardcoded.mc.general.nbt;
 
-import com.hardcoded.mc.general.PacketIO;
+import com.hardcoded.mc.general.ByteBuf;
 
 public class NBTTagInt extends NBTBase {
 	private int value;
@@ -22,11 +22,13 @@ public class NBTTagInt extends NBTBase {
 		this.value = value;
 	}
 	
-	public void write(PacketIO writer, int depth) {
+	@Override
+	public void write(ByteBuf writer, int depth) {
 		writer.writeInt(value);
 	}
 	
-	public void read(PacketIO reader, int depth) {
+	@Override
+	public void read(ByteBuf reader, int depth) {
 		this.value = reader.readInt();
 	}
 	

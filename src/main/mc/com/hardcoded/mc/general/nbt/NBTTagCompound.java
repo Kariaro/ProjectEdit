@@ -4,7 +4,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.hardcoded.mc.general.PacketIO;
+import com.hardcoded.mc.general.ByteBuf;
 
 //TODO: Max depth 512!!!
 public class NBTTagCompound extends NBTBase {
@@ -43,7 +43,7 @@ public class NBTTagCompound extends NBTBase {
 		return map.remove(name);
 	}
 	
-	public void writeRoot(PacketIO writer) {
+	public void writeRoot(ByteBuf writer) {
 		for(NBTBase base : map.values()) {
 			if(base.getId() == TAG_END) {
 				break;
@@ -62,12 +62,8 @@ public class NBTTagCompound extends NBTBase {
 	}
 	
 	@Override
-	public void write(PacketIO writer, int depth) {
+	public void write(ByteBuf writer, int depth) {
 		if(depth == 0) {
-			// System.out.println(map);
-			// System.out.println();
-			// System.out.println(StringUtils.printNBT(this, depth));
-			
 			String nameValue = getName();
 			byte[] name = (nameValue == null ? "":nameValue).getBytes(StandardCharsets.UTF_8);
 			writer.writeByte(TAG_COMPOUND);
@@ -81,9 +77,6 @@ public class NBTTagCompound extends NBTBase {
 			writer.writeByte(base.getId());
 			writer.writeShort(name.length);
 			writer.writeBytes(name);
-			
-			// System.out.println(StringUtils.printNBT(base, depth + 1));
-			
 			base.write(writer, depth + 1);
 		}
 		
@@ -91,16 +84,14 @@ public class NBTTagCompound extends NBTBase {
 	}
 	
 	@Override
-	public void read(PacketIO reader, int depth) {
-		while(reader.hasReadableBytes()) {
-			int type = reader.readByte();
+	public void read(ByteBuf reader, int depth) {
+		while(reader.readableBytes() > 0) {
+			int type = reader.readUnsignedByte();
 			if(type == TAG_END) break;
 			
-			NBTBase base = NBTBase.createFromId(null, type);
+			NBTBase base = NBTBase.createFromId(type);
 			int nameLength = reader.readShort();
-			if(nameLength == 0) {
-				base.setName(null);
-			} else {
+			if(nameLength > 0) {
 				base.setName(new String(reader.readBytes(nameLength)));
 			}
 			
@@ -113,8 +104,6 @@ public class NBTTagCompound extends NBTBase {
 	public boolean equals(Object obj) {
 		if(obj instanceof NBTTagCompound) {
 			NBTTagCompound tag = (NBTTagCompound)obj;
-			
-			// TODO: Implement
 			return tag.toString().equals(toString());
 		}
 		return false;

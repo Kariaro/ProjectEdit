@@ -1,11 +1,12 @@
 package com.hardcoded.mc.general.nbt;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
-import com.hardcoded.mc.general.PacketIO;
+import com.hardcoded.mc.general.ByteBuf;
 
-public class NBTTagList<T extends NBTBase> extends NBTBase {
+public class NBTTagList<T extends NBTBase> extends NBTBase implements Iterable<T> {
 	private List<T> list;
 	
 	public NBTTagList(String name) {
@@ -29,7 +30,7 @@ public class NBTTagList<T extends NBTBase> extends NBTBase {
 		this.list.remove(index);
 	}
 	
-	public NBTBase get(int index) {
+	public T get(int index) {
 		return this.list.get(index);
 	}
 	
@@ -41,7 +42,8 @@ public class NBTTagList<T extends NBTBase> extends NBTBase {
 		return this.list.size();
 	}
 	
-	public void write(PacketIO writer, int depth) {
+	@Override
+	public void write(ByteBuf writer, int depth) {
 		if(size() == 0) {
 			writer.writeByte(0);
 			writer.writeInt(0);
@@ -57,8 +59,26 @@ public class NBTTagList<T extends NBTBase> extends NBTBase {
 		}
 	}
 	
+	@Override
+	public Iterator<T> iterator() {
+		return new Iterator<T>() {
+			private int index;
+			
+			@Override
+			public boolean hasNext() {
+				return index < size();
+			}
+			
+			@Override
+			public T next() {
+				return get(index++);
+			}
+		};
+	}
+	
 	@SuppressWarnings("unchecked")
-	public void read(PacketIO reader, int depth) {
+	@Override
+	public void read(ByteBuf reader, int depth) {
 		int type = reader.readByte();
 		
 		if(type == 0) {

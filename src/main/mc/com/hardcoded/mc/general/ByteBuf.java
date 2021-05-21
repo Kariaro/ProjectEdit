@@ -65,8 +65,9 @@ public class ByteBuf {
 	private long readValue(final int offset, final int length) {
 		long result = 0;
 		
+		final int ofs = offset + length - 1;
 		for(int i = 0; i < length; i++) {
-			long val = Byte.toUnsignedLong(buffer[offset + i]);
+			long val = Byte.toUnsignedLong(buffer[ofs - i]);
 			result |= (val << (i * 8L));
 		}
 		
@@ -76,8 +77,9 @@ public class ByteBuf {
 	private void writeValue(long number, final int offset, final int length) {
 		number &= (~((-1L) << (length)));
 		
+		final int ofs = offset + length - 1;
 		for(int i = 0; i < length; i++) {
-			buffer[offset + i] = (byte)((number >>> (i * 8L)) & 0xff);
+			buffer[ofs - i] = (byte)((number >>> (i * 8L)) & 0xff);
 		}
 	}
 	
@@ -94,6 +96,13 @@ public class ByteBuf {
 	}
 	
 	public byte[] readBytes(byte[] array) {
+		System.arraycopy(buffer, readerIndex, array, 0, array.length);
+		readerIndex += array.length;
+		return array;
+	}
+	
+	public byte[] readBytes(int length) {
+		byte[] array = new byte[length];
 		System.arraycopy(buffer, readerIndex, array, 0, array.length);
 		readerIndex += array.length;
 		return array;

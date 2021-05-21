@@ -57,8 +57,8 @@ public class Camera {
 			ry -= delta.y / 2.0f;
 		}
 		
-		if(ry < -180) ry = -180;
-		if(ry >    0) ry = 0;
+		if(ry < -90) ry = -90;
+		if(ry >  90) ry =  90;
 		
 		if(rx <   0) rx += 360;
 		if(rx > 360) rx -= 360;
@@ -78,19 +78,19 @@ public class Camera {
 		
 		float speed = 0.025f * (float)Math.pow(5, speedMod - 1);
 		int xd = 0;
-		int zd = 0;
 		int yd = 0;
+		int zd = 0;
 		
-		if(forwards) yd --;
-		if(backwards) yd ++;
+		if(forwards) zd ++;
+		if(backwards) zd --;
 		if(right) xd --;
 		if(left) xd ++;
-		if(up) zd ++;
-		if(down) zd --;
+		if(up) yd ++;
+		if(down) yd --;
 		
-		float xx = xd * MathUtils.cosDeg(-rx) + yd * MathUtils.sinDeg(-rx);
-		float yy = xd * MathUtils.sinDeg(-rx) - yd * MathUtils.cosDeg(-rx);
-		float zz = zd;
+		float xx = xd * MathUtils.cosDeg(rx) + zd * MathUtils.sinDeg(rx);
+		float zz = xd * MathUtils.sinDeg(rx) - zd * MathUtils.cosDeg(rx);
+		float yy = yd;
 		
 		float time_delta = 0.01f;
 		if(last_time == 0) {
@@ -116,9 +116,9 @@ public class Camera {
 	
 	public Matrix4f getViewMatrix() {
 		return new Matrix4f()
-			.rotate(MathUtils.toRadians(ry), 1, 0, 0)
-			.rotate(MathUtils.toRadians(rx), 0, 0, 1)
-			.rotate(MathUtils.toRadians(rz), 0, 1, 0)
+			.rotate(MathUtils.toRadians(rx), 1, 0, 0)
+			.rotate(MathUtils.toRadians(ry), 0, 1, 0)
+			.rotate(MathUtils.toRadians(rz), 0, 0, 1)
 			.translate(-x, -y, -z);
 	}
 	
@@ -127,7 +127,7 @@ public class Camera {
 		projectionMatrix.setPerspective((float)Math.toRadians(fov), width / height, 0.5f, 10000000);
 		return projectionMatrix
 			.rotate(MathUtils.toRadians(ry), 1, 0, 0)
-			.rotate(MathUtils.toRadians(rx), 0, 0, 1)
+			.rotate(MathUtils.toRadians(rx), 0, 1, 0)
 			.rotate(MathUtils.toRadians(rz), 0, 1, 0)
 			.translate(-x, -y, -z);
 	}

@@ -1,8 +1,9 @@
 package com.hardcoded.mc.general.nbt;
 
+import java.util.Arrays;
 import java.util.List;
 
-import com.hardcoded.mc.general.PacketIO;
+import com.hardcoded.mc.general.ByteBuf;
 
 public class NBTTagByteArray extends NBTBase {
 	private byte[] array;
@@ -59,15 +60,17 @@ public class NBTTagByteArray extends NBTBase {
 	public void setValue(int index, int value) {
 		this.array[index] = (byte)value;
 	}
-
-	public void write(PacketIO writer, int depth) {
+	
+	@Override
+	public void write(ByteBuf writer, int depth) {
 		writer.writeInt(array.length);
 		for(int i = 0; i < size; i++) {
 			writer.writeByte(array[i]);
 		}
 	}
 	
-	public void read(PacketIO reader, int depth) {
+	@Override
+	public void read(ByteBuf reader, int depth) {
 		int length = reader.readInt();
 		byte[] array = new byte[length];
 		for(int i = 0; i < length; i++) {
@@ -79,5 +82,10 @@ public class NBTTagByteArray extends NBTBase {
 	@Override
 	public Object getObjectValue() {
 		return array;
+	}
+	
+	@Override
+	public String toString() {
+		return Arrays.toString(array);
 	}
 }

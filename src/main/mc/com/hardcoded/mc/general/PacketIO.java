@@ -27,7 +27,7 @@ public class PacketIO {
 	}
 	
 	public PacketIO writeNBT(NBTBase nbt) {
-		nbt.write(this, 0);
+		nbt.write(buffer, 0);
 		return this;
 	}
 	
