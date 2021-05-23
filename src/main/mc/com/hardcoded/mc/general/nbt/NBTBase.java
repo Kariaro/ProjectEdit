@@ -17,25 +17,13 @@ public abstract class NBTBase {
 							TAG_INT_ARRAY = 11,
 							TAG_LONG_ARRAY = 12;
 	
-	private final int tagId;
-	private String name;
-	
-	public NBTBase(String name, int tagId) {
-		this.tagId = tagId;
-		this.name = name;
+	protected NBTBase() {
+		
 	}
 	
-	public String getName() {
-		return name;
-	}
-	
-	public int getId() {
-		return tagId;
-	}
-	
-	public void setName(String name) {
-		this.name = name;
-	}
+	protected abstract int getId();
+	public abstract void write(ByteBuf writer, int depth);
+	public abstract void read(ByteBuf reader, int depth);
 	
 	public static NBTTagCompound readNBTTagCompound(ByteBuf reader) {
 		NBTTagCompound tag = new NBTTagCompound();
@@ -44,7 +32,7 @@ public abstract class NBTBase {
 		if(tag.size() < 1) {
 			return null;
 		} else {
-			return (NBTTagCompound)tag.get(null);
+			return (NBTTagCompound)tag.get("");
 		}
 	}
 	
@@ -57,33 +45,45 @@ public abstract class NBTBase {
 		base.write(writer, 0);
 	}
 	
-	public static NBTBase createFromId(int id) {
-		return createFromId(null, id);
-	}
-	
-	public static NBTBase createFromId(String name, int id) {
+	protected static NBTBase createFromId(int id) {
 		switch(id) {
-			case TAG_BYTE: return new NBTTagByte(name);
-			case TAG_SHORT: return new NBTTagShort(name);
-			case TAG_INT: return new NBTTagInt(name);
-			case TAG_LONG: return new NBTTagLong(name);
-			case TAG_FLOAT: return new NBTTagFloat(name);
-			case TAG_DOUBLE: return new NBTTagDouble(name);
-			case TAG_BYTE_ARRAY: return new NBTTagByteArray(name, new byte[0]);
-			case TAG_STRING: return new NBTTagString(name);
-			case TAG_LIST: return new NBTTagList<NBTBase>(name);
-			case TAG_COMPOUND: return new NBTTagCompound(name);
-			case TAG_INT_ARRAY: return new NBTTagIntArray(name, new int[0]);
-			case TAG_LONG_ARRAY: return new NBTTagLongArray(name, new long[0]);
+			case TAG_BYTE: return new NBTTagByte();
+			case TAG_SHORT: return new NBTTagShort();
+			case TAG_INT: return new NBTTagInt();
+			case TAG_LONG: return new NBTTagLong();
+			case TAG_FLOAT: return new NBTTagFloat();
+			case TAG_DOUBLE: return new NBTTagDouble();
+			case TAG_BYTE_ARRAY: return new NBTTagByteArray();
+			case TAG_STRING: return new NBTTagString();
+			case TAG_LIST: return new NBTTagList<>();
+			case TAG_COMPOUND: return new NBTTagCompound();
+			case TAG_INT_ARRAY: return new NBTTagIntArray();
+			case TAG_LONG_ARRAY: return new NBTTagLongArray();
 			case TAG_END:
 			default:
 				return null;
 		}
 	}
-	
-	public abstract Object getObjectValue();
-	public abstract void write(ByteBuf writer, int depth);
-	public abstract void read(ByteBuf reader, int depth);
+//	
+//	protected static NBTBase createFromId(String name, int id) {
+//		switch(id) {
+//			case TAG_BYTE: return new NBTTagByte(name);
+//			case TAG_SHORT: return new NBTTagShort(name);
+//			case TAG_INT: return new NBTTagInt(name);
+//			case TAG_LONG: return new NBTTagLong(name);
+//			case TAG_FLOAT: return new NBTTagFloat(name);
+//			case TAG_DOUBLE: return new NBTTagDouble(name);
+//			case TAG_BYTE_ARRAY: return new NBTTagByteArray(name, new byte[0]);
+//			case TAG_STRING: return new NBTTagString(name);
+//			case TAG_LIST: return new NBTTagList<NBTBase>(name);
+//			case TAG_COMPOUND: return new NBTTagCompound(name);
+//			case TAG_INT_ARRAY: return new NBTTagIntArray(name, new int[0]);
+//			case TAG_LONG_ARRAY: return new NBTTagLongArray(name, new long[0]);
+//			case TAG_END:
+//			default:
+//				return null;
+//		}
+//	}
 	
 	public static String getTypeIdName(int id) {
 		switch(id) {

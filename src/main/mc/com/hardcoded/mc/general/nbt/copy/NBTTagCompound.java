@@ -1,7 +1,7 @@
-package com.hardcoded.mc.general.nbt;
+package com.hardcoded.mc.general.nbt.copy;
 
 import java.nio.charset.StandardCharsets;
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.Map;
 
 import com.hardcoded.mc.general.ByteBuf;
@@ -11,13 +11,22 @@ import com.hardcoded.mc.general.ByteBuf;
  * @author HardCoded
  */
 public class NBTTagCompound extends NBTBase {
-	private Map<String, NBTBase> map = new LinkedHashMap<>();
+	private Map<String, NBTBase> map = new HashMap<String, NBTBase>();
 	
 	public NBTTagCompound() {
-		
+		super(null, TAG_COMPOUND);
+	}
+	
+	public NBTTagCompound(String name) {
+		super(name, TAG_COMPOUND);
+	}
+	
+	public void put(NBTBase base) {
+		map.put(base.getName(), base);
 	}
 	
 	public void put(String name, NBTBase base) {
+		base.setName(name);
 		map.put(name, base);
 	}
 	
@@ -44,16 +53,17 @@ public class NBTTagCompound extends NBTBase {
 	}
 	
 	public void writeRoot(ByteBuf writer) {
-		for(String key : map.keySet()) {
-			NBTBase base = map.get(key);
+		for(NBTBase base : map.values()) {
 			if(base.getId() == TAG_END) {
 				break;
 			}
-			
-			byte[] name = key.getBytes(StandardCharsets.UTF_8);
+
+			String nameValue = base.getName();
+			byte[] name = (nameValue == null ? "":nameValue).getBytes(StandardCharsets.UTF_8);
 			writer.writeByte(base.getId());
 			writer.writeShort(name.length);
 			writer.writeBytes(name);
+			
 			base.write(writer, 1);
 		}
 		
@@ -61,16 +71,18 @@ public class NBTTagCompound extends NBTBase {
 	}
 	
 	@Override
-	protected int getId() {
-		return TAG_COMPOUND;
-	}
-	
-	@Override
 	public void write(ByteBuf writer, int depth) {
-		for(String key : map.keySet()) {
-			NBTBase base = map.get(key);
-			
-			byte[] name = key.getBytes(StandardCharsets.UTF_8);
+		if(depth == 0) {
+			String nameValue = getName();
+			byte[] name = (nameValue == null ? "":nameValue).getBytes(StandardCharsets.UTF_8);
+			writer.writeByte(TAG_COMPOUND);
+			writer.writeShort(name.length);
+			writer.writeBytes(name);
+		}
+		
+		for(NBTBase base : map.values()) {
+			String nameValue = base.getName();
+			byte[] name = (nameValue == null ? "":nameValue).getBytes(StandardCharsets.UTF_8);
 			writer.writeByte(base.getId());
 			writer.writeShort(name.length);
 			writer.writeBytes(name);
@@ -87,14 +99,13 @@ public class NBTTagCompound extends NBTBase {
 			if(type == TAG_END) break;
 			
 			NBTBase base = NBTBase.createFromId(type);
-			String name = "";
 			int nameLength = reader.readShort();
 			if(nameLength > 0) {
-				name = new String(reader.readBytes(nameLength));
+				base.setName(new String(reader.readBytes(nameLength)));
 			}
 			
 			base.read(reader, depth + 1);
-			put(name, base);
+			put(base);
 		}
 	}
 	
@@ -105,6 +116,11 @@ public class NBTTagCompound extends NBTBase {
 			return tag.toString().equals(toString());
 		}
 		return false;
+	}
+	
+	@Override
+	public Object getObjectValue() {
+		return map;
 	}
 	
 	@Override

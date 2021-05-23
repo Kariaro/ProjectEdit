@@ -5,13 +5,12 @@ import com.hardcoded.mc.general.ByteBuf;
 public class NBTTagString extends NBTBase {
 	private String value;
 	
-	public NBTTagString(String name) {
-		this(name, null);
+	public NBTTagString() {
+		this.value = "";
 	}
 	
-	public NBTTagString(String name, String value) {
-		super(name, TAG_STRING);
-		this.value = value;
+	public NBTTagString(String value) {
+		this.value = (value == null) ? "":value;
 	}
 	
 	public String getValue() {
@@ -19,32 +18,31 @@ public class NBTTagString extends NBTBase {
 	}
 	
 	public void setValue(String value) {
-		this.value = value;
+		this.value = (value == null) ? "":value;
+	}
+	
+	@Override
+	protected int getId() {
+		return TAG_STRING;
 	}
 	
 	@Override
 	public void write(ByteBuf writer, int depth) {
-		if(value == null) {
-			writer.writeShort(0);
-		} else {
-			writer.writeShort(value.length());
+		writer.writeShort(value.length());
+		
+		if(!value.isEmpty()) {
 			writer.writeBytes(value.getBytes());
 		}
 	}
 	
 	@Override
 	public void read(ByteBuf reader, int depth) {
-		int valueLength = reader.readShort();
-		if(valueLength == 0) {
-			this.value = null;
+		int length = reader.readShort();
+		if(length == 0) {
+			this.value = "";
 		} else {
-			this.value = new String(reader.readBytes(valueLength));
+			this.value = new String(reader.readBytes(length));
 		}
-	}
-	
-	@Override
-	public Object getObjectValue() {
-		return value;
 	}
 	
 	@Override

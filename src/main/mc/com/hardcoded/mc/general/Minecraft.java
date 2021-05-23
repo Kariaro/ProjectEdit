@@ -13,7 +13,9 @@ import com.hardcoded.utils.NotNull;
  * @author HardCoded
  */
 public class Minecraft {
+	@SuppressWarnings("unused")
 	private static final Logger LOGGER = LogManager.getLogger(Minecraft.class);
+	
 	private Minecraft() {
 		
 	}

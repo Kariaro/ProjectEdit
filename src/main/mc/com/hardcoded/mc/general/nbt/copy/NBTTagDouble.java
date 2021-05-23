@@ -1,15 +1,16 @@
-package com.hardcoded.mc.general.nbt;
+package com.hardcoded.mc.general.nbt.copy;
 
 import com.hardcoded.mc.general.ByteBuf;
 
 public class NBTTagDouble extends NBTBase {
 	private double value;
 	
-	public NBTTagDouble() {
-		
+	public NBTTagDouble(String name) {
+		this(name, 0);
 	}
 	
-	public NBTTagDouble(double value) {
+	public NBTTagDouble(String name, double value) {
+		super(name, TAG_DOUBLE);
 		this.value = value;
 	}
 	
@@ -22,11 +23,6 @@ public class NBTTagDouble extends NBTBase {
 	}
 	
 	@Override
-	protected int getId() {
-		return TAG_DOUBLE;
-	}
-	
-	@Override
 	public void write(ByteBuf writer, int depth) {
 		writer.writeDouble(value);
 	}
@@ -34,6 +30,11 @@ public class NBTTagDouble extends NBTBase {
 	@Override
 	public void read(ByteBuf reader, int depth) {
 		this.value = reader.readDouble();
+	}
+	
+	@Override
+	public Object getObjectValue() {
+		return value;
 	}
 	
 	@Override

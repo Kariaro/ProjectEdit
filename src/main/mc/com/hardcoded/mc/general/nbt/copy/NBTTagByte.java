@@ -1,15 +1,16 @@
-package com.hardcoded.mc.general.nbt;
+package com.hardcoded.mc.general.nbt.copy;
 
 import com.hardcoded.mc.general.ByteBuf;
 
 public class NBTTagByte extends NBTBase {
 	private byte value;
 	
-	public NBTTagByte() {
-		
+	public NBTTagByte(String name) {
+		this(name, 0);
 	}
 	
-	public NBTTagByte(int value) {
+	public NBTTagByte(String name, int value) {
+		super(name, TAG_BYTE);
 		this.value = (byte)value;
 	}
 	
@@ -22,11 +23,6 @@ public class NBTTagByte extends NBTBase {
 	}
 	
 	@Override
-	public int getId() {
-		return TAG_BYTE;
-	}
-	
-	@Override
 	public void write(ByteBuf writer, int depth) {
 		writer.writeByte(value);
 	}
@@ -34,6 +30,11 @@ public class NBTTagByte extends NBTBase {
 	@Override
 	public void read(ByteBuf reader, int depth) {
 		this.value = reader.readByte();
+	}
+	
+	@Override
+	public Object getObjectValue() {
+		return value;
 	}
 	
 	@Override

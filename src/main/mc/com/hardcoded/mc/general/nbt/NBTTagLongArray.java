@@ -7,50 +7,43 @@ import com.hardcoded.mc.general.ByteBuf;
 
 public class NBTTagLongArray extends NBTBase {
 	private long[] array;
-	private int size;
 	
-	public NBTTagLongArray(String name, long[] array) {
-		this(name, array, 0, array.length);
+	public NBTTagLongArray() {
+		array = new long[0];
 	}
 	
-	public NBTTagLongArray(String name, long[] array, int offset, int length) {
-		super(name, TAG_LONG_ARRAY);
+	public NBTTagLongArray(long[] array) {
+		this.array = array.clone();
+	}
+	
+	public NBTTagLongArray(long[] array, int offset, int length) {
 		setArray(array, offset, length);
 	}
 	
-	public NBTTagLongArray(String name, List<Long> list) {
-		this(name, list, 0, list.size());
+	public NBTTagLongArray(List<Long> list) {
+		this.array = list.stream().mapToLong(i -> i).toArray().clone();
 	}
 	
-	public NBTTagLongArray(String name, List<Long> list, int offset, int length) {
-		super(name, TAG_LONG_ARRAY);
-		setArray(list, offset, length);
+	public NBTTagLongArray(List<Long> list, int offset, int length) {
+		setArray(list.stream().mapToLong(i -> i).toArray(), offset, length);
 	}
+	
 	
 	public void setArray(List<Long> list) {
-		setArray(list, 0, list.size());
+		this.array = list.stream().mapToLong(i -> i).toArray().clone();
 	}
 	
-	public void setArray(List<Long> list, int offset, int length) {
-		this.size = length - offset;
-		this.array = new long[size];
-		Object[] values = list.toArray();
-		for(int i = 0; i < size; i++) {
-			this.array[i] = (long)values[i + offset];
-		}
+	public void setArray(List<Long> list, int offset, final int length) {
+		setArray(list.stream().mapToLong(i -> i).toArray(), offset, length);
 	}
 	
 	public void setArray(long[] array) {
-		this.size = array.length;
 		this.array = array.clone();
 	}
 	
 	public void setArray(long[] array, int offset, int length) {
-		this.size = length - offset;
-		this.array = new long[size];
-		for(int i = 0; i < size; i++) {
-			this.array[i] = array[i + offset];
-		}
+		this.array = new long[length];
+		System.arraycopy(array, offset, this.array, 0, length);
 	}
 	
 	public long[] getArray() {
@@ -61,10 +54,20 @@ public class NBTTagLongArray extends NBTBase {
 		this.array[index] = value;
 	}
 	
+	public int size() {
+		return array.length;
+	}
+	
+	@Override
+	protected int getId() {
+		return TAG_LONG_ARRAY;
+	}
+	
 	@Override
 	public void write(ByteBuf writer, int depth) {
-		writer.writeInt(array.length);
-		for(int i = 0; i < size; i++) {
+		final int len = array.length;
+		writer.writeInt(len);
+		for(int i = 0; i < len; i++) {
 			writer.writeLong(array[i]);
 		}
 	}
@@ -72,16 +75,10 @@ public class NBTTagLongArray extends NBTBase {
 	@Override
 	public void read(ByteBuf reader, int depth) {
 		int length = reader.readInt();
-		long[] array = new long[length];
+		array = new long[length];
 		for(int i = 0; i < length; i++) {
 			array[i] = reader.readLong();
 		}
-		setArray(array);
-	}
-	
-	@Override
-	public Object getObjectValue() {
-		return array;
 	}
 	
 	@Override

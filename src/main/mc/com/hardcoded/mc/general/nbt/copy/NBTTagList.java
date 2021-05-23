@@ -1,4 +1,4 @@
-package com.hardcoded.mc.general.nbt;
+package com.hardcoded.mc.general.nbt.copy;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -9,44 +9,37 @@ import com.hardcoded.mc.general.ByteBuf;
 public class NBTTagList<T extends NBTBase> extends NBTBase implements Iterable<T> {
 	private List<T> list;
 	
-	public NBTTagList() {
-		list = new ArrayList<>();
+	public NBTTagList(String name) {
+		super(name, TAG_LIST);
+		this.list = new ArrayList<T>();
 	}
 	
 	public void add(int index, T element) {
-		list.add(index, element);
+		this.list.add(index, element);
 	}
 	
 	public void add(T element) {
-		list.add(element);
+		this.list.add(element);
 	}
 	
 	public void clear() {
-		list.clear();
+		this.list.clear();
 	}
 	
 	public void remove(int index) {
-		list.remove(index);
+		this.list.remove(index);
 	}
 	
 	public T get(int index) {
-		return list.get(index);
+		return this.list.get(index);
 	}
 	
 	public void remove(T element) {
-		list.remove(element);
+		this.list.remove(element);
 	}
 	
-	/**
-	 * @return the size of this {@code NBTTagList}
-	 */
 	public int size() {
-		return list.size();
-	}
-	
-	@Override
-	protected int getId() {
-		return TAG_LIST;
+		return this.list.size();
 	}
 	
 	@Override
@@ -60,6 +53,7 @@ public class NBTTagList<T extends NBTBase> extends NBTBase implements Iterable<T
 			writer.writeInt(size());
 			
 			for(NBTBase nbt : this.list) {
+				// System.out.println(StringUtils.printNBT(nbt, depth + 1));
 				nbt.write(writer, depth + 1);
 			}
 		}
@@ -94,7 +88,7 @@ public class NBTTagList<T extends NBTBase> extends NBTBase implements Iterable<T
 			int length = reader.readInt();
 			
 			for(int i = 0; i < length; i++) {
-				NBTBase element = NBTBase.createFromId(type);
+				NBTBase element = NBTBase.createFromId(null, type);
 				element.read(reader, depth + 1);
 				add((T)element);
 			}
@@ -116,5 +110,10 @@ public class NBTTagList<T extends NBTBase> extends NBTBase implements Iterable<T
 			sb.deleteCharAt(sb.length() - 1);
 			return sb.append("}").toString();
 		}
+	}
+	
+	@Override
+	public Object getObjectValue() {
+		return list;
 	}
 }

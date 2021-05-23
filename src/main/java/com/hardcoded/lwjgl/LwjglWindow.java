@@ -171,6 +171,7 @@ public class LwjglWindow implements Runnable {
 				long now = System.currentTimeMillis();
 				if(now - last > 1000) {
 					fps = frames;
+					LOGGER.info("fps: {}", fps);
 					frames = 0;
 					last += 1000;
 				}

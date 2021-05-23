@@ -7,50 +7,42 @@ import com.hardcoded.mc.general.ByteBuf;
 
 public class NBTTagIntArray extends NBTBase {
 	private int[] array;
-	private int size;
 	
-	public NBTTagIntArray(String name, int[] array) {
-		this(name, array, 0, array.length);
+	public NBTTagIntArray() {
+		this.array = new int[0];
 	}
 	
-	public NBTTagIntArray(String name, int[] array, int offset, int length) {
-		super(name, TAG_INT_ARRAY);
+	public NBTTagIntArray(int[] array) {
+		this.array = array.clone();
+	}
+	
+	public NBTTagIntArray(int[] array, int offset, int length) {
 		setArray(array, offset, length);
 	}
 	
-	public NBTTagIntArray(String name, List<Integer> list) {
-		this(name, list, 0, list.size());
+	public NBTTagIntArray(List<Integer> list) {
+		this.array = list.stream().mapToInt(i -> i).toArray().clone();
 	}
 	
-	public NBTTagIntArray(String name, List<Integer> list, int offset, int length) {
-		super(name, TAG_INT_ARRAY);
-		setArray(list, offset, length);
+	public NBTTagIntArray(List<Integer> list, int offset, int length) {
+		setArray(list.stream().mapToInt(i -> i).toArray(), offset, length);
 	}
 	
 	public void setArray(List<Integer> list) {
-		setArray(list, 0, list.size());
+		setArray(list.stream().mapToInt(i -> i).toArray());
 	}
 	
 	public void setArray(List<Integer> list, int offset, int length) {
-		this.size = length - offset;
-		this.array = new int[size];
-		Object[] values = list.toArray();
-		for(int i = 0; i < size; i++) {
-			this.array[i] = (int)values[i + offset];
-		}
+		setArray(list.stream().mapToInt(i -> i).toArray(), offset, length);
 	}
 	
 	public void setArray(int[] array) {
-		this.size = array.length;
 		this.array = array.clone();
 	}
 	
 	public void setArray(int[] array, int offset, int length) {
-		this.size = length - offset;
-		this.array = new int[size];
-		for(int i = 0; i < size; i++) {
-			this.array[i] = array[i + offset];
-		}
+		this.array = new int[length];
+		System.arraycopy(array, offset, array, 0, length);
 	}
 	
 	public int[] getArray() {
@@ -62,9 +54,15 @@ public class NBTTagIntArray extends NBTBase {
 	}
 	
 	@Override
+	protected int getId() {
+		return TAG_INT_ARRAY;
+	}
+	
+	@Override
 	public void write(ByteBuf writer, int depth) {
-		writer.writeInt(array.length);
-		for(int i = 0; i < size; i++) {
+		final int len = array.length;
+		writer.writeInt(len);
+		for(int i = 0; i < len; i++) {
 			writer.writeInt(array[i]);
 		}
 	}
@@ -72,16 +70,10 @@ public class NBTTagIntArray extends NBTBase {
 	@Override
 	public void read(ByteBuf reader, int depth) {
 		int length = reader.readInt();
-		int[] array = new int[length];
+		array = new int[length];
 		for(int i = 0; i < length; i++) {
 			array[i] = reader.readInt();
 		}
-		setArray(array);
-	}
-	
-	@Override
-	public Object getObjectValue() {
-		return array;
 	}
 	
 	@Override

@@ -10,11 +10,9 @@ import org.apache.logging.log4j.Logger;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
 
-import com.hardcoded.mc.general.ByteBuf;
 import com.hardcoded.mc.general.Minecraft;
-import com.hardcoded.mc.general.files.RegionChunk;
-import com.hardcoded.mc.general.files.RegionChunk.SubChunk;
-import com.hardcoded.mc.general.files.RegionFile;
+import com.hardcoded.mc.general.files.Blocks;
+import com.hardcoded.mc.general.world.World;
 
 public class WorldRender {
 	private static final Logger LOGGER = LogManager.getLogger(WorldRender.class);
@@ -29,14 +27,14 @@ public class WorldRender {
 	private final long window;
 	
 	public Camera camera;
-	private WorldReader reader;
-	
+	private ChunkRender chunk_render;
 	public WorldRender(LwjglWindow parent, long window, int width, int height) {
 		this.parent = parent;
 		this.window = window;
 		
-		this.reader = new WorldReader();
+		chunk_render = new ChunkRender();
 		camera = new Camera(window);
+		
 		setViewport(width, height);
 		
 		try {
@@ -58,7 +56,10 @@ public class WorldRender {
 		GL11.glMatrixMode(GL11.GL_MODELVIEW_MATRIX);
 	}
 	
+	private World world;
 	private void init() {
+		Blocks.init();
+		
 		File[] files = Minecraft.getSaves();
 		if(files.length > 0) {
 			File save = files[0];
@@ -66,8 +67,7 @@ public class WorldRender {
 			LOGGER.info("Loading savefile '{}'", save);
 			
 			try {
-				reader.read(new File(save, "level.dat"));
-				reader.readTest(new File(save, "region/r.0.0.mca"));
+				world = new World(save);
 			} catch(Exception e) {
 				e.printStackTrace();
 			}
@@ -156,119 +156,6 @@ public class WorldRender {
 		GL11.glEnd();
 	}
 	
-	private void render_cube(float x, float y, float z, float xs, float ys, float zs, int rgba) {
-		float rc, gc, bc, ac;
-		{
-			ac = ((rgba >> 24) & 0xff) / 255.0f;
-			rc = ((rgba >> 16) & 0xff) / 255.0f;
-			gc = ((rgba >>  8) & 0xff) / 255.0f;
-			bc = ((rgba      ) & 0xff) / 255.0f;
-		}
-		
-		float d =  - 0.1f;
-		x -= 0.5f;
-		y -= 0.5f;
-		z -= 0.5f;
-		GL11.glBegin(GL11.GL_TRIANGLE_FAN);
-			GL11.glColor4f(rc + d, gc, bc, ac);
-			GL11.glVertex3f(x     , y + ys, z);
-			GL11.glColor4f(rc, gc + d, bc + d, ac);
-			GL11.glVertex3f(x + xs, y + ys, z);
-			GL11.glVertex3f(x + xs, y     , z);
-			GL11.glVertex3f(x     , y     , z);
-		GL11.glEnd();
-		
-		GL11.glBegin(GL11.GL_TRIANGLE_FAN);
-			GL11.glColor4f(rc, gc + d, bc, ac);
-			GL11.glVertex3f(x + xs, y + ys, z     );
-			GL11.glColor4f(rc + d, gc, bc + d, ac);
-			GL11.glVertex3f(x + xs, y + ys, z + zs);
-			GL11.glVertex3f(x + xs, y     , z + zs);
-			GL11.glVertex3f(x + xs, y     , z     );
-		GL11.glEnd();
-		
-		GL11.glBegin(GL11.GL_TRIANGLE_FAN);
-			GL11.glColor4f(rc, gc, bc + d, ac);
-			GL11.glVertex3f(x     , y     , z + zs);
-			GL11.glColor4f(rc + d, gc + d, bc, ac);
-			GL11.glVertex3f(x + xs, y     , z + zs);
-			GL11.glVertex3f(x + xs, y + ys, z + zs);
-			GL11.glVertex3f(x     , y + ys, z + zs);
-		GL11.glEnd();
-		
-		GL11.glBegin(GL11.GL_TRIANGLE_FAN);
-			GL11.glColor4f(rc + d, gc + d, bc, ac);
-			GL11.glVertex3f(x, y + ys, z + zs);
-			GL11.glColor4f(rc, gc, bc + d, ac);
-			GL11.glVertex3f(x, y + ys, z     );
-			GL11.glVertex3f(x, y     , z     );
-			GL11.glVertex3f(x, y     , z + zs);
-		GL11.glEnd();
-		
-		GL11.glBegin(GL11.GL_TRIANGLE_FAN);
-			GL11.glColor4f(rc + d, gc, bc + d, ac);
-			GL11.glVertex3f(x     , y + ys, z     );
-			GL11.glColor4f(rc, gc + d, bc, ac);
-			GL11.glVertex3f(x     , y + ys, z + zs);
-			GL11.glVertex3f(x + xs, y + ys, z + zs);
-			GL11.glVertex3f(x + xs, y + ys, z     );
-		GL11.glEnd();
-		
-		GL11.glBegin(GL11.GL_TRIANGLE_FAN);
-			GL11.glColor4f(rc, gc + d, bc + d, ac);
-			GL11.glVertex3f(x     , y, z + zs);
-			GL11.glColor4f(rc + d, gc, bc, ac);
-			GL11.glVertex3f(x     , y, z     );
-			GL11.glVertex3f(x + xs, y, z     );
-			GL11.glVertex3f(x + xs, y, z + zs);
-		GL11.glEnd();
-	}
-	
-	public static final int AIR = "minecraft:air".hashCode();
-	
-	public void renderSubChunk(int cx, int cy, int cz, SubChunk sub) {
-		int hash = 0x30297845;
-		for(int i = 0; i < 4096; i++) {
-			int x = (i & 15);
-			int z = (i / 16) & 15;
-			int y = i / 256;
-			
-			int id = sub.data[i];
-			if(id == AIR || id == 0) continue;
-			int col = hash * id;
-			
-			render_cube(cx + x, cy + y, cz + z, 1, 1, 1, col);
-		}
-	}
-	
-	public void renderChunk(int x, int z, RegionChunk chunk) {
-		int idx = x + z;
-		int col = ((idx & 1) == 0) ? 0x666666:0xff7700;
-		renderCube(x, 0, z, 16, 1, 16, col);
-		
-		for(int y = 0; y < 16; y++) {
-			SubChunk sub = chunk.getSubChunk(y);
-			if(sub == null) continue;
-			renderSubChunk(x, y * 16, z, sub);
-		}
-	}
-	
-	public void renderRegionFile(int rx, int rz, RegionFile region) {
-		for(int x = 0; x < 4; x++) {
-			for(int z = 4; z < 8; z++) {
-				if(region.hasChunk(x, z)) {
-					ByteBuf buf = region.getChunkBuffer(x, z);
-					
-					if(buf != null) {
-						renderChunk(rx + x * 16, rz + z * 16, new RegionChunk(buf));
-					}
-				} else {
-					renderCube(rx + x * 16, 0, rz + z * 16, 16, 1, 16, 0x111111);
-				}
-			}
-		}
-	}
-	
 	private int displayList;
 	private boolean hasList = false;
 	public void render() {
@@ -295,8 +182,14 @@ public class WorldRender {
 		if(!hasList) {
 			hasList = true;
 			GL11.glNewList(displayList, GL11.GL_COMPILE);
-			int s = 0;
-			for(int i = -s; i <= s; i++) {
+			int s = 20;
+//			
+//			for(int i = 0; i < 256; i++) {
+//				world.setBlock(Blocks.DIRT, 0, 0, i);
+//				world.setBlock(Blocks.AIR, 0, 1, i);
+//			}
+			chunk_render.renderWorld(world, 0, 0, s);
+			/*for(int i = -s; i <= s; i++) {
 				for(int j = -s; j <= s; j++) {
 					int ix = i * 16 * 32;
 					int jz = j * 16 * 32;
@@ -304,29 +197,9 @@ public class WorldRender {
 					RegionFile region = reader.tryLoad(i, j);
 					if(region == null) continue;
 					
-					renderRegionFile(ix, jz, region);
-					/*
-					for(int x = 0; x < 32; x++) {
-						for(int z = 0; z < 32; z++) {
-							if(region.hasChunk(x, z)) {
-								ByteBuf buf = region.getChunkBuffer(x, z);
-								
-								if(buf != null) {
-									RegionChunk chunk = new RegionChunk(buf);
-									System.out.println(chunk);
-								}
-								
-								int idx = x + z;
-								int col = ((idx & 1) == 0) ? 0x666666:0xff7700;
-								renderCube(x * 16 + ix, 0, z * 16 + jz, 16, 1, 16, col);
-							} else {
-								renderCube(x * 16 + ix, 0, z * 16 + jz, 16, 1, 16, 0x111111);
-							}
-						}
-					}
-					*/
+					chunk_render.renderRegionFile(ix, jz, region);
 				}
-			}
+			}*/
 			GL11.glEndList();
 		}
 		GL11.glCallList(displayList);
