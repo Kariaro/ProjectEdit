@@ -166,6 +166,16 @@ public class Texture {
 		return new Texture(bi, 0, interpolation);
 	}
 	
+	public static Texture loadBufferedImageTexture(BufferedImage bi, String key, int interpolation) {
+		if(cacheTextureId.containsKey(key)) {
+			return new Texture(cacheTextureId.get(key), 0);
+		}
+		
+		Texture tex = new Texture(bi, 0, interpolation);
+		cacheTextureId.put(key, tex.textureId);
+		return tex;
+	}
+	
 	public static ByteBuffer loadBuffer(BufferedImage bi) {
 		return loadBuffer(bi, false);
 	}

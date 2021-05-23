@@ -1,10 +1,15 @@
 package com.hardcoded.mc.general;
 
 /**
- * This class provies methods to read and write to byte arrays.
+ * This {@code ByteBuf} class is used to read from and write to arrays.
+ * 
+ * <p>To instantiate this class use one of the following static methods.
+ * <br>{@link #direct(byte[])} to create a direct buffer. Any modification to this {@code ByteBuf} will modify the source array.
+ * <br>{@link #copy(byte[])} to create a {@code ByteBuf} with the contents of another byte array.
+ * <br>{@link #allocate(int)} to create a {@code ByteBuf} with a set size.
+ * <br>{@link #readOnly(byte[])} to create a {@code ByteBuf} with direct access to a byte array but without the ability to modify that array.
  * 
  * @author HardCoded
- *
  */
 public class ByteBuf {
 	private byte[] buffer;
@@ -15,16 +20,16 @@ public class ByteBuf {
 	 * Construct a new byte buffer with a set capacity.
 	 * @param capacity the capacity of this buffer
 	 */
-	public ByteBuf(int capacity) {
+	private ByteBuf(int capacity) {
 		this.buffer = new byte[capacity];
 	}
 	
 	/**
-	 * Construct a new byte buffer with the content of byte array .
-	 * @param buffer the source array
+	 * Construct a new {@code ByteBuf} that has direct access to the passed byte array.
+	 * @param buffer the byte array
 	 */
-	public ByteBuf(byte[] buffer) {
-		this.buffer = buffer.clone();
+	private ByteBuf(byte[] buffer) {
+		this.buffer = buffer;
 	}
 	
 	/**
@@ -60,28 +65,37 @@ public class ByteBuf {
 		return buffer.length - readerIndex;
 	}
 	
+	/**
+	 * If this {@code ByteBuf} is readOnly then any calls to any
+	 * write method will result in a {@code UnsupportedOperationException}.
+	 * @return {@code true} if this {@code ByteBuf} is read only
+	 */
+	public boolean isReadOnly() {
+		return false;
+	}
+	
 	// PRIVATE METHODS
 	
-	private long readValue(final int offset, final int length) {
-		long result = 0;
-		
-		final int ofs = offset + length - 1;
-		for(int i = 0; i < length; i++) {
-			long val = Byte.toUnsignedLong(buffer[ofs - i]);
-			result |= (val << (i * 8L));
-		}
-		
-		return result;
-	}
-	
-	private void writeValue(long number, final int offset, final int length) {
-		number &= (~((-1L) << (length)));
-		
-		final int ofs = offset + length - 1;
-		for(int i = 0; i < length; i++) {
-			buffer[ofs - i] = (byte)((number >>> (i * 8L)) & 0xff);
-		}
-	}
+//	private long readValue(final int offset, final int length) {
+//		long result = 0;
+//		
+//		final int ofs = offset + length - 1;
+//		for(int i = 0; i < length; i++) {
+//			long val = Byte.toUnsignedLong(buffer[ofs - i]);
+//			result |= (val << (i * 8L));
+//		}
+//		
+//		return result;
+//	}
+//	
+//	private void writeValue(long number, final int offset, final int length) {
+//		number &= (~((-1L) << (length)));
+//		
+//		final int ofs = offset + length - 1;
+//		for(int i = 0; i < length; i++) {
+//			buffer[ofs - i] = (byte)((number >>> (i * 8L)) & 0xff);
+//		}
+//	}
 	
 	// PUBLIC METHODS
 	
@@ -114,12 +128,13 @@ public class ByteBuf {
 		return array;
 	}
 	
+	
 	public boolean readBoolean() {
-		return readValue((readerIndex += 1) - 1, 1) != 0;
+		return buffer[(readerIndex += 1) - 1] != 0;
 	}
 	
 	public void writeBoolean(boolean value) {
-		writeValue(value ? 1:0, (writerIndex += 1) - 1, 1);
+		buffer[(writerIndex += 1) - 1] = (byte)(value ? 1:0);
 	}
 	
 	
@@ -127,65 +142,195 @@ public class ByteBuf {
 		return buffer[(readerIndex += 1) - 1];
 	}
 	
-	public void writeByte(long value) {
-		buffer[(writerIndex += 1) - 1] = (byte)value;
-	}
-	
 	public int readUnsignedByte() {
 		return (int)(buffer[(readerIndex += 1) - 1] & 0xff);
 	}
 	
-	
-	public short readShort() {
-		return (short)readValue((readerIndex += 2) - 2, 2);
+	public void writeByte(long value) {
+		buffer[(writerIndex += 1) - 1] = (byte)value;
 	}
 	
-	public void writeShort(long value) {
-		writeValue(value, (writerIndex += 2) - 2, 2);
+	
+	public short readShort() {
+		final int offset = (readerIndex += 2);
+		return (short)((((long)buffer[offset - 1]) & 0xffL)
+			| ((((long)buffer[offset - 2]) & 0xffL) << 8L));
 	}
 	
 	public int readUnsignedShort() {
-		return (int)(readValue((readerIndex += 2) - 2, 2) & 0xffff);
+		final int offset = (readerIndex += 2);
+		return (int)((((long)buffer[offset - 1]) & 0xffL)
+			| ((((long)buffer[offset - 2]) & 0xffL) << 8L)) & 0xffff;
+	}
+	
+	public void writeShort(long value) {
+		final int offset = (writerIndex += 2);
+		buffer[offset - 1] = (byte)value;
+		buffer[offset - 2] = (byte)(value >>> 8L);
 	}
 	
 	
 	public int readInt() {
-		return (int)readValue((readerIndex += 4) - 4, 4);
-	}
-	
-	public void writeInt(long value) {
-		writeValue(value, (writerIndex += 4) - 4, 4);
+		final int offset = (readerIndex += 4);
+		return (int)((((long)buffer[offset - 1]) & 0xffL)
+			| ((((long)buffer[offset - 2]) & 0xffL) << 8L)
+			| ((((long)buffer[offset - 3]) & 0xffL) << 16L)
+			| ((((long)buffer[offset - 4]) & 0xffL) << 24L));
 	}
 	
 	public long readUnsignedInt() {
-		return (long)(readValue((readerIndex += 4) - 4, 4) & 0xffffffffL);
+		final int offset = (readerIndex += 4);
+		return ((((long)buffer[offset - 1]) & 0xffL)
+			| ((((long)buffer[offset - 2]) & 0xffL) << 8L)
+			| ((((long)buffer[offset - 3]) & 0xffL) << 16L)
+			| ((((long)buffer[offset - 4]) & 0xffL) << 24L)) & 0xffffffffL;
+	}
+	
+	public void writeInt(long value) {
+		final int offset = (writerIndex += 4);
+		buffer[offset - 1] = (byte)value;
+		buffer[offset - 2] = (byte)(value >>> 8L);
+		buffer[offset - 3] = (byte)(value >>> 16L);
+		buffer[offset - 4] = (byte)(value >>> 24L);
 	}
 	
 	
 	public long readLong() {
-		return readValue((readerIndex += 8) - 8, 8);
+		final int offset = (readerIndex += 8);
+		return (((long)buffer[offset - 1]) & 0xffL)
+			| ((((long)buffer[offset - 2]) & 0xffL) << 8L)
+			| ((((long)buffer[offset - 3]) & 0xffL) << 16L)
+			| ((((long)buffer[offset - 4]) & 0xffL) << 24L)
+			| ((((long)buffer[offset - 5]) & 0xffL) << 32L)
+			| ((((long)buffer[offset - 6]) & 0xffL) << 40L)
+			| ((((long)buffer[offset - 7]) & 0xffL) << 48L)
+			| ((((long)buffer[offset - 8]) & 0xffL) << 56L);
 	}
 	
 	public void writeLong(long value) {
-		writeValue(value, (writerIndex += 8) - 8, 8);
-	}
-	
-	
-	public double readDouble() {
-		return Double.longBitsToDouble(readValue((readerIndex += 8) - 8, 8));
-	}
-	
-	public void writeDouble(double value) {
-		writeValue(Double.doubleToRawLongBits(value), (writerIndex += 8) - 8, 8);
+		final int offset = (writerIndex += 8);
+		buffer[offset - 1] = (byte)value;
+		buffer[offset - 2] = (byte)(value >>> 8L);
+		buffer[offset - 3] = (byte)(value >>> 16L);
+		buffer[offset - 4] = (byte)(value >>> 24L);
+		buffer[offset - 5] = (byte)(value >>> 32L);
+		buffer[offset - 6] = (byte)(value >>> 40L);
+		buffer[offset - 7] = (byte)(value >>> 48L);
+		buffer[offset - 8] = (byte)(value >>> 56L);
 	}
 	
 	
 	public float readFloat() {
-		return Float.intBitsToFloat((int)readValue((readerIndex += 4) - 4, 4));
+		return Float.intBitsToFloat(readInt());
 	}
 	
 	public void writeFloat(float value) {
-		writeValue(Float.floatToRawIntBits(value), (writerIndex += 4) - 4, 4);
+		writeInt(Float.floatToRawIntBits(value));
 	}
 	
+	
+	public double readDouble() {
+		return Double.longBitsToDouble(readLong());
+	}
+	
+	public void writeDouble(double value) {
+		writeLong(Double.doubleToRawLongBits(value));
+	}
+	
+	/**
+	 * Construct a new {@code ByteBuf} that has direct access to a byte array.
+	 * That means that when you modify this buffer with a write command the
+	 * byte array will also change.
+	 * 
+	 * @param array the array
+	 * @return a {@code ByteBuf} with direct access to the specified byte array
+	 */
+	public static ByteBuf direct(byte[] array) {
+		return new ByteBuf(array);
+	}
+	
+	/**
+	 * Construct a new {@code ByteBuf} that contains the content of a byte array.
+	 * Any modifications to the {@code ByteBuf} will not change the passed byte
+	 * array.
+	 * 
+	 * @param array the source array
+	 * @return a new {@code ByteBuf}
+	 */
+	public static ByteBuf copy(byte[] array) {
+		return new ByteBuf(array.clone());
+	}
+	
+	/**
+	 * Construct a new {@code ByteBuf} with a specified capacity.
+	 * @param capacity the amount of bytes this {@code ByteBuf} should contain.
+	 * @return a new {@code ByteBuf}
+	 */
+	public static ByteBuf allocate(int capacity) {
+		return new ByteBuf(capacity);
+	}
+	
+	/**
+	 * Construct a new {@code ByteBuf} that has direct access to a byte array.
+	 * This method allows a creation of a {@code ByteBuf} with direct access to
+	 * a byte array without allowing any modifications to the underlying array.
+	 * 
+	 * <p><b>Note:</b> Any calls to any write method will throw a {@code UnsupportedOperationException}.
+	 * 
+	 * @param array the array
+	 * @return a {@code ByteBuf} with direct access to the specified byte array
+	 */
+	public static ByteBuf readOnly(byte[] array) {
+		return new ByteBuf(array) {
+			@Override
+			public boolean isReadOnly() {
+				return true;
+			}
+			
+			@Override
+			public void writeBoolean(boolean value) {
+				throw new UnsupportedOperationException();
+			}
+			
+			@Override
+			public void writeByte(long value) {
+				throw new UnsupportedOperationException();
+			}
+			
+			@Override
+			public void writeBytes(byte[] array) {
+				throw new UnsupportedOperationException();
+			}
+			
+			@Override
+			public void writeBytes(ByteBuf buf) {
+				throw new UnsupportedOperationException();
+			}
+			
+			@Override
+			public void writeDouble(double value) {
+				throw new UnsupportedOperationException();
+			}
+			
+			@Override
+			public void writeFloat(float value) {
+				throw new UnsupportedOperationException();
+			}
+			
+			@Override
+			public void writeInt(long value) {
+				throw new UnsupportedOperationException();
+			}
+			
+			@Override
+			public void writeLong(long value) {
+				throw new UnsupportedOperationException();
+			}
+			
+			@Override
+			public void writeShort(long value) {
+				throw new UnsupportedOperationException();
+			}
+		};
+	}
 }

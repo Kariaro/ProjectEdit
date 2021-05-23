@@ -7,7 +7,6 @@ import java.util.Map;
 import com.hardcoded.mc.general.ByteBuf;
 
 /**
- * 
  * @author HardCoded
  */
 public class NBTTagCompound extends NBTBase {

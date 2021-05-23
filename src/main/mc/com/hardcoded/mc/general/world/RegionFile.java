@@ -12,6 +12,27 @@ import org.apache.logging.log4j.Logger;
 import com.hardcoded.mc.general.ByteBuf;
 import com.hardcoded.utils.StreamUtils;
 
+/**
+ * This class handles region files and can both read and write to them.
+ * 
+ * <p>The structure of the region file is as follows:
+ * <pre>
+ * RegionFile:
+ *     int[1024]: offsets
+ *     int[1024]: last_modified
+ *     byte[....]: sectors
+ * </pre>
+ * 
+ * The value of {@code offsets} points towards individual chunks inside the file.
+ * Calling {@link #getChunkBuffer(int, int)} will give you a {@code ByteBuf} stream
+ * that contains the raw chunk nbt data.
+ * 
+ * Minecraft currently uses two compression systems inside the region files and
+ * those are {@code GZIP} and {@code DEFLATE}.
+ *  
+ * @author HardCoded
+ *
+ */
 public class RegionFile {
 	private static final Logger LOGGER = LogManager.getLogger(RegionFile.class);
 	
@@ -21,7 +42,7 @@ public class RegionFile {
 	private static final int VERSION_GZIP = 1;
 	private static final int VERSION_DEFLATE = 2;
 	
-	private final File file;
+	final File file;
 	private final int[] offsets;
 	private final int[] timestamps;
 	private final ByteBuf buf;
@@ -43,7 +64,7 @@ public class RegionFile {
 		has_sector[0] = false; // chunk offset
 		has_sector[1] = false; // timestamp
 		
-		this.buf = new ByteBuf(bytes);
+		this.buf = ByteBuf.direct(bytes);
 		for(int i = 0; i < SECTOR_INTS; i++) {
 			int offset = buf.readInt();
 			offsets[i] = offset;
@@ -54,7 +75,6 @@ public class RegionFile {
 					has_sector[(offset >> 8) + j] = false;
 				}
 			}
-			
 		}
 		
 		for(int i = 0; i < SECTOR_INTS; i++) {
@@ -72,8 +92,7 @@ public class RegionFile {
 			return null;
 		}
 		
-		int sector = offset >>> 8;
-		// int nsect = offset & 0xff;
+		int sector = offset >> 8;
 		
 		buf.readerIndex(sector * SECTOR_BYTES);
 		int length = buf.readInt();
@@ -82,14 +101,14 @@ public class RegionFile {
 		if(version == VERSION_GZIP) {
 			byte[] bytes = StreamUtils.decompress_gzip(buf.readBytes(length));
 			if(bytes != null) {
-				return new ByteBuf(bytes);
+				return ByteBuf.direct(bytes);
 			}
 			
 			LOGGER.error("Failed to decompress gzip");
 		} else if(version == VERSION_DEFLATE) {
 			byte[] bytes = StreamUtils.decompress_deflate(buf.readBytes(length));
 			if(bytes != null) {
-				return new ByteBuf(bytes);
+				return ByteBuf.direct(bytes);
 			}
 			
 			LOGGER.error("Failed to decompress deflate");

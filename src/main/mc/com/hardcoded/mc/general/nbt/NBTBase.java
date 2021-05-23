@@ -64,26 +64,6 @@ public abstract class NBTBase {
 				return null;
 		}
 	}
-//	
-//	protected static NBTBase createFromId(String name, int id) {
-//		switch(id) {
-//			case TAG_BYTE: return new NBTTagByte(name);
-//			case TAG_SHORT: return new NBTTagShort(name);
-//			case TAG_INT: return new NBTTagInt(name);
-//			case TAG_LONG: return new NBTTagLong(name);
-//			case TAG_FLOAT: return new NBTTagFloat(name);
-//			case TAG_DOUBLE: return new NBTTagDouble(name);
-//			case TAG_BYTE_ARRAY: return new NBTTagByteArray(name, new byte[0]);
-//			case TAG_STRING: return new NBTTagString(name);
-//			case TAG_LIST: return new NBTTagList<NBTBase>(name);
-//			case TAG_COMPOUND: return new NBTTagCompound(name);
-//			case TAG_INT_ARRAY: return new NBTTagIntArray(name, new int[0]);
-//			case TAG_LONG_ARRAY: return new NBTTagLongArray(name, new long[0]);
-//			case TAG_END:
-//			default:
-//				return null;
-//		}
-//	}
 	
 	public static String getTypeIdName(int id) {
 		switch(id) {

@@ -1,14 +1,19 @@
 package com.hardcoded.mc.general.world;
 
 import com.hardcoded.mc.general.files.Blocks;
+import com.hardcoded.utils.ModelJsonLoader.ModelBlock;
 
-class BlockState implements IBlockState {
+public class BlockState implements IBlockState {
+	protected final String namespace;
 	protected final String name;
 	protected final int id;
 	protected int rgb;
+	public ModelBlock model;
 	
 	public BlockState(String name) {
-		this.name = name;
+		int colon_index = name.indexOf(':');
+		this.namespace = name.substring(0, colon_index);
+		this.name = name.substring(colon_index + 1);
 		
 		// Temporary id creation
 		this.id = name.hashCode();
@@ -43,6 +48,6 @@ class BlockState implements IBlockState {
 	
 	@Override
 	public String toString() {
-		return "BlockState[" + name + "]";
+		return "BlockState[" + namespace + ":" + name + "]";
 	}
 }

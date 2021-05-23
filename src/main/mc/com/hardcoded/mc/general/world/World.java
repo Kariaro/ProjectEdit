@@ -5,14 +5,20 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.hardcoded.mc.general.files.*;
+import com.hardcoded.mc.general.nbt.NBTTagCompound;
+import com.hardcoded.mc.general.nbt.NBTTagString;
 import com.hardcoded.utils.NotNull;
 
 public class World {
 	protected Map<Long, IRegion> regions = new HashMap<>();	
-	private File file;
+	private final File file;
+	private final NBTTagCompound level_dat;
+	private final NBTTagCompound version;
 	
 	public World(File file) {
 		this.file = file;
+		this.level_dat = WorldLoader.loadLevelDat(this);
+		this.version = (NBTTagCompound)((NBTTagCompound)level_dat.get("Data")).get("Version");
 	}
 	
 	/**
@@ -57,13 +63,6 @@ public class World {
 		return getRegion(Math.floorDiv(x, 32), Math.floorDiv(z, 32)).getChunk(x & 31, z & 31);
 	}
 	
-//	@NotNull
-//	public IBlockState getBlock(BlockPosition pos) {
-//		//return Math.random() > 0.1 ? Blocks.DIRT:Blocks.AIR;
-//		//return getChunk(pos.getChunkX(), pos.getChunkZ()).getBlock(pos.getLocalChunkX(), pos.getLocalChunkY(), pos.getLocalChunkZ());
-//		return null;
-//	}
-	
 	@NotNull
 	public IBlockState getBlock(int x, int y, int z) {
 		return getWorldRegion(x, z)
@@ -71,12 +70,12 @@ public class World {
 			  .getBlock(x & 15, y, z & 15);
 	}
 	
-//	public void setBlock(IBlockState state, BlockPosition pos) {
-//		getChunk(pos.getChunkX(), pos.getChunkZ()).setBlock(state, pos.getLocalChunkX(), pos.getLocalChunkY(), pos.getLocalChunkZ());
-//	}
-	
 	protected File getFile() {
 		return file;
+	}
+	
+	public String getVersion() {
+		return ((NBTTagString)version.get("Name")).getValue();
 	}
 	
 	private static long get_index(int x, int y) {

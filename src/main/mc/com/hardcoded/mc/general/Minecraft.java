@@ -30,4 +30,14 @@ public class Minecraft {
 		File[] array = new File(getMinecraftPath(), "saves").listFiles();
 		return array == null ? new File[0]:array;
 	}
+	
+	@NotNull
+	public static File getVersionsPath() {
+		return new File(getMinecraftPath(), "versions");
+	}
+	
+	@NotNull
+	public static File getVersionFolder(String name) {
+		return new File(getMinecraftPath(), "versions/" + name);
+	}
 }

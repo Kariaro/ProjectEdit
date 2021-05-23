@@ -1,7 +1,6 @@
 package com.hardcoded.mc.general.world;
 
 import com.hardcoded.mc.general.ByteBuf;
-import com.hardcoded.mc.general.files.Blocks;
 import com.hardcoded.mc.general.nbt.*;
 
 public class RegionChunk {
@@ -10,14 +9,7 @@ public class RegionChunk {
 	
 	public RegionChunk(ByteBuf buf) {
 		this.nbt = NBTBase.readNBTTagCompound(buf);
-		try {
 		read();
-		} catch(Exception e) {
-			e.printStackTrace();
-			
-			//System.out.println(nbt);
-			System.exit(0);
-		}
 	}
 	
 	@SuppressWarnings("unchecked")

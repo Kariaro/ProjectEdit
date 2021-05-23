@@ -8,11 +8,14 @@ import java.io.File;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.joml.Matrix4f;
+import org.json.JSONObject;
 import org.lwjgl.opengl.GL11;
 
 import com.hardcoded.mc.general.Minecraft;
 import com.hardcoded.mc.general.files.Blocks;
-import com.hardcoded.mc.general.world.World;
+import com.hardcoded.mc.general.world.*;
+import com.hardcoded.utils.ModelJsonLoader;
+import com.hardcoded.utils.VersionResourceReader;
 
 public class WorldRender {
 	private static final Logger LOGGER = LogManager.getLogger(WorldRender.class);
@@ -57,6 +60,7 @@ public class WorldRender {
 	}
 	
 	private World world;
+	private File version_jar;
 	private void init() {
 		Blocks.init();
 		
@@ -71,11 +75,32 @@ public class WorldRender {
 			} catch(Exception e) {
 				e.printStackTrace();
 			}
+			
+			version_jar = new File(Minecraft.getVersionFolder(world.getVersion()), world.getVersion() + ".jar");
+			LOGGER.info("Version file: '{}'", version_jar);
+			
+			try {
+				VersionResourceReader reader = new VersionResourceReader(version_jar);
+				
+				for(IBlockState state : BlockStates.getStates()) {
+					System.out.println("################################################################");
+					JSONObject json = reader.resolveState(state);
+					LOGGER.info("State: {}, {}", state, state.getName());
+					LOGGER.info("Entry: {}", json);
+					LOGGER.info("");
+					
+					if(json != null) {
+						((BlockState)state).model = ModelJsonLoader.createModel(reader, json);
+					}
+				}
+			} catch(Exception e) {
+				LOGGER.trace(e);
+				e.printStackTrace();
+			}
 		} else {
 			LOGGER.warn("Could not find any savefiles");
 		}
 		
-
 		this.displayList = GL11.glGenLists(1);
 	}
 	
@@ -89,72 +114,72 @@ public class WorldRender {
 		camera.update();
 	}
 	
-	private void renderCube(float x, float y, float z, float xs, float ys, float zs, int rgba) {
-		float rc, gc, bc, ac;
-		{
-			ac = ((rgba >> 24) & 0xff) / 255.0f;
-			rc = ((rgba >> 16) & 0xff) / 255.0f;
-			gc = ((rgba >>  8) & 0xff) / 255.0f;
-			bc = ((rgba      ) & 0xff) / 255.0f;
-		}
-		
-		x -= 0.5f;
-		y -= 0.5f;
-		z -= 0.5f;
-		GL11.glBegin(GL11.GL_TRIANGLE_FAN);
-			GL11.glColor4f(1, 1, 1, 0.5f);
-			GL11.glVertex3f(x     , y + ys, z);
-			GL11.glColor4f(rc, gc, bc, ac);
-			GL11.glVertex3f(x + xs, y + ys, z);
-			GL11.glVertex3f(x + xs, y     , z);
-			GL11.glVertex3f(x     , y     , z);
-		GL11.glEnd();
-		
-		GL11.glBegin(GL11.GL_TRIANGLE_FAN);
-			GL11.glColor4f(1, 1, 0, 0.5f);
-			GL11.glVertex3f(x + xs, y + ys, z     );
-			GL11.glColor4f(rc, gc, bc, ac);
-			GL11.glVertex3f(x + xs, y + ys, z + zs);
-			GL11.glVertex3f(x + xs, y     , z + zs);
-			GL11.glVertex3f(x + xs, y     , z     );
-		GL11.glEnd();
-		
-		GL11.glBegin(GL11.GL_TRIANGLE_FAN);
-			GL11.glColor4f(1, 0, 1, 0.5f);
-			GL11.glVertex3f(x     , y     , z + zs);
-			GL11.glColor4f(rc, gc, bc, ac);
-			GL11.glVertex3f(x + xs, y     , z + zs);
-			GL11.glVertex3f(x + xs, y + ys, z + zs);
-			GL11.glVertex3f(x     , y + ys, z + zs);
-		GL11.glEnd();
-		
-		GL11.glBegin(GL11.GL_TRIANGLE_FAN);
-			GL11.glColor4f(0, 1, 1, 0.5f);
-			GL11.glVertex3f(x, y + ys, z + zs);
-			GL11.glColor4f(rc, gc, bc, ac);
-			GL11.glVertex3f(x, y + ys, z     );
-			GL11.glVertex3f(x, y     , z     );
-			GL11.glVertex3f(x, y     , z + zs);
-		GL11.glEnd();
-		
-		GL11.glBegin(GL11.GL_TRIANGLE_FAN);
-			GL11.glColor4f(1, 0, 0, 0.5f);
-			GL11.glVertex3f(x     , y + ys, z     );
-			GL11.glColor4f(rc, gc, bc, ac);
-			GL11.glVertex3f(x     , y + ys, z + zs);
-			GL11.glVertex3f(x + xs, y + ys, z + zs);
-			GL11.glVertex3f(x + xs, y + ys, z     );
-		GL11.glEnd();
-		
-		GL11.glBegin(GL11.GL_TRIANGLE_FAN);
-			GL11.glColor4f(0, 0, 1, 0.5f);
-			GL11.glVertex3f(x     , y, z + zs);
-			GL11.glColor4f(rc, gc, bc, ac);
-			GL11.glVertex3f(x     , y, z     );
-			GL11.glVertex3f(x + xs, y, z     );
-			GL11.glVertex3f(x + xs, y, z + zs);
-		GL11.glEnd();
-	}
+//	private void renderCube(float x, float y, float z, float xs, float ys, float zs, int rgba) {
+//		float rc, gc, bc, ac;
+//		{
+//			ac = ((rgba >> 24) & 0xff) / 255.0f;
+//			rc = ((rgba >> 16) & 0xff) / 255.0f;
+//			gc = ((rgba >>  8) & 0xff) / 255.0f;
+//			bc = ((rgba      ) & 0xff) / 255.0f;
+//		}
+//		
+//		x -= 0.5f;
+//		y -= 0.5f;
+//		z -= 0.5f;
+//		GL11.glBegin(GL11.GL_TRIANGLE_FAN);
+//			GL11.glColor4f(1, 1, 1, 0.5f);
+//			GL11.glVertex3f(x     , y + ys, z);
+//			GL11.glColor4f(rc, gc, bc, ac);
+//			GL11.glVertex3f(x + xs, y + ys, z);
+//			GL11.glVertex3f(x + xs, y     , z);
+//			GL11.glVertex3f(x     , y     , z);
+//		GL11.glEnd();
+//		
+//		GL11.glBegin(GL11.GL_TRIANGLE_FAN);
+//			GL11.glColor4f(1, 1, 0, 0.5f);
+//			GL11.glVertex3f(x + xs, y + ys, z     );
+//			GL11.glColor4f(rc, gc, bc, ac);
+//			GL11.glVertex3f(x + xs, y + ys, z + zs);
+//			GL11.glVertex3f(x + xs, y     , z + zs);
+//			GL11.glVertex3f(x + xs, y     , z     );
+//		GL11.glEnd();
+//		
+//		GL11.glBegin(GL11.GL_TRIANGLE_FAN);
+//			GL11.glColor4f(1, 0, 1, 0.5f);
+//			GL11.glVertex3f(x     , y     , z + zs);
+//			GL11.glColor4f(rc, gc, bc, ac);
+//			GL11.glVertex3f(x + xs, y     , z + zs);
+//			GL11.glVertex3f(x + xs, y + ys, z + zs);
+//			GL11.glVertex3f(x     , y + ys, z + zs);
+//		GL11.glEnd();
+//		
+//		GL11.glBegin(GL11.GL_TRIANGLE_FAN);
+//			GL11.glColor4f(0, 1, 1, 0.5f);
+//			GL11.glVertex3f(x, y + ys, z + zs);
+//			GL11.glColor4f(rc, gc, bc, ac);
+//			GL11.glVertex3f(x, y + ys, z     );
+//			GL11.glVertex3f(x, y     , z     );
+//			GL11.glVertex3f(x, y     , z + zs);
+//		GL11.glEnd();
+//		
+//		GL11.glBegin(GL11.GL_TRIANGLE_FAN);
+//			GL11.glColor4f(1, 0, 0, 0.5f);
+//			GL11.glVertex3f(x     , y + ys, z     );
+//			GL11.glColor4f(rc, gc, bc, ac);
+//			GL11.glVertex3f(x     , y + ys, z + zs);
+//			GL11.glVertex3f(x + xs, y + ys, z + zs);
+//			GL11.glVertex3f(x + xs, y + ys, z     );
+//		GL11.glEnd();
+//		
+//		GL11.glBegin(GL11.GL_TRIANGLE_FAN);
+//			GL11.glColor4f(0, 0, 1, 0.5f);
+//			GL11.glVertex3f(x     , y, z + zs);
+//			GL11.glColor4f(rc, gc, bc, ac);
+//			GL11.glVertex3f(x     , y, z     );
+//			GL11.glVertex3f(x + xs, y, z     );
+//			GL11.glVertex3f(x + xs, y, z + zs);
+//		GL11.glEnd();
+//	}
 	
 	private int displayList;
 	private boolean hasList = false;
@@ -170,36 +195,24 @@ public class WorldRender {
 		GL11.glEnable(GL_CULL_FACE);
 		GL11.glEnable(GL_TEXTURE_2D);
 		
-		for(int x = 0; x < 10; x++) {
-			for(int y = 0; y < 10; y++) {
-				for(int z = 0; z < 10; z++) {
-					renderCube(x, y, z, 1, 1, 1, 0xff00ff);
-				}
-			}
-		}
-		renderCube(0, 0, 0, 1, 1, 1, 0xff00ff);
+//		for(int x = 0; x < 10; x++) {
+//			for(int y = 0; y < 10; y++) {
+//				for(int z = 0; z < 10; z++) {
+//					renderCube(x, y, z, 1, 1, 1, 0xff00ff);
+//				}
+//			}
+//		}
 		
 		if(!hasList) {
 			hasList = true;
 			GL11.glNewList(displayList, GL11.GL_COMPILE);
-			int s = 20;
+			int s = 2;
 //			
 //			for(int i = 0; i < 256; i++) {
 //				world.setBlock(Blocks.DIRT, 0, 0, i);
 //				world.setBlock(Blocks.AIR, 0, 1, i);
 //			}
 			chunk_render.renderWorld(world, 0, 0, s);
-			/*for(int i = -s; i <= s; i++) {
-				for(int j = -s; j <= s; j++) {
-					int ix = i * 16 * 32;
-					int jz = j * 16 * 32;
-					
-					RegionFile region = reader.tryLoad(i, j);
-					if(region == null) continue;
-					
-					chunk_render.renderRegionFile(ix, jz, region);
-				}
-			}*/
 			GL11.glEndList();
 		}
 		GL11.glCallList(displayList);
