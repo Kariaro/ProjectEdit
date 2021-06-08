@@ -1,6 +1,6 @@
 package com.hardcoded.mc.general.files;
 
-import com.hardcoded.mc.general.world.IBlockState;
+import com.hardcoded.mc.general.world.IBlockData;
 
 public class Chunk implements IChunk {
 	private ChunkSection[] sections = new ChunkSection[16];
@@ -18,11 +18,11 @@ public class Chunk implements IChunk {
 	}
 	
 	@Override
-	public IBlockState getBlock(int x, int y, int z) {
+	public IBlockData getBlock(int x, int y, int z) {
 		return getSection(y / 16).getBlock(x & 15, y & 15, z & 15);
 	}
 	
-	public void setBlock(IBlockState state, int x, int y, int z) {
+	public void setBlock(IBlockData state, int x, int y, int z) {
 		getSection(y / 16).setBlock(state, x & 15, y & 15, z & 15);
 	}
 	

@@ -3,6 +3,7 @@ package com.hardcoded.mc.general.nbt;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 
 import com.hardcoded.mc.general.ByteBuf;
 
@@ -29,6 +30,10 @@ public class NBTTagCompound extends NBTBase {
 	 */
 	public int size() {
 		return map.size();
+	}
+	
+	public Set<String> keySet() {
+		return map.keySet();
 	}
 	
 	/**

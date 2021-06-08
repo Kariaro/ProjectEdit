@@ -64,7 +64,7 @@ public class World {
 	}
 	
 	@NotNull
-	public IBlockState getBlock(int x, int y, int z) {
+	public IBlockData getBlock(int x, int y, int z) {
 		return getWorldRegion(x, z)
 			  .getChunk(Math.floorDiv(x, 16) & 31, Math.floorDiv(z, 16) & 31)
 			  .getBlock(x & 15, y, z & 15);

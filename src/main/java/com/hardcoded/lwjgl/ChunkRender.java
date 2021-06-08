@@ -1,11 +1,13 @@
 package com.hardcoded.lwjgl;
 
+import org.joml.Vector4f;
 import org.lwjgl.opengl.GL11;
 
 import com.hardcoded.mc.general.files.IChunk;
-import com.hardcoded.mc.general.world.BlockState;
-import com.hardcoded.mc.general.world.IBlockState;
+import com.hardcoded.mc.general.world.BlockData;
+import com.hardcoded.mc.general.world.IBlockData;
 import com.hardcoded.mc.general.world.World;
+import com.hardcoded.utils.FastModelRenderer;
 
 public class ChunkRender {
 	public static final int FACE_UP = 1;
@@ -15,7 +17,7 @@ public class ChunkRender {
 	public static final int FACE_FRONT= 16;
 	public static final int FACE_BACK = 32;
 	
-	private void render_cube(IBlockState state, float x, float y, float z, int faces) {
+	private void render_cube(IBlockData state, float x, float y, float z, int faces) {
 		int rgba = state.getMapColor();
 		float rc, gc, bc, ac;
 		{
@@ -26,15 +28,19 @@ public class ChunkRender {
 		}
 		
 		{
-			BlockState bs = (BlockState)state;
-			if(bs.model != null) {
-				x *= 16;
-				y *= 16;
-				z *= 16;
+			BlockData bs = (BlockData)state;
+			if(bs.model2 != null) {
+				GL11.glPushMatrix();
 				GL11.glColor4f(rc, gc, bc, ac);
+				GL11.glColor4f(1, 1, 1, 1);
 				GL11.glTranslatef(x, y, z);
-				bs.model.render(rc, gc, bc, ac, faces);
-				GL11.glTranslatef(-x, -y, -z);
+				float s = 1 / 16.0f;
+				GL11.glScalef(s, s, s);
+				//bs.model.render(rc, gc, bc, ac, faces);
+				//bs.model.render(1, 1, 1, 1, faces);
+				GL11.glMultMatrixf(bs.model2_transform.get(new float[16]));
+				FastModelRenderer.renderModel(bs.model2, new Vector4f(1, 1, 1, 1), faces);
+				GL11.glPopMatrix();
 				return;
 			}
 		}
@@ -43,9 +49,9 @@ public class ChunkRender {
 		float xs = 1;
 		float ys = 1;
 		float zs = 1;
-		x -= 0.5f;
-		y -= 0.5f;
-		z -= 0.5f;
+//		x -= 0.5f;
+//		y -= 0.5f;
+//		z -= 0.5f;
 		if((faces & FACE_BACK) != 0) {
 			GL11.glBegin(GL11.GL_TRIANGLE_FAN);
 				GL11.glColor4f(rc + d, gc, bc, ac);
@@ -151,7 +157,7 @@ public class ChunkRender {
 			final int world_y = y;
 			final int world_z = chunk_z + z;
 			
-			IBlockState state = world.getBlock(world_x, world_y, world_z);
+			IBlockData state = world.getBlock(world_x, world_y, world_z);
 			if(state.isAir()) continue;
 			
 			int flags = getShownFaces(world, world_x, world_y, world_z);

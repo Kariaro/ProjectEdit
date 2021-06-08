@@ -16,13 +16,11 @@ import org.lwjgl.opengl.GL12;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.stb.STBImage;
 
-import com.hardcoded.lwjgl.async.LwjglAsyncThread;
-
 public class Texture {
 	private static final Map<String, Texture> cache = new HashMap<>();
 	
 	public static final Texture NONE = new Texture();
-	public static final Map<String, Integer> cacheTextureId = new HashMap<>();
+	public static final Map<String, Texture> cacheTextureId = new HashMap<>();
 	
 	private final String path;
 	public final String name;
@@ -46,23 +44,25 @@ public class Texture {
 		
 		//load(buf, interpolation);
 		
-		cacheTextureId.put(path, this.textureId);
+		cacheTextureId.put(path, this);
 		
-		if(!LwjglAsyncThread.isCurrentThread()) {
-			LwjglAsyncThread.runAsync(() -> {
-				loadData(interpolation);
-			});
-			return;
-		}
+//		if(!LwjglAsyncThread.isCurrentThread()) {
+//			LwjglAsyncThread.runAsync(() -> {
+//				loadData(interpolation);
+//			});
+//			return;
+//		}
 		
 		loadData(interpolation);
 	}
 	
-	private Texture(int textureId, int activeId) {
-		this.textureId = textureId;
+	private Texture(Texture texture, int activeId) {
+		this.textureId = texture.textureId;
 		this.activeId = GL20.GL_TEXTURE0 + activeId;
-		this.name = null;
-		this.path = null;
+		this.name = texture.name;
+		this.path = texture.path;
+		this.width = texture.width;
+		this.height = texture.height;
 	}
 	
 	private Texture(BufferedImage bi, int id, int interpolation) {
@@ -148,7 +148,7 @@ public class Texture {
 			return new Texture(cacheTextureId.get(path), activeId);
 		}
 		
-		return new Texture(tex.textureId, activeId);
+		return new Texture(tex, activeId);
 	}
 	
 	public static Texture loadResourceTexture(String path, int interpolation) throws IOException, URISyntaxException {
@@ -172,7 +172,7 @@ public class Texture {
 		}
 		
 		Texture tex = new Texture(bi, 0, interpolation);
-		cacheTextureId.put(key, tex.textureId);
+		cacheTextureId.put(key, tex);
 		return tex;
 	}
 	

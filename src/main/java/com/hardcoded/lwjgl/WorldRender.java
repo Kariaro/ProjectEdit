@@ -14,6 +14,7 @@ import org.lwjgl.opengl.GL11;
 import com.hardcoded.mc.general.Minecraft;
 import com.hardcoded.mc.general.files.Blocks;
 import com.hardcoded.mc.general.world.*;
+import com.hardcoded.utils.FastModelJsonLoader;
 import com.hardcoded.utils.ModelJsonLoader;
 import com.hardcoded.utils.VersionResourceReader;
 
@@ -82,16 +83,18 @@ public class WorldRender {
 			try {
 				VersionResourceReader reader = new VersionResourceReader(version_jar);
 				
-				for(IBlockState state : BlockStates.getStates()) {
+				for(IBlockData state : BlockDataManager.getStates()) {
 					System.out.println("################################################################");
+					((BlockData)state).model2 = reader.resolveState_TEST(state);
+					
 					JSONObject json = reader.resolveState(state);
 					LOGGER.info("State: {}, {}", state, state.getName());
 					LOGGER.info("Entry: {}", json);
 					LOGGER.info("");
 					
-					if(json != null) {
-						((BlockState)state).model = ModelJsonLoader.createModel(reader, json);
-					}
+//					if(json != null) {
+//						((BlockData)state).model = ModelJsonLoader.createModel(reader, json);
+//					}
 				}
 			} catch(Exception e) {
 				LOGGER.trace(e);
@@ -185,7 +188,7 @@ public class WorldRender {
 	private boolean hasList = false;
 	public void render() {
 		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
-		GL11.glClearColor(0, 0, 0, 1);
+		GL11.glClearColor(0.3f, 0.3f, 0.3f, 1);
 		
 		Matrix4f projectionView = camera.getProjectionMatrix(FOV, width, height);
 		
@@ -202,12 +205,13 @@ public class WorldRender {
 //				}
 //			}
 //		}
-		
+//		GL11.glEnable(GL11.GL_BLEND);
+//		GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
 		if(!hasList) {
 			hasList = true;
 			GL11.glNewList(displayList, GL11.GL_COMPILE);
-			int s = 2;
-//			
+			int s = 4;
+			
 //			for(int i = 0; i < 256; i++) {
 //				world.setBlock(Blocks.DIRT, 0, 0, i);
 //				world.setBlock(Blocks.AIR, 0, 1, i);
