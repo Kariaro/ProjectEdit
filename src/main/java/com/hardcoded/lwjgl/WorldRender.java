@@ -8,14 +8,11 @@ import java.io.File;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.joml.Matrix4f;
-import org.json.JSONObject;
 import org.lwjgl.opengl.GL11;
 
 import com.hardcoded.mc.general.Minecraft;
 import com.hardcoded.mc.general.files.Blocks;
 import com.hardcoded.mc.general.world.*;
-import com.hardcoded.utils.FastModelJsonLoader;
-import com.hardcoded.utils.ModelJsonLoader;
 import com.hardcoded.utils.VersionResourceReader;
 
 public class WorldRender {
@@ -85,16 +82,7 @@ public class WorldRender {
 				
 				for(IBlockData state : BlockDataManager.getStates()) {
 					System.out.println("################################################################");
-					((BlockData)state).model2 = reader.resolveState_TEST(state);
-					
-					JSONObject json = reader.resolveState(state);
-					LOGGER.info("State: {}, {}", state, state.getName());
-					LOGGER.info("Entry: {}", json);
-					LOGGER.info("");
-					
-//					if(json != null) {
-//						((BlockData)state).model = ModelJsonLoader.createModel(reader, json);
-//					}
+					reader.resolveState_TEST(((BlockData)state), state);
 				}
 			} catch(Exception e) {
 				LOGGER.trace(e);

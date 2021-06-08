@@ -7,7 +7,6 @@ import org.joml.Matrix4f;
 import com.hardcoded.mc.general.files.Blocks;
 import com.hardcoded.mc.general.world.IBlockState.IBlockStateList;
 import com.hardcoded.utils.FastModelJsonLoader.FastModel;
-import com.hardcoded.utils.ModelJsonLoader.ModelBlock;
 
 public class BlockData implements IBlockData {
 	protected final List<BlockData> children;
@@ -16,7 +15,7 @@ public class BlockData implements IBlockData {
 	protected final String name;
 	protected final int id;
 	protected int rgb;
-	public ModelBlock model;
+	
 	public Matrix4f model2_transform = new Matrix4f();
 	public FastModel.ModelObject model2;
 	
