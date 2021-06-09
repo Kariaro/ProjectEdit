@@ -13,9 +13,16 @@ public interface IChunkSection {
 		public void setBlock(IBlockData state, int x, int y, int z) {
 			
 		}
+		
+		@Override
+		public boolean isLoaded() {
+			return false;
+		}
 	};
 	
 	IBlockData getBlock(int x, int y, int z);
 	
 	void setBlock(IBlockData state, int x, int y, int z);
+	
+	boolean isLoaded();
 }

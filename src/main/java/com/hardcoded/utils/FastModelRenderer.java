@@ -1,9 +1,10 @@
 package com.hardcoded.utils;
 
-import org.joml.Vector4f;
+import org.joml.Matrix4f;
+import org.joml.Vector3f;
 import org.lwjgl.opengl.GL11;
 
-import com.hardcoded.lwjgl.ChunkRender;
+import com.hardcoded.mc.general.world.BlockData;
 import com.hardcoded.utils.FastModelJsonLoader.FaceType;
 import com.hardcoded.utils.FastModelJsonLoader.FastModel.ModelElement;
 import com.hardcoded.utils.FastModelJsonLoader.FastModel.ModelFace;
@@ -11,19 +12,47 @@ import com.hardcoded.utils.FastModelJsonLoader.FastModel.ModelObject;
 
 public class FastModelRenderer {
 	public static boolean hasFace(FaceType face, int faces) {
-		if(face == null) return true;
-		if(face == FaceType.none) return true;
-		if(face == FaceType.up && (faces & ChunkRender.FACE_UP) != 0) return true;
-		if(face == FaceType.down && (faces & ChunkRender.FACE_DOWN) != 0) return true;
-		if(face == FaceType.north && (faces & ChunkRender.FACE_FRONT) != 0) return true;
-		if(face == FaceType.south && (faces & ChunkRender.FACE_BACK) != 0) return true;
-		if(face == FaceType.east && (faces & ChunkRender.FACE_RIGHT) != 0) return true;
-		if(face == FaceType.west && (faces & ChunkRender.FACE_LEFT) != 0) return true;
-		return false;
+		return (face.getFlags() & faces) != 0;
 	}
 	
-	public static void renderModel(ModelObject object, Vector4f col, int faces) {
-		GL11.glColor4f(col.x, col.y, col.z, col.w);
+	public static void renderModelFast(BlockData bs, float x, float y, float z, int faces) {
+		GL11.glBegin(GL11.GL_TRIANGLES);
+		for(int i = 0; i < bs.model_objects.size(); i++) {
+			Matrix4f mat = new Matrix4f()
+				.translate(x, y, z)
+				.scale(1 / 16.0f)
+				.mul(bs.model_transform.get(i));
+			
+			for(ModelElement element : bs.model_objects.get(i).elements) {
+				renderElementFast(element, mat, faces);
+			}
+		}
+		GL11.glEnd();
+	}
+	
+	private static void renderElementFast(ModelElement element, Matrix4f mat, int faces) {
+		for(FaceType type : element.faces.keySet()) {
+			if((type.getFlags() & faces) == 0) continue;
+			renderFaceFast(element.faces.get(type), mat);
+		}
+	}
+	
+	private static void renderFaceFast(ModelFace face, Matrix4f mat) {
+		float[] vertex = face.vertex;
+		float[] uv = face.uv;
+		
+		for(int i = 0, len = vertex.length / 3; i < len; i++) {
+			int v = i * 3;
+			int t = i * 2;
+			
+			//GL11.glVertex3f(vertex[v], vertex[v + 1], vertex[v + 2]);
+			Vector3f p = mat.transformPosition(new Vector3f(vertex[v], vertex[v + 1], vertex[v + 2]));
+			GL11.glTexCoord2f(uv[t], uv[t + 1]);
+			GL11.glVertex3f(p.x, p.y, p.z);
+		}
+	}
+	
+	public static void renderModel(ModelObject object, int faces) {
 		for(ModelElement element : object.elements) {
 			renderElement(element, faces);
 		}
@@ -31,7 +60,7 @@ public class FastModelRenderer {
 	
 	private static void renderElement(ModelElement element, int faces) {
 		for(FaceType type : element.faces.keySet()) {
-			if(!hasFace(type, faces)) continue;
+			if((type.getFlags() & faces) == 0) continue;
 			renderFace(element.faces.get(type));
 		}
 	}
@@ -40,23 +69,14 @@ public class FastModelRenderer {
 		float[] vertex = face.vertex;
 		float[] uv = face.uv;
 		
-		if(face.texture != null) {
-			face.texture.bind();
-		}
-		
 		GL11.glBegin(GL11.GL_TRIANGLES);
 		for(int i = 0, len = vertex.length / 3; i < len; i++) {
 			int v = i * 3;
 			int t = i * 2;
 			
-			//GL11.glColor4f(rgba[0] + dif(), rgba[1] + dif(), rgba[2] + dif(), rgba[3] + dif());
 			GL11.glTexCoord2f(uv[t], uv[t + 1]);
 			GL11.glVertex3f(vertex[v], vertex[v + 1], vertex[v + 2]);
 		}
 		GL11.glEnd();
-		
-		if(face.texture != null) {
-			face.texture.unbind();
-		}
 	}
 }

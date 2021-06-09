@@ -21,7 +21,6 @@ public interface IChunk {
 	};
 	
 	IBlockData getBlock(int x, int y, int z);
-	
 	void setBlock(IBlockData state, int x, int y, int z);
 	boolean isLoaded();
 }

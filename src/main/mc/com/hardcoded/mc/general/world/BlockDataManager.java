@@ -4,7 +4,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class BlockDataManager {
-	private static final Map<Integer, BlockData> states = new HashMap<>();
+	private static final Map<Integer, BlockData> states = new LinkedHashMap<>();
 	
 	// Temporary
 	public static IBlockData getState(String name) {

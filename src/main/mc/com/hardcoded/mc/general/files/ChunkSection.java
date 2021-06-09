@@ -17,4 +17,9 @@ public class ChunkSection implements IChunkSection {
 	public void setBlock(IBlockData state, int x, int y, int z) {
 		blocks[(x) | (z << 4) | (y << 8)] = state;
 	}
+	
+	@Override
+	public boolean isLoaded() {
+		return true;
+	}
 }

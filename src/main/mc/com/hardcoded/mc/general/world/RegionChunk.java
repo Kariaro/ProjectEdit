@@ -37,6 +37,7 @@ public class RegionChunk {
 	private static int ceillog2(int i) {
 		return i < 1 ? 0:(32 - Integer.numberOfLeadingZeros(i - 1));
 	}
+	
 	public class SubChunk {
 		public IBlockData[] blocks = new IBlockData[4096];
 		public NBTTagCompound nbt;

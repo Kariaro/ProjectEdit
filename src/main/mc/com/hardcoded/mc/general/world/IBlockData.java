@@ -1,7 +1,7 @@
 package com.hardcoded.mc.general.world;
 
-import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
 
 import com.hardcoded.mc.general.world.IBlockState.IBlockStateList;
 
@@ -15,9 +15,11 @@ public interface IBlockData {
 	
 	int getMapColor();
 	
-	Collection<IBlockState> getStates();
+	Set<IBlockState> getStates();
 	
 	IBlockData getFromStates(Map<String, String> states);
 	
 	IBlockStateList getStateList();
+	
+	boolean isOpaque();
 }

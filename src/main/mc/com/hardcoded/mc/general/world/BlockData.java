@@ -16,8 +16,8 @@ public class BlockData implements IBlockData {
 	protected final int id;
 	protected int rgb;
 	
-	public Matrix4f model2_transform = new Matrix4f();
-	public FastModel.ModelObject model2;
+	public List<Matrix4f> model_transform = new ArrayList<>();
+	public List<FastModel.ModelObject> model_objects = new ArrayList<>();
 	
 	public BlockData(String name, List<IBlockState> states) {
 		this.namespace = name.substring(0, name.indexOf(':'));
@@ -98,8 +98,77 @@ public class BlockData implements IBlockData {
 	}
 	
 	@Override
-	public Collection<IBlockState> getStates() {
+	public Set<IBlockState> getStates() {
 		return stateList.values();
+	}
+	
+	public List<IBlockData> getChildren() {
+		return new ArrayList<>(children);
+	}
+	
+	@Override
+	public boolean isOpaque() {
+		return isAir()
+			|| id == Blocks.WATER.getBlockId()
+			|| id == Blocks.LAVA.getBlockId()
+			
+			|| id == Blocks.GRASS.getBlockId()
+			|| id == Blocks.TALL_GRASS.getBlockId()
+			|| id == Blocks.FERN.getBlockId()
+			|| id == Blocks.LARGE_FERN.getBlockId()
+			
+			|| id == Blocks.BLUE_ORCHID.getBlockId()
+			|| id == Blocks.OXEYE_DAISY.getBlockId()
+			|| id == Blocks.AZURE_BLUET.getBlockId()
+			|| id == Blocks.SUNFLOWER.getBlockId()
+			|| id == Blocks.ALLIUM.getBlockId()
+			|| id == Blocks.DANDELION.getBlockId()
+			|| id == Blocks.POPPY.getBlockId()
+			|| id == Blocks.DEAD_BUSH.getBlockId()
+			|| id == Blocks.ORANGE_TULIP.getBlockId()
+			|| id == Blocks.ROSE_BUSH.getBlockId()
+			|| id == Blocks.SWEET_BERRY_BUSH.getBlockId()
+			
+//			|| id == Blocks.ACACIA_FENCE.getBlockId()
+//			|| id == Blocks.ACACIA_FENCE_GATE.getBlockId()
+//			|| id == Blocks.BIRCH_FENCE.getBlockId()
+//			|| id == Blocks.BIRCH_FENCE_GATE.getBlockId()
+//			|| id == Blocks.CRIMSON_FENCE.getBlockId()
+//			|| id == Blocks.CRIMSON_FENCE_GATE.getBlockId()
+//			|| id == Blocks.DARK_OAK_FENCE.getBlockId()
+//			|| id == Blocks.DARK_OAK_FENCE_GATE.getBlockId()
+//			|| id == Blocks.JUNGLE_FENCE.getBlockId()
+//			|| id == Blocks.JUNGLE_FENCE_GATE.getBlockId()
+//			|| id == Blocks.NETHER_BRICK_FENCE.getBlockId()
+//			|| id == Blocks.OAK_FENCE.getBlockId()
+//			|| id == Blocks.OAK_FENCE_GATE.getBlockId()
+//			|| id == Blocks.SPRUCE_FENCE.getBlockId()
+//			|| id == Blocks.SPRUCE_FENCE_GATE.getBlockId()
+//			|| id == Blocks.WARPED_FENCE.getBlockId()
+//			|| id == Blocks.WARPED_FENCE_GATE.getBlockId()
+
+//			|| id == Blocks.STONE_BRICK_WALL.getBlockId()
+//			|| id == Blocks.COBBLESTONE_WALL.getBlockId()
+//			|| id == Blocks.MOSSY_STONE_BRICK_WALL.getBlockId()
+			
+			|| id == Blocks.SNOW.getBlockId()
+			|| id == Blocks.VINE.getBlockId()
+			|| id == Blocks.SUGAR_CANE.getBlockId()
+			
+			|| id == Blocks.SEAGRASS.getBlockId()
+			|| id == Blocks.SEA_PICKLE.getBlockId()
+			|| id == Blocks.TALL_SEAGRASS.getBlockId()
+			
+			|| id == Blocks.TORCH.getBlockId()
+			|| id == Blocks.SOUL_TORCH.getBlockId()
+			
+//			|| id == Blocks.ACACIA_LEAVES.getBlockId()
+//			|| id == Blocks.BIRCH_LEAVES.getBlockId()
+//			|| id == Blocks.DARK_OAK_LEAVES.getBlockId()
+//			|| id == Blocks.JUNGLE_LEAVES.getBlockId()
+//			|| id == Blocks.OAK_LEAVES.getBlockId()
+//			|| id == Blocks.SPRUCE_LEAVES.getBlockId()
+		;
 	}
 	
 	@Override
@@ -128,7 +197,7 @@ public class BlockData implements IBlockData {
 	
 	@Override
 	public String toString() {
-		if(children.isEmpty()) {
+		if(stateList.isEmpty()) {
 			return "IBlockData[" + namespace + ":" + name + "]";
 		}
 		

@@ -83,16 +83,19 @@ public interface IBlockState {
 	
 	// Container of states
 	static class IBlockStateList {
-		private Map<IBlockState, Object> map;
+		private Set<IBlockState> states;
+		private Map<String, Object> map;
 		
 		public IBlockStateList() {
-			map = new HashMap<>();
+			states = new HashSet<>();
+			map = new LinkedHashMap<>();
 		}
 		
 		public IBlockStateList setState(IBlockState state, Object value) {
 			List<?> values = state.getValues();
 			if(values.contains(value)) {
-				map.put(state, value);
+				map.put(state.getName(), value);
+				states.add(state);
 			} else {
 				// Failed to set state
 			}
@@ -100,12 +103,16 @@ public interface IBlockState {
 			return this;
 		}
 		
-		public Object getState(IBlockState state) {
-			return map.get(state);
+		public boolean isEmpty() {
+			return map.isEmpty();
 		}
 		
-		public Collection<IBlockState> values() {
-			return map.keySet();
+		public Object getState(IBlockState state) {
+			return map.get(state.getName());
+		}
+		
+		public Set<IBlockState> values() {
+			return states;
 		}
 		
 		@Override
@@ -114,7 +121,6 @@ public interface IBlockState {
 			return string.substring(1, string.length() - 1).replace(" ", "");
 		}
 
-		@SuppressWarnings("unlikely-arg-type")
 		public boolean matches(Map<String, String> states) {
 			for(String key : states.keySet()) {
 				String val = states.get(key);
@@ -126,16 +132,13 @@ public interface IBlockState {
 		}
 		
 		public boolean matches(String state) {
-			// Format: "facing=north,half=lower,hinge=right,open=true"
-			Map<String, String> filter = new HashMap<>();
-			String[] parts = state.split(",");
-			
-			for(String part : parts) {
+			for(String part : state.split(",")) {
 				String[] obj = part.split("=");
-				filter.put(obj[0], obj[1]);
+				Object value = map.get(obj[0]);
+				if(value == null || !value.toString().equals(obj[1])) return false;
 			}
 			
-			return matches(filter);
+			return true;
 		}
 	}
 	

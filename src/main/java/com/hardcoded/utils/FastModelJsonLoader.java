@@ -4,17 +4,41 @@ import java.text.NumberFormat;
 import java.util.*;
 
 import org.joml.Vector3f;
+import org.joml.Vector3fc;
 import org.joml.Vector4f;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hardcoded.lwjgl.data.Texture;
+import com.hardcoded.lwjgl.data.TextureAtlas;
+import com.hardcoded.mc.general.files.Blocks;
 
 public class FastModelJsonLoader {
-	public static enum FaceType { down, up, north, south, west, east, none }
+	private static final JsonFactory factory = new JsonFactory();
+	private static final ObjectMapper mapper = new ObjectMapper();
+	
+	public static enum FaceType {
+		down(Blocks.FACE_DOWN),
+		bottom(Blocks.FACE_DOWN),
+		
+		up(Blocks.FACE_UP),
+		north(Blocks.FACE_FRONT),
+		south(Blocks.FACE_BACK),
+		west(Blocks.FACE_LEFT),
+		east(Blocks.FACE_RIGHT),
+		none(0);
+		
+		private int flags;
+		private FaceType(int flags) {
+			this.flags = flags;
+		}
+		
+		public int getFlags() {
+			return flags;
+		}
+	}
+	
 	public static enum Axis { x, y, z }
 	
 	static class JsonModelFace {
@@ -41,7 +65,7 @@ public class FastModelJsonLoader {
 		
 		@JsonSetter(value = "rotation")
 		public void setRotation(Number value) {
-			rotation = value.floatValue();
+			rotation = (float)Math.toRadians(value.floatValue());
 		}
 
 		public JsonModelFace build(JsonModelObject model) {
@@ -54,14 +78,32 @@ public class FastModelJsonLoader {
 			} else {
 				next.texture = texture;
 			}
-			next.uv = uv.get(new Vector4f());
+			
+			Vector4f next_uv = new Vector4f();
+			next.uv = uv.get(next_uv);
+			
+			if(rotation != 0) {
+				float cx = (uv.x() + uv.z()) / 2.0f;
+				float cy = (uv.y() + uv.w()) / 2.0f;
+				Vector3f p1 = new Vector3f(uv.x() - cx, uv.y() - cy, 0);
+				Vector3f p2 = new Vector3f(uv.z() - cx, uv.w() - cy, 0);
+				p1.rotateZ(rotation);
+				p2.rotateZ(rotation);
+				next_uv.set(
+					p1.x + cx,
+					p1.y + cy,
+					p2.x + cx,
+					p2.y + cy
+				);
+			}
+			
 			return next;
 		}
 		
-		@Override
-		public String toString() {
-			return String.format("face{ texture=\"%s\" }", texture);
-		}
+//		@Override
+//		public String toString() {
+//			return String.format("face{ texture=\"%s\" }", texture);
+//		}
 	}
 	
 	static class JsonRotation {
@@ -77,6 +119,50 @@ public class FastModelJsonLoader {
 				list.get(1).floatValue(),
 				list.get(2).floatValue()
 			);
+		}
+		
+		@JsonSetter(value = "angle")
+		public void setAngle(Number value) {
+			angle = (float)Math.toRadians(value.floatValue());
+		}
+			
+		public Vector3f apply(float[] vertex, int i) {
+//			switch(axis) {
+//				case x: Maths.fastRotateX(vertex, origin, i, angle); break;
+//				case y: Maths.fastRotateY(vertex, origin, i, angle); break;
+//				case z: Maths.fastRotateZ(vertex, origin, i, angle); break;
+//			}
+			Vector3f v = new Vector3f(vertex[i], vertex[i + 1], vertex[i + 2]).sub(origin);
+			
+			if(rescale) {
+				float a = (float)(1.0 / Math.cos(angle));
+				switch(axis) {
+					case x: { // right
+						v.mul(1, a, a);
+						break;
+					}
+					case y: { // up
+						v.mul(a, 1, a);
+						break;
+					}
+					case z: { // front
+						v.mul(a, a, 1);
+						break;
+					}
+				}
+			}
+			
+			switch(axis) {
+				case x: v.rotateX(angle); break;
+				case y: v.rotateY(angle); break;
+				case z: v.rotateZ(angle); break;
+			}
+			v.add(origin);
+			
+			vertex[i] = v.x;
+			vertex[i + 1] = v.y;
+			vertex[i + 2] = v.z;
+			return v;
 		}
 	}
 	
@@ -144,9 +230,9 @@ public class FastModelJsonLoader {
 	}
 	
 	static class JsonDisplayElement {
-		public Vector3f rotation = new Vector3f(0, 0, 0);
-		public Vector3f translation = new Vector3f(0, 0, 0);
-		public Vector3f scale = new Vector3f(1, 1, 1);
+		public Vector3fc rotation = new Vector3f(0, 0, 0);
+		public Vector3fc translation = new Vector3f(0, 0, 0);
+		public Vector3fc scale = new Vector3f(1, 1, 1);
 		
 		@JsonSetter(value = "rotation")
 		public void setRotation(List<Number> list) {
@@ -178,9 +264,9 @@ public class FastModelJsonLoader {
 		@Override
 		public String toString() {
 			return String.format("element{ rotation=%s, translation=%s, scale=%s }",
-				rotation.toString(NumberFormat.getNumberInstance(Locale.US)),
-				translation.toString(NumberFormat.getNumberInstance(Locale.US)),
-				scale.toString(NumberFormat.getNumberInstance(Locale.US))
+				rotation.toString(),
+				translation.toString(),
+				scale.toString()
 			);
 		}
 		
@@ -198,65 +284,35 @@ public class FastModelJsonLoader {
 		
 		@JsonProperty(required = false)
 		private Map<String, JsonDisplayElement> display = Map.of();
-		
-		private boolean ambientocclusion = false;
+
+		@JsonProperty(required = false)
+		private Boolean ambientocclusion;
 		
 		@JsonProperty(required = false)
 		private String gui_light;
 		
-		public JsonModelObject(String path) throws Exception {
-			String content = resource.getBlockModel(path).toString();
-//			System.out.println("-----------------------");
-//			System.out.println("path: " + path);
-//			System.out.println("content: " + content);
-			
-			JsonFactory factory = new JsonFactory();
-			JsonParser parser = factory.createParser(content);
-			
-			ObjectMapper mapper = new ObjectMapper();
-			mapper.enable(JsonParser.Feature.ALLOW_COMMENTS);
-			mapper.readerForUpdating(this).readValue(parser);
+		private JsonModelObject(String path) throws Exception {
+			mapper.readerForUpdating(this).readValue(factory.createParser(resource.getBlockModelBytes(path)));
 		}
 		
-		public JsonModelObject() {
-			
+		private JsonModelObject() {}
+		
+		String getGuiLight() {
+			if(gui_light != null) return gui_light;
+			return (parent == null) ? "":parent.getGuiLight();
 		}
 		
-		public boolean getAmbientocclusion() {
-			return ambientocclusion;
+		boolean getAmbientocclusion() {
+			if(ambientocclusion != null) return ambientocclusion;
+			return (parent == null) ? false:parent.getAmbientocclusion();
 		}
 		
-		public String getGuiLight() {
-			// side
-			return gui_light;
+		List<JsonModelElement> getModelElements() {
+			if(elements != null) return elements;
+			return (parent == null) ? List.of():parent.getModelElements();
 		}
 		
-		public String resolveTexture(String name) {
-			if(name.startsWith("#")) {
-				String value = textures.get(name);
-				if(value == null && parent != null) {
-					return parent.resolveTexture(name);
-				}
-				
-				return value;
-			}
-			
-			return name;
-		}
-		 
-		public List<JsonModelElement> getModelElements() {
-			if(elements != null) {
-				return elements;
-			}
-			
-			if(parent != null) {
-				return parent.getModelElements();
-			}
-			
-			return List.of();
-		}
-		
-		public Map<String, String> getResolvedTextures() {
+		Map<String, String> getResolvedTextures() {
 			Map<String, String> map = new HashMap<>();
 			map.putAll(textures);
 			
@@ -285,8 +341,8 @@ public class FastModelJsonLoader {
 		 */
 		public JsonModelObject build() {
 			JsonModelObject model = new JsonModelObject();
-			model.ambientocclusion = this.ambientocclusion;
-			model.gui_light = this.gui_light;
+			model.gui_light = this.getGuiLight();
+			model.ambientocclusion = this.getAmbientocclusion();
 			model.textures = this.getResolvedTextures();
 			
 			{
@@ -298,23 +354,9 @@ public class FastModelJsonLoader {
 				}
 			}
 			
-//			System.out.println(model.textures);
-//			System.out.println(model);
-//			
-//			for(JsonModelElement element : model.elements) {
-//				System.out.println("    " + element);
-//			}
-			
 			return model;
 		}
-		
-		@Override
-		public String toString() {
-			return String.format("model=[\n\telements=%s\n\ttextures=%s\n];", getModelElements(), textures);
-		}
 	}
-	
-	private static VersionResourceReader resource;
 	
 	public static class FastModel {
 		public static class ModelObject {
@@ -326,7 +368,7 @@ public class FastModelJsonLoader {
 		}
 		
 		public static class ModelFace {
-			public Texture texture;
+			public int textureId;
 			public FaceType cullface;
 			public float[] vertex;
 			public float[] uv;
@@ -346,36 +388,89 @@ public class FastModelJsonLoader {
 			ModelElement element = new ModelElement();
 			element.faces = new HashMap<>();
 			for(FaceType type : json.faces.keySet()) {
-				element.faces.put(type, createModelFace(type, json, json.faces.get(type)));
+				ModelFace face = createModelFace(type, json, json.faces.get(type));
+				if(json.rotation != null)
+					applyRotation(face, json.rotation);
+				
+				element.faces.put(type, face);
 			}
+			
 			return element;
 		}
 		
+		private static void applyRotation(ModelFace face, JsonRotation rotation) {
+			rotation.apply(face.vertex, 0);
+			rotation.apply(face.vertex, 3);
+			rotation.apply(face.vertex, 6);
+			rotation.apply(face.vertex, 9);
+			rotation.apply(face.vertex, 12);
+			rotation.apply(face.vertex, 15);
+			
+//			switch(rotation.axis) {
+//				case x: {
+//					Maths.fastRotateX(face.vertex, rotation.origin, 0, rotation.angle);
+//					Maths.fastRotateX(face.vertex, rotation.origin, 3, rotation.angle);
+//					Maths.fastRotateX(face.vertex, rotation.origin, 6, rotation.angle);
+//					Maths.fastRotateX(face.vertex, rotation.origin, 9, rotation.angle);
+//					Maths.fastRotateX(face.vertex, rotation.origin, 12, rotation.angle);
+//					Maths.fastRotateX(face.vertex, rotation.origin, 15, rotation.angle);
+//					break;
+//				}
+//				case y: {
+//					Maths.fastRotateY(face.vertex, rotation.origin, 0, rotation.angle);
+//					Maths.fastRotateY(face.vertex, rotation.origin, 3, rotation.angle);
+//					Maths.fastRotateY(face.vertex, rotation.origin, 6, rotation.angle);
+//					Maths.fastRotateY(face.vertex, rotation.origin, 9, rotation.angle);
+//					Maths.fastRotateY(face.vertex, rotation.origin, 12, rotation.angle);
+//					Maths.fastRotateY(face.vertex, rotation.origin, 15, rotation.angle);
+//					break;
+//				}
+//				case z: {
+//					Maths.fastRotateZ(face.vertex, rotation.origin, 0, rotation.angle);
+//					Maths.fastRotateZ(face.vertex, rotation.origin, 3, rotation.angle);
+//					Maths.fastRotateZ(face.vertex, rotation.origin, 6, rotation.angle);
+//					Maths.fastRotateZ(face.vertex, rotation.origin, 9, rotation.angle);
+//					Maths.fastRotateZ(face.vertex, rotation.origin, 12, rotation.angle);
+//					Maths.fastRotateZ(face.vertex, rotation.origin, 15, rotation.angle);
+//					break;
+//				}
+//			}
+		}
+		
+		// 0.54
 		private static ModelFace createModelFace(FaceType type, JsonModelElement element, JsonModelFace json) {
 			ModelFace face = new ModelFace();
 			
-			face.texture = resource.readTexture(json.texture);
+			// 0.9ms
+			int id = atlas.addTexture(json.texture, resource.readBufferedImage(json.texture));
+			
+			face.textureId = id;
 			face.vertex = Maths.getModelVertexes(type, element.from, element.to);
-			face.uv = Maths.getModelUvs(json.uv, face.texture);
+			Vector4f uv = json.uv;
+			face.uv = new float[] {
+				uv.x, uv.w, uv.z, uv.w, uv.z, uv.y,
+				uv.x, uv.w, uv.z, uv.y, uv.x, uv.y
+			};
+			atlas.transformModelUv(id, face.uv);
 			
 			return face;
 		}
 	}
 	
-	/**
-	 * Put compiled models inside this hash
-	 */
+	public static final TextureAtlas atlas = new TextureAtlas();
+	public static VersionResourceReader resource;
 	private static Map<String, FastModel.ModelObject> cache_modles = new HashMap<>();
-
-	public static FastModel.ModelObject test(VersionResourceReader resource, String path) {
+	public static FastModel.ModelObject loadModel(String path) {
 		FastModel.ModelObject model = cache_modles.get(path);
 		if(model != null) return model;
 		
-		FastModelJsonLoader.resource = resource;
-		
 		try {
 			JsonModelObject loaded = new JsonModelObject(path).build();
+			
+			// Average: 7,77621525 ms
+			TimerUtils.begin();
 			FastModel.ModelObject object = FastModel.createModelObject(loaded);
+			TimerUtils.end();
 			cache_modles.put(path, object);
 			return object;
 		} catch(Exception e) {
@@ -385,6 +480,4 @@ public class FastModelJsonLoader {
 		
 		return null;
 	}
-	
-	
 }

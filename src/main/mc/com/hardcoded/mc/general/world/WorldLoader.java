@@ -41,7 +41,7 @@ public class WorldLoader {
 					ByteBuf buf = rf.getChunkBuffer(cx, cz);
 					
 					if(buf != null) {
-						region.chunks[i] = createChunk(new RegionChunk(buf));
+						region.chunks[i] = createChunk((32 * x) + cx, (32 * z) + cz,  new RegionChunk(buf));
 						continue;
 					}
 				}
@@ -58,8 +58,8 @@ public class WorldLoader {
 	}
 	
 	@NotNull
-	private static Chunk createChunk(RegionChunk rc) {
-		Chunk chunk = new Chunk();
+	private static Chunk createChunk(int x, int z, RegionChunk rc) {
+		Chunk chunk = new Chunk(x, z);
 		
 		for(int i = 0; i < 16; i++) {
 			SubChunk sub = rc.getSubChunk(i);

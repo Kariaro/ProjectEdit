@@ -27,7 +27,7 @@ public class LwjglWindow implements Runnable {
 	private static LwjglWindow INSTANCE;
 			
 	public static final BufferedImage ICON = null;
-	public static final int TARGET_FPS = 60;
+	public static final int TARGET_FPS = 240;
 	
 	protected final ConcurrentLinkedDeque<Runnable> tasks;
 	private WorldRender render;

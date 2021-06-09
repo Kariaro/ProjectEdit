@@ -8,6 +8,13 @@ import com.hardcoded.mc.general.world.IBlockState;
 import com.hardcoded.mc.general.world.IBlockState.States;
 
 public class Blocks {
+	public static final int FACE_UP = 1;
+	public static final int FACE_DOWN = 2;
+	public static final int FACE_LEFT = 4;
+	public static final int FACE_RIGHT = 8;
+	public static final int FACE_FRONT= 16;
+	public static final int FACE_BACK = 32;
+	
 	public static void init() {
 		
 	}
