@@ -26,17 +26,39 @@ public class StreamUtils {
 	}
 	
 	public static byte[] decompress_deflate(byte[] array) {
-		byte[] output = new byte[0x100000];
-		Inflater inflater = new Inflater();
-		inflater.setInput(array);
 		try {
-			int resultLength = inflater.inflate(output);
-			inflater.end();
-			byte[] result = new byte[resultLength];
-			System.arraycopy(output, 0, result, 0, resultLength);
-			return result;
+			return try_decompress_deflate(array, 3);
 		} catch(DataFormatException e) {
-			
+			e.printStackTrace();
+		}
+		
+		return null;
+	}
+	
+	private static byte[] try_decompress_deflate(byte[] array, final int retries) throws DataFormatException {
+		ByteArrayOutputStream bs = new ByteArrayOutputStream();
+		Inflater inflater = new Inflater();
+		byte[] buffer = new byte[8192];
+		int readBytes;
+		
+		for(int i = 0; i < retries; i++) {
+			try {
+				inflater.setInput(array);
+				while((readBytes = inflater.inflate(buffer)) > 0) {
+					bs.write(buffer, 0, readBytes);
+				}
+				
+				inflater.end();
+				
+				return bs.toByteArray();
+			} catch(DataFormatException e) {
+				inflater.reset();
+				bs.reset();
+				
+				if(i == retries - 1) {
+					throw e;
+				}
+			}
 		}
 		
 		return null;

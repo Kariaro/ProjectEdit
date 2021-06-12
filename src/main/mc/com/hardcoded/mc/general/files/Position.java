@@ -48,12 +48,20 @@ public class Position {
 		return Math.floorDiv((int)z, 16);
 	}
 	
+	public long getChunkIndex() {
+		return get_index(getChunkX(), getChunkZ());
+	}
+	
 	public int getRegionX() {
 		return Math.floorDiv((int)x, 512);
 	}
 	
 	public int getRegionZ() {
 		return Math.floorDiv((int)z, 512);
+	}
+	
+	public long getRegionIndex() {
+		return get_index(getRegionX(), getRegionZ());
 	}
 	
 	public float getX() {
@@ -82,6 +90,10 @@ public class Position {
 	
 	public static Position get(double x, double y, double z) {
 		return new Position(x, y, z);
+	}
+	
+	private static long get_index(int x, int y) {
+		return ((long)(x) & 0xffffffffL) | (((long)y) << 32L);
 	}
 	
 	@Override

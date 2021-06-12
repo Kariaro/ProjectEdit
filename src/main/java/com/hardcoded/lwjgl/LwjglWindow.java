@@ -27,13 +27,14 @@ public class LwjglWindow implements Runnable {
 	private static LwjglWindow INSTANCE;
 			
 	public static final BufferedImage ICON = null;
-	public static final int TARGET_FPS = 240;
+	public static final int TARGET_FPS = 120;
 	
 	protected final ConcurrentLinkedDeque<Runnable> tasks;
-	private WorldRender render;
+	private LwjglRender render;
 	private boolean running;
 	private long window;
 	private int fps;
+	private Input input;
 	
 	private Thread runningThread;
 	private Thread asyncThread;
@@ -83,7 +84,10 @@ public class LwjglWindow implements Runnable {
 		GLFWVidMode vidmode = glfwGetVideoMode(glfwGetPrimaryMonitor());
 		glfwSetWindowPos(window, (vidmode.width() - width) / 2, (vidmode.height() - height) / 2);
 		
-		glfwSetKeyCallback(window, new Input());
+		input = new Input();
+		glfwSetKeyCallback(window, input.getKeyboard());
+		glfwSetCursorPosCallback(window, input.getMouse());
+		
 		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 		glfwSetFramebufferSizeCallback(window, new GLFWFramebufferSizeCallback() {
 			public void invoke(long window, int width, int height) {
@@ -122,7 +126,7 @@ public class LwjglWindow implements Runnable {
 		asyncThread.start();
 		
 		WGL.wglMakeCurrent(dc, context_1);
-		render = new WorldRender(this, window, width, height);
+		render = new LwjglRender(this, window, width, height);
 		glfwShowWindow(window);
 		
 		return true;
@@ -171,6 +175,7 @@ public class LwjglWindow implements Runnable {
 				long now = System.currentTimeMillis();
 				if(now - last > 1000) {
 					fps = frames;
+//					System.gc();
 					LOGGER.info("fps: {}", fps);
 					frames = 0;
 					last += 1000;

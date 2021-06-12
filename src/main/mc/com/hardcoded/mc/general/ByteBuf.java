@@ -74,30 +74,6 @@ public class ByteBuf {
 		return false;
 	}
 	
-	// PRIVATE METHODS
-	
-//	private long readValue(final int offset, final int length) {
-//		long result = 0;
-//		
-//		final int ofs = offset + length - 1;
-//		for(int i = 0; i < length; i++) {
-//			long val = Byte.toUnsignedLong(buffer[ofs - i]);
-//			result |= (val << (i * 8L));
-//		}
-//		
-//		return result;
-//	}
-//	
-//	private void writeValue(long number, final int offset, final int length) {
-//		number &= (~((-1L) << (length)));
-//		
-//		final int ofs = offset + length - 1;
-//		for(int i = 0; i < length; i++) {
-//			buffer[ofs - i] = (byte)((number >>> (i * 8L)) & 0xff);
-//		}
-//	}
-	
-	// PUBLIC METHODS
 	
 	public void writeBytes(byte[] array) {
 		System.arraycopy(array, 0, buffer, writerIndex, array.length);
@@ -122,6 +98,12 @@ public class ByteBuf {
 		return array;
 	}
 	
+	public byte[] readBytes(int offset, int length) {
+		byte[] array = new byte[length];
+		System.arraycopy(buffer, offset, array, 0, array.length);
+		return array;
+	}
+	
 	public byte[] readBytes(byte[] array, int offset, int length) {
 		System.arraycopy(buffer, readerIndex, array, offset, length);
 		readerIndex += length;
@@ -137,13 +119,16 @@ public class ByteBuf {
 		buffer[(writerIndex += 1) - 1] = (byte)(value ? 1:0);
 	}
 	
-	
 	public byte readByte() {
 		return buffer[(readerIndex += 1) - 1];
 	}
 	
 	public int readUnsignedByte() {
 		return (int)(buffer[(readerIndex += 1) - 1] & 0xff);
+	}
+	
+	public int readUnsignedByte(int offset) {
+		return (int)(buffer[offset] & 0xff);
 	}
 	
 	public void writeByte(long value) {
@@ -176,6 +161,13 @@ public class ByteBuf {
 			| ((((long)buffer[offset - 2]) & 0xffL) << 8L)
 			| ((((long)buffer[offset - 3]) & 0xffL) << 16L)
 			| ((((long)buffer[offset - 4]) & 0xffL) << 24L));
+	}
+	
+	public int readInt(int offset) {
+		return (int)((((long)buffer[offset + 3]) & 0xffL)
+			| ((((long)buffer[offset + 2]) & 0xffL) << 8L)
+			| ((((long)buffer[offset + 1]) & 0xffL) << 16L)
+			| ((((long)buffer[offset]) & 0xffL) << 24L));
 	}
 	
 	public long readUnsignedInt() {

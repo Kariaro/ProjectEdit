@@ -22,36 +22,36 @@ public class WorldLoader {
 	@NotNull
 	public static IRegion loadRegion(World world, int x, int z) {
 		File file = new File(world.getFile(), "region/r." + x + "." + z + ".mca");
-//		System.out.printf("Loading region: { x: %d, z: %d }\n", x, z);
 		LOGGER.info("Loading region: { x: {}, z: {} }", x, z);
 		
 		if(!file.exists()) {
 			LOGGER.info("Failed to load region: { x: {}, z: {} }", x, z);
-//			System.out.printf("Failed to load region: { x: %d, z: %d }\n", x, z);
 			return Region.UNLOADED;
 		}
 		
 		try {
-			Region region = new Region();
-			RegionFile rf = new RegionFile(file);
-			for(int i = 0; i < 1024; i++) {
-				int cx = (i & 31);
-				int cz = (i / 32);
-				if(rf.hasChunk(cx, cz)) {
-					ByteBuf buf = rf.getChunkBuffer(cx, cz);
-					
-					if(buf != null) {
-						region.chunks[i] = createChunk((32 * x) + cx, (32 * z) + cz,  new RegionChunk(buf));
-						continue;
-					}
-				}
-				
-				region.chunks[i] = IChunk.UNLOADED;
-			}
+			Region region = new Region(file, x, z);
+//			RegionFile rf = new RegionFile(file);
+//			for(int i = 0; i < 1024; i++) {
+//				int cx = (i & 31);
+//				int cz = (i / 32);
+//				if(rf.hasChunk(cx, cz)) {
+//					ByteBuf buf = rf.getChunkBuffer(cx, cz);
+//					
+//					if(buf != null) {
+//						region.chunks[i] = createChunk((32 * x) + cx, (32 * z) + cz,  new RegionChunk(buf));
+//						continue;
+//					}
+//				}
+//				
+//				region.chunks[i] = IChunk.UNLOADED;
+//			}
 			
 			return region;
 		} catch(IOException e) {
-			e.printStackTrace();
+			//e.printStackTrace();
+			// TODO: Fix chunk loading errors
+			
 		}
 		
 		return IRegion.UNLOADED;

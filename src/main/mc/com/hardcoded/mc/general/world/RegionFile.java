@@ -94,19 +94,19 @@ public class RegionFile {
 		
 		int sector = offset >> 8;
 		
-		buf.readerIndex(sector * SECTOR_BYTES);
-		int length = buf.readInt();
-		int version = buf.readUnsignedByte();
+		int sector_index = sector * SECTOR_BYTES;
+		int length = buf.readInt(sector_index);
+		int version = buf.readUnsignedByte(sector_index + 4);
 		
 		if(version == VERSION_GZIP) {
-			byte[] bytes = StreamUtils.decompress_gzip(buf.readBytes(length));
+			byte[] bytes = StreamUtils.decompress_gzip(buf.readBytes(sector_index + 5, length));
 			if(bytes != null) {
 				return ByteBuf.direct(bytes);
 			}
 			
 			LOGGER.error("Failed to decompress gzip");
 		} else if(version == VERSION_DEFLATE) {
-			byte[] bytes = StreamUtils.decompress_deflate(buf.readBytes(length));
+			byte[] bytes = StreamUtils.decompress_deflate(buf.readBytes(sector_index + 5, length));
 			if(bytes != null) {
 				return ByteBuf.direct(bytes);
 			}

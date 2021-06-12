@@ -1,11 +1,10 @@
 package com.hardcoded.utils;
 
+import java.lang.Math;
 import java.text.NumberFormat;
 import java.util.*;
 
-import org.joml.Vector3f;
-import org.joml.Vector3fc;
-import org.joml.Vector4f;
+import org.joml.*;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSetter;
@@ -34,8 +33,53 @@ public class FastModelJsonLoader {
 			this.flags = flags;
 		}
 		
+		public Vector3f normal() {
+			switch(flags) {
+				case Blocks.FACE_DOWN: return new Vector3f(0, -1, 0);
+				case Blocks.FACE_UP: return new Vector3f(0, 1, 0);
+				case Blocks.FACE_LEFT: return new Vector3f(-1, 0, 0);
+				case Blocks.FACE_RIGHT: return new Vector3f(1, 0, 0);
+				case Blocks.FACE_BACK: return new Vector3f(0, 0, -1);
+				case Blocks.FACE_FRONT: return new Vector3f(0, 0, 1);
+				default:
+					return new Vector3f(0, 0, 0);
+			}
+		}
+		
+		public static FaceType getFromNormal(Vector3f normal) {
+			normal = normal.normalize();
+			if(normal.x >  0.7) return FaceType.east;
+			if(normal.x < -0.7) return FaceType.west;
+			if(normal.z >  0.7) return FaceType.north;
+			if(normal.z < -0.7) return FaceType.south;
+			if(normal.y >  0.7) return FaceType.up;
+			if(normal.y < -0.7) return FaceType.down;
+			return FaceType.none;
+		}
+		
+//		public FaceType rotateXZ(int xstep, int zstep) {
+//			return getFromNormal(normal()
+//				.rotateX((float)(xstep * java.lang.Math.PI / 2.0f))
+//				.rotateY((float)(zstep * java.lang.Math.PI / 2.0f))
+//			);
+//		}
+		
 		public int getFlags() {
 			return flags;
+		}
+
+		public FaceType rotate(Matrix4f mat) {
+			switch(flags) {
+				case Blocks.FACE_DOWN: return FaceType.getFromNormal(new Vector3f(-mat.m10(), -mat.m11(), -mat.m12()));
+				case Blocks.FACE_UP: return FaceType.getFromNormal(new Vector3f(mat.m10(), mat.m11(), mat.m12()));
+				case Blocks.FACE_LEFT: return FaceType.getFromNormal(new Vector3f(-mat.m00(), -mat.m01(), -mat.m02()));
+				case Blocks.FACE_RIGHT: return FaceType.getFromNormal(new Vector3f(mat.m00(), mat.m01(), mat.m02()));
+				case Blocks.FACE_BACK: return FaceType.getFromNormal(new Vector3f(-mat.m20(), -mat.m21(), -mat.m22()));
+				case Blocks.FACE_FRONT: return FaceType.getFromNormal(new Vector3f(mat.m20(), mat.m21(), mat.m22()));
+				default: return this;
+			}
+			
+//			return FaceType.getFromNormal(mat.transformDirection(normal()));
 		}
 	}
 	

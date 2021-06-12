@@ -17,11 +17,14 @@ public class BlockDataManager {
 		return data.getFromStates(states);
 	}
 	
-	public static IBlockData getState(String name, int rgb, List<IBlockState> list) {
+	public static IBlockData getState(String name, boolean occluding, int rgb, List<IBlockState> list) {
 		int hash = name.hashCode();
 		BlockData state = states.get(hash);
 		if(state == null) {
-			state = new BlockData(name, list).setColor(rgb);
+			state = new BlockData(name, list)
+				.setColor(rgb)
+				.setOccluding(occluding);
+			
 			states.put(hash, state);
 		}
 		

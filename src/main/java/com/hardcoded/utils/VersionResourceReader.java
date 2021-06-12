@@ -119,13 +119,13 @@ public class VersionResourceReader {
 			
 			if(model_data.has("y")) {
 				matrix.translateLocal(-8, -8, -8)
-					.rotateLocalY((float)Math.toRadians(model_data.getNumber("y").floatValue()))
+					.rotateLocalY(-(float)Math.toRadians(model_data.getNumber("y").floatValue()))
 					.translateLocal(8, 8, 8);
 			}
 			
 			if(model_data.has("x")) {
 				matrix.translateLocal(-8, -8, -8)
-					.rotateLocalX((float)Math.toRadians(model_data.getNumber("x").floatValue()))
+					.rotateLocalX(-(float)Math.toRadians(model_data.getNumber("x").floatValue()))
 					.translateLocal(8, 8, 8);
 			}
 			

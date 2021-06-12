@@ -4,11 +4,13 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.hardcoded.mc.general.ByteBuf;
+import com.hardcoded.mc.general.files.Blocks;
 import com.hardcoded.mc.general.nbt.*;
 
 public class RegionChunk {
 	private NBTTagCompound nbt;
 	public SubChunk[] sections = new SubChunk[16];
+	private int dataVersion;
 	
 	public RegionChunk(ByteBuf buf) {
 		this.nbt = NBTBase.readNBTTagCompound(buf);
@@ -19,6 +21,13 @@ public class RegionChunk {
 	public void read() {
 		NBTTagCompound level = (NBTTagCompound)nbt.get("Level");
 		NBTTagList<NBTTagCompound> sections = (NBTTagList<NBTTagCompound>)level.get("Sections");
+		if(sections == null) {
+			
+			// Ooof
+			return;
+		}
+		
+		dataVersion = ((NBTTagInt)nbt.get("DataVersion")).getValue();
 		
 		NBTTagCompound[] nbt_sections = new NBTTagCompound[16];
 		for(NBTTagCompound entry : sections) {
@@ -28,6 +37,10 @@ public class RegionChunk {
 			nbt_sections[y] = entry;
 			this.sections[y] = new SubChunk(entry, y);
 		}
+		
+		// Clear nbt
+		// Release memory
+		nbt = null;
 	}
 	
 	public SubChunk getSubChunk(int y) {
@@ -84,19 +97,80 @@ public class RegionChunk {
 				block_palette[i] = BlockDataManager.getState(palette_test[i], states_map[i]);
 			}
 			
-			compute_blocks(array, block_palette, bits_per_block);
+			// 2527
+			// 2230
+			if(dataVersion < 2527) {//1976) {
+				getBlockArrayFast(array, block_palette, bits_per_block);
+			} else {
+				compute_blocks(array, block_palette, bits_per_block);
+			}
+			
+			if(wrongMethod) {
+				System.out.println("WrongMethod for: " + dataVersion);
+			}
 		}
 		
+		private boolean wrongMethod = false;
+		
 		private void compute_blocks(long[] data, IBlockData[] block_palette, long bits) {
+			final IBlockData[] array = blocks;
+			
 			final long mask = (1L << bits) - 1;
 			final long gt = 64 - bits;
 			for(int i = 0, index = 0; i < 4096; index += bits, i++) {
 				final long offset = (index & 63);
+				if(index >> 6 >= data.length) break;
+				
 				int value = (int)((data[index >> 6] >>> offset) & mask);
-				blocks[i] = block_palette[value];
+				if(value >= block_palette.length) {
+					array[i] = Blocks.AIR;
+					wrongMethod = true;
+				} else {
+					array[i] = block_palette[value];
+				}
 				
 				final long next_offset = (index + bits) & 63;
 				index += (next_offset > gt) ? (64 - next_offset):0;
+			}
+		}
+		
+		private void getBlockArrayFast(long[] data, IBlockData[] block_palette, int bits) {
+			final IBlockData[] array = blocks;
+			
+			long mask = (1 << (bits + 0L)) - 1;
+			long offset = 0;
+			int position = 0;
+			int amount = 4096;
+			
+			for(int i = 0; i < data.length; i++) {
+				long value = data[i] >>> offset;
+				
+				for(int j = 0; j <= 63 / bits; j++) {
+					long bitPos = j * bits;
+					
+					long id = value & mask;
+					value >>>= bits;
+					
+					if(bitPos + offset + bits > 64) {
+						long pos = ((bitPos + bits + offset) & 63);
+						long next = 0;
+						if(i + 1 < data.length) {
+							next = (data[i + 1] & ((1 << pos) - 1)) << (bits - pos);
+						}
+						
+						id |= next;
+						if(position < amount) {
+							array[position++] = block_palette[(int)id];
+						}
+						
+						offset = pos;
+						break;
+					}
+					
+					if(position < amount) {
+						array[position++] = block_palette[(int)id];
+					}
+				}
 			}
 		}
 		
