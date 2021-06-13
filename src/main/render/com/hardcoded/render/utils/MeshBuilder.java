@@ -16,10 +16,10 @@ public class MeshBuilder {
 							_NORMAL	= 0x8;
 	
 	private final int flags;
-	public final FloatArray verts;
-	public final FloatArray uvs;
-	private final FloatArray colors;
-	private final FloatArray normals;
+	public FloatArray verts;
+	public FloatArray uvs;
+	private FloatArray colors;
+	private FloatArray normals;
 	
 	public MeshBuilder() {
 		this(_VERTS | _UV);
@@ -68,7 +68,25 @@ public class MeshBuilder {
 	}
 	
 	public Mesh build() {
-		Mesh mesh = new Mesh(verts.toArray(), uvs.toArray());
-		return mesh;
+		try {
+			if((flags & _COLOR) != 0) {
+				return new Mesh(verts.toArray(), uvs.toArray(), colors.toArray());
+			}
+			
+			Mesh mesh = new Mesh(verts.toArray(), uvs.toArray());
+			return mesh;
+		} finally {
+			if(verts != null) {
+				verts = null;
+			}
+			
+			if(uvs != null) {
+				uvs = null;
+			}
+			
+			if(colors != null) {
+				colors = null;
+			}
+		}
 	}
 }

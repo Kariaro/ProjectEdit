@@ -13,6 +13,11 @@ public interface IBlockData {
 	
 	boolean isAir();
 	
+	/**
+	 * The value returned by this function could change between sessions.
+	 */
+	int getInternalId();
+	
 	int getMapColor();
 	
 	Set<IBlockState> getStates();

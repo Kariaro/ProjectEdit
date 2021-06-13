@@ -54,9 +54,13 @@ public class ChunkProvider {
 		return region;
 	}
 	
+	@Deprecated
+	public Collection<IRegion> getRegions() {
+		return regions.values();
+	}
+	
 	private synchronized IRegion loadRegion(int x, int z) {
 		File file = new File(world.getFile(), "region/r." + x + "." + z + ".mca");
-//		LOGGER.info("Load region called for region: { x: {}, z: {} }", x, z);
 		
 		if(!file.exists()) {
 			return IRegion.UNLOADED;
@@ -85,7 +89,18 @@ public class ChunkProvider {
 		while(iter.hasNext()) {
 			long index = iter.next();
 			if(set.contains(index)) continue;
-			iter.remove();
+			
+			IRegion region = regions.get(index);
+			if(region instanceof Region) {
+				Region reg = (Region)region;
+				
+				// Unload chunks
+				for(int i = 0; i < reg.chunks.length; i++) {
+					reg.chunks[i] = null;
+				}
+			} else {
+				iter.remove();
+			}
 		}
 	}
 	

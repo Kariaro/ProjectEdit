@@ -8,9 +8,7 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.lwjgl.glfw.GLFWFramebufferSizeCallback;
-import org.lwjgl.glfw.GLFWNativeWin32;
-import org.lwjgl.glfw.GLFWVidMode;
+import org.lwjgl.glfw.*;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.WGL;
 import org.lwjgl.system.windows.User32;
@@ -18,6 +16,7 @@ import org.lwjgl.system.windows.User32;
 import com.hardcoded.lwjgl.async.LwjglAsyncThread;
 import com.hardcoded.lwjgl.input.Input;
 import com.hardcoded.lwjgl.util.LoadingException;
+import com.hardcoded.render.LwjglRender;
 
 /**
  * This is the main thread of the lwjgl application.
@@ -41,6 +40,7 @@ public class LwjglWindow implements Runnable {
 	public LwjglWindow() {
 		INSTANCE = this;
 		tasks = new ConcurrentLinkedDeque<>();
+		LwjglConstants.getFov();
 	}
 	
 	public synchronized void start() {
@@ -87,6 +87,7 @@ public class LwjglWindow implements Runnable {
 		input = new Input();
 		glfwSetKeyCallback(window, input.getKeyboard());
 		glfwSetCursorPosCallback(window, input.getMouse());
+		glfwSetMouseButtonCallback(window, input.getMouseButton());
 		
 		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 		glfwSetFramebufferSizeCallback(window, new GLFWFramebufferSizeCallback() {
@@ -143,11 +144,23 @@ public class LwjglWindow implements Runnable {
 		int frames = 0;
 		long last = System.currentTimeMillis();
 		double next = System.currentTimeMillis() + SLEEP_TIME;
+		long last_delta = System.nanoTime();
 		try {
 			while(running) {
 				// Run tasks
 				while(!tasks.isEmpty()) {
 					tasks.poll().run();
+				}
+				
+				if(Input.pollKey(GLFW.GLFW_KEY_LEFT_ALT) && !Input.isControlDown()) {
+					// Capture the mouse or not
+					capture_mouse = !capture_mouse;
+					
+					if(capture_mouse) {
+						GLFW.glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+					} else {
+						GLFW.glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+					}
 				}
 				
 				{
@@ -158,9 +171,13 @@ public class LwjglWindow implements Runnable {
 					next += SLEEP_TIME;
 					if(now > next + SLEEP_TIME) {
 						next += (long)((now - next) / SLEEP_TIME) * SLEEP_TIME;
-						// Target fps not reached!
-						// Fps is lower than TARGET_FPS
 					}
+				}
+				
+				{
+					long now = System.nanoTime();
+					delta_time = ((int)(now - last_delta)) / 1000000000.0f;
+					last_delta = now;
 				}
 				
 				
@@ -175,7 +192,6 @@ public class LwjglWindow implements Runnable {
 				long now = System.currentTimeMillis();
 				if(now - last > 1000) {
 					fps = frames;
-//					System.gc();
 					LOGGER.info("fps: {}", fps);
 					frames = 0;
 					last += 1000;
@@ -189,8 +205,19 @@ public class LwjglWindow implements Runnable {
 			LOGGER.error(e);
 		}
 		
+		render.cleanup();
 		glfwDestroyWindow(window);
 		glfwTerminate();
+	}
+	
+	private static boolean capture_mouse = false;
+	public static boolean isMouseCaptured() {
+		return capture_mouse;
+	}
+	
+	private static float delta_time = 0;
+	public static float getDeltaTime() {
+		return delta_time;
 	}
 	
 	/**

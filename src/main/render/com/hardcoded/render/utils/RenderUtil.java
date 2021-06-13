@@ -5,7 +5,7 @@ import org.joml.Vector3f;
 import org.lwjgl.opengl.GL11;
 
 public class RenderUtil {
-	private static Vector3f getRay(Matrix4f matrix, int width, int height, float x, float y) {
+	public static Vector3f getRay(Matrix4f matrix, int width, int height, float x, float y) {
 		return matrix.unproject(x, height - y, 1, new int[] { 0, 0, width, height }, new Vector3f());
 	}
 	
@@ -84,6 +84,50 @@ public class RenderUtil {
 			GL11.glVertex3f(x1, y2, z1); GL11.glVertex3f(x1, y2, z2);
 			GL11.glVertex3f(x2, y1, z1); GL11.glVertex3f(x2, y1, z2);
 			GL11.glVertex3f(x2, y2, z1); GL11.glVertex3f(x2, y2, z2);
+		GL11.glEnd();
+	}
+	
+	public static void drawBlock(float x, float y, float z, float xs, float ys, float zs) {
+		GL11.glBegin(GL11.GL_TRIANGLE_FAN);
+			GL11.glVertex3f(x     , y + ys, z);
+			GL11.glVertex3f(x + xs, y + ys, z);
+			GL11.glVertex3f(x + xs, y     , z);
+			GL11.glVertex3f(x     , y     , z);
+		GL11.glEnd();
+		
+		GL11.glBegin(GL11.GL_TRIANGLE_FAN);
+			GL11.glVertex3f(x     , y     , z + zs);
+			GL11.glVertex3f(x + xs, y     , z + zs);
+			GL11.glVertex3f(x + xs, y + ys, z + zs);
+			GL11.glVertex3f(x     , y + ys, z + zs);
+		GL11.glEnd();
+		
+		GL11.glBegin(GL11.GL_TRIANGLE_FAN);
+			GL11.glVertex3f(x + xs, y + ys, z     );
+			GL11.glVertex3f(x + xs, y + ys, z + zs);
+			GL11.glVertex3f(x + xs, y     , z + zs);
+			GL11.glVertex3f(x + xs, y     , z     );
+		GL11.glEnd();
+		
+		GL11.glBegin(GL11.GL_TRIANGLE_FAN);
+			GL11.glVertex3f(x, y + ys, z + zs);
+			GL11.glVertex3f(x, y + ys, z     );
+			GL11.glVertex3f(x, y     , z     );
+			GL11.glVertex3f(x, y     , z + zs);
+		GL11.glEnd();
+		
+		GL11.glBegin(GL11.GL_TRIANGLE_FAN);
+			GL11.glVertex3f(x     , y + ys, z     );
+			GL11.glVertex3f(x     , y + ys, z + zs);
+			GL11.glVertex3f(x + xs, y + ys, z + zs);
+			GL11.glVertex3f(x + xs, y + ys, z     );
+		GL11.glEnd();
+		
+		GL11.glBegin(GL11.GL_TRIANGLE_FAN);
+			GL11.glVertex3f(x     , y, z + zs);
+			GL11.glVertex3f(x     , y, z     );
+			GL11.glVertex3f(x + xs, y, z     );
+			GL11.glVertex3f(x + xs, y, z + zs);
 		GL11.glEnd();
 	}
 }

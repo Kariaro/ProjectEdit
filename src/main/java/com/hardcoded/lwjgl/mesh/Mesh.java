@@ -2,6 +2,7 @@ package com.hardcoded.lwjgl.mesh;
 
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.lwjgl.opengl.*;
@@ -13,12 +14,21 @@ public class Mesh {
 	private final int vertexCount;
 	
 	public Mesh(float[] vertexs, float[] uvs) {
+		this(
+			vertexs,
+			uvs,
+			createEmptyFloatArray((vertexs.length / 3) * 4, 0.0f)
+		);
+	}
+	
+	public Mesh(float[] vertexs, float[] uvs, float[] colors) {
 //		if(LwjglAsyncThread.isCurrentThread()) {
 //			throw new RuntimeException("Meshes can only be loaded on the main thread");
 //		}
 		
 		FloatBuffer vertBuffer = null;
 		FloatBuffer uvBuffer = null;
+		FloatBuffer colBuffer = null;
 		
 		try {
 			vertexCount = vertexs.length;
@@ -45,6 +55,15 @@ public class Mesh {
 			GL15.glBufferData(GL15.GL_ARRAY_BUFFER, uvBuffer, GL15.GL_STATIC_DRAW);
 			GL20.glVertexAttribPointer(1, 2, GL11.GL_FLOAT, false, 0, 0);
 			
+
+			vboId = GL15.glGenBuffers();
+			vboIdList.add(vboId);
+			colBuffer = MemoryUtil.memAllocFloat(colors.length);
+			colBuffer.put(colors).flip();
+			GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vboId);
+			GL15.glBufferData(GL15.GL_ARRAY_BUFFER, colBuffer, GL15.GL_STATIC_DRAW);
+			GL20.glVertexAttribPointer(2, 4, GL11.GL_FLOAT, false, 0, 0);
+			
 			GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
 			GL30.glBindVertexArray(0);
 		} finally {
@@ -54,6 +73,10 @@ public class Mesh {
 			
 			if(uvBuffer != null) {
 				MemoryUtil.memFree(uvBuffer);
+			}
+			
+			if(colBuffer != null) {
+				MemoryUtil.memFree(colBuffer);
 			}
 		}
 	}
@@ -70,9 +93,11 @@ public class Mesh {
 		GL30.glBindVertexArray(vaoId);
 		GL20.glEnableVertexAttribArray(0);
 		GL20.glEnableVertexAttribArray(1);
+		GL20.glEnableVertexAttribArray(2);
 		
 		GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, vertexCount);
 		
+		GL20.glDisableVertexAttribArray(2);
 		GL20.glDisableVertexAttribArray(1);
 		GL20.glDisableVertexAttribArray(0);
 		GL30.glBindVertexArray(0);
@@ -90,5 +115,11 @@ public class Mesh {
 		// Delete the VAO
 		GL30.glBindVertexArray(0);
 		GL30.glDeleteVertexArrays(vaoId);
+	}
+	
+	protected static float[] createEmptyFloatArray(int length, float defaultValue) {
+		float[] result = new float[length];
+		Arrays.fill(result, defaultValue);
+		return result;
 	}
 }

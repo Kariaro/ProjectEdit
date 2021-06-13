@@ -14,6 +14,11 @@ public class BlockData implements IBlockData {
 	protected final String namespace;
 	protected final String name;
 	protected final int id;
+	
+	/**
+	 * This could change between runns
+	 */
+	protected final int internal_id;
 	protected boolean occluding;
 	protected int rgb;
 	
@@ -26,6 +31,9 @@ public class BlockData implements IBlockData {
 		this.id = name.hashCode();
 		this.children = new ArrayList<>();
 		this.stateList = new IBlockStateList();
+		
+		this.internal_id = BlockDataManager.id_states.size();
+		BlockDataManager.id_states.put(this.internal_id, this);
 		
 		final int len = states.size();
 		int[] statesLength = new int[len];
@@ -80,6 +88,9 @@ public class BlockData implements IBlockData {
 		this.id = name.hashCode();
 		this.children = List.of();
 		this.stateList = stateList;
+		
+		this.internal_id = BlockDataManager.id_states.size();
+		BlockDataManager.id_states.put(this.internal_id, this);
 	}
 	
 	protected BlockData setColor(int rgb) {
@@ -105,6 +116,11 @@ public class BlockData implements IBlockData {
 	@Override
 	public int getMapColor() {
 		return rgb;
+	}
+	
+	@Override
+	public int getInternalId() {
+		return internal_id;
 	}
 	
 	@Override

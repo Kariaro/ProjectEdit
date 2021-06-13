@@ -38,6 +38,10 @@ public final class FloatArray {
 		return array[index];
 	}
 	
+	public void set(int index, float value) {
+		array[index] = value;
+	}
+	
 	public void reset() {
 		index = 0;
 		array = new float[1024];

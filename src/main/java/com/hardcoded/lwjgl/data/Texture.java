@@ -11,6 +11,8 @@ import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.imageio.ImageIO;
+
 import org.lwjgl.opengl.*;
 import org.lwjgl.stb.STBImage;
 
@@ -162,6 +164,22 @@ public class Texture {
 		}
 		
 		return new Texture(file, path, 0, interpolation);
+	}
+	
+	public static Texture loadResource(String path, int interpolation) {
+		if(cacheTextureId.containsKey(path)) {
+			return new Texture(cacheTextureId.get(path), 0);
+		}
+		
+		BufferedImage bi = null;
+		
+		try {
+			bi = ImageIO.read(Texture.class.getResourceAsStream(path));
+		} catch(IOException e) {
+			e.printStackTrace();
+		}
+		
+		return loadBufferedImageTexture(bi, interpolation);
 	}
 	
 	public static Texture loadBufferedImageTexture(BufferedImage bi, int interpolation) {

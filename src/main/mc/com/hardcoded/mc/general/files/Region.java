@@ -35,7 +35,8 @@ public class Region implements IRegion {
 	
 	@Override
 	public boolean hasChunk(int x, int z) {
-		return getChunk(x, z) != null;
+		return regionFile.hasChunk(x, z);
+//		return getChunk(x, z) != null;
 	}
 	
 	private IChunk readChunk(int cx, int cz) {
@@ -74,6 +75,16 @@ public class Region implements IRegion {
 		}
 		
 		return chunk;
+	}
+	
+	@Override
+	public int getX() {
+		return region_x;
+	}
+	
+	@Override
+	public int getZ() {
+		return region_z;
 	}
 	
 	@Override

@@ -3,6 +3,8 @@ package com.hardcoded.utils;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -15,6 +17,7 @@ import org.lwjgl.opengl.GL11;
 
 import com.hardcoded.lwjgl.data.Texture;
 import com.hardcoded.mc.general.world.BlockData;
+import com.hardcoded.mc.general.world.BlockDataManager;
 import com.hardcoded.mc.general.world.IBlockData;
 import com.hardcoded.mc.general.world.IBlockState.IBlockStateList;
 
@@ -102,7 +105,6 @@ public class VersionResourceReader {
 		}
 		
 		if(model_data_list == null || model_data_list.isEmpty()) {
-
 			return;
 		}
 		
@@ -245,5 +247,63 @@ public class VersionResourceReader {
 		}
 		
 		return new byte[0];
+	}
+	
+	/**
+	 * This method will load all blocks using multiple threads.
+	 * 
+	 * <p>Before:
+	 * <pre>
+	 * Took: 10764,4312 ms, per item (14,1080)
+	 * Average: 7,94011591 ms
+	 * </pre>
+	 * 
+	 * Now:
+	 * <pre>
+	 * Took: 5786,3481 ms, per item (7,5837)
+	 * </pre>
+	 */
+	public void loadBlocks() {
+		ConcurrentLinkedQueue<IBlockData> queue = new ConcurrentLinkedQueue<>(BlockDataManager.getStates());
+		
+		final AtomicInteger count = new AtomicInteger();
+		final int size = queue.size();
+		
+		int threads = Runtime.getRuntime().availableProcessors() - 1;
+		List<Thread> workers = new ArrayList<>();
+		
+		Runnable loader = () -> {
+			while(!queue.isEmpty()) {
+				IBlockData data = queue.poll();
+				if(data == null) break;
+				
+				BlockData dta = (BlockData)data;
+				resolveState(data);
+				
+				System.out.printf("\rLoading: (%d) / (%d)", count.getAndIncrement(), size);
+				for(IBlockData child : dta.getChildren()) {
+					resolveState(child);
+				}
+			}
+		};
+		
+		TimerUtils.begin();
+		try {
+			for(int i = 0; i < threads; i++) {
+				Thread thread = new Thread(loader, "Resource-Loader-Worker#" + i);
+				thread.start();
+				workers.add(thread);
+			}
+			
+			for(int i = 0; i < threads; i++) {
+				Thread worker = workers.get(i);
+				worker.join();
+			}
+		} catch(InterruptedException e) {
+			e.printStackTrace();
+		}
+		double time = TimerUtils.end() / 1000000.0;
+		
+		System.out.printf("\nTook: %.4f ms, per item (%.4f)\n", time, time / (size + 0.0));
 	}
 }

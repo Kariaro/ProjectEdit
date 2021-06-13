@@ -4,6 +4,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class BlockDataManager {
+	static final Map<Integer, BlockData> id_states = new LinkedHashMap<>();
 	private static final Map<Integer, BlockData> states = new LinkedHashMap<>();
 	
 	// Temporary
@@ -15,6 +16,10 @@ public class BlockDataManager {
 		IBlockData data = getState(name);
 		if(data == null) return null;
 		return data.getFromStates(states);
+	}
+	
+	public static IBlockData getStateFromInternalId(int id) {
+		return id_states.get(id);
 	}
 	
 	public static IBlockData getState(String name, boolean occluding, int rgb, List<IBlockState> list) {

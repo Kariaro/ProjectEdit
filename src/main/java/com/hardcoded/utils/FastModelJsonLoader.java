@@ -10,8 +10,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hardcoded.lwjgl.data.TextureAtlas;
 import com.hardcoded.mc.general.files.Blocks;
+import com.hardcoded.render.LwjglRender;
 
 public class FastModelJsonLoader {
 	private static final JsonFactory factory = new JsonFactory();
@@ -486,7 +486,7 @@ public class FastModelJsonLoader {
 			ModelFace face = new ModelFace();
 			
 			// 0.9ms
-			int id = atlas.addTexture(json.texture, resource.readBufferedImage(json.texture));
+			int id = LwjglRender.atlas.addTexture(json.texture, resource.readBufferedImage(json.texture));
 			
 			face.textureId = id;
 			face.vertex = Maths.getModelVertexes(type, element.from, element.to);
@@ -495,13 +495,12 @@ public class FastModelJsonLoader {
 				uv.x, uv.w, uv.z, uv.w, uv.z, uv.y,
 				uv.x, uv.w, uv.z, uv.y, uv.x, uv.y
 			};
-			atlas.transformModelUv(id, face.uv);
+			LwjglRender.atlas.transformModelUv(id, face.uv);
 			
 			return face;
 		}
 	}
 	
-	public static final TextureAtlas atlas = new TextureAtlas();
 	public static VersionResourceReader resource;
 	private static Map<String, FastModel.ModelObject> cache_modles = new HashMap<>();
 	public static FastModel.ModelObject loadModel(String path) {

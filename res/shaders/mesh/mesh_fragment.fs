@@ -1,6 +1,7 @@
 #version 130
 
 in vec2 pass_Uv;
+in vec4 pass_Color;
 in vec4 pass_ShadowCoords;
 
 out vec4 out_Color;
@@ -26,10 +27,9 @@ float calcLightFactor() {
 void main() {
 	vec4 dif = texture2D(dif_tex, pass_Uv);
 	float lightFactor = calcLightFactor();
+	dif = vec4(dif.rgb * lightFactor, dif.a);
 	
-	// vec3 col_a = dif.rgb * dif.a;
-	// vec3 col_b = vec3(1 - dif.a);
-	// vec4 diffuse = vec4(col_a + col_b, 1);
-	
-	out_Color = vec4(dif.rgb * lightFactor, dif.a);
+	vec3 col_a = dif.rgb * (1 - pass_Color.a);
+	vec3 col_b = pass_Color.rga * pass_Color.a;
+	out_Color = vec4(col_a + col_b, dif.a * (1 - pass_Color.a) + pass_Color.a);
 }

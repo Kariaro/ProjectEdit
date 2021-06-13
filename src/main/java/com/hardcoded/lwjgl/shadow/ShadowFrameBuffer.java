@@ -4,7 +4,7 @@ import java.nio.ByteBuffer;
 
 import org.lwjgl.opengl.*;
 
-import com.hardcoded.lwjgl.LwjglRender;
+import com.hardcoded.render.LwjglRender;
 
 /**
  * The frame buffer for the shadow pass. This class sets up the depth texture

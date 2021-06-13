@@ -1,6 +1,13 @@
 package com.hardcoded.mc.general.files;
 
 public interface IRegion {
+	enum Status {
+		LOADED,
+		FAILED,
+		LOADING,
+		UNLOADED
+	}
+	
 	public static final IRegion UNLOADED = new IRegion() {
 		@Override
 		public IChunk getChunk(int x, int z) {
@@ -15,6 +22,16 @@ public interface IRegion {
 		@Override
 		public boolean isLoaded() {
 			return false;
+		}
+		
+		@Override
+		public int getX() {
+			return 0;
+		}
+		
+		@Override
+		public int getZ() {
+			return 0;
 		}
 	};
 	
@@ -36,6 +53,16 @@ public interface IRegion {
 		public boolean isLoaded() {
 			return true;
 		}
+		
+		@Override
+		public int getX() {
+			return 0;
+		}
+		
+		@Override
+		public int getZ() {
+			return 0;
+		}
 	};
 	
 	boolean isLoaded();
@@ -43,4 +70,8 @@ public interface IRegion {
 	IChunk getChunk(int x, int z);
 	
 	boolean hasChunk(int x, int z);
+	
+	int getX();
+	
+	int getZ();
 }
