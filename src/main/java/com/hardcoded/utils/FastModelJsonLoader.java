@@ -7,6 +7,7 @@ import java.util.*;
 
 import org.joml.*;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.core.JsonFactory;
@@ -80,6 +81,9 @@ public class FastModelJsonLoader {
 	public static enum Axis { x, y, z }
 	
 	static class JsonModelFace {
+		@JsonIgnore
+		private boolean was_uv_defined;
+		
 		public Vector4f uv = new Vector4f(0, 0, 16, 16);
 		public String texture;
 		public FaceType cullface = FaceType.none;
@@ -94,6 +98,7 @@ public class FastModelJsonLoader {
 				list.get(2).floatValue(),
 				list.get(3).floatValue()
 			);
+			was_uv_defined = true;
 		}
 		
 		@JsonSetter(value = "tintindex")
@@ -106,7 +111,7 @@ public class FastModelJsonLoader {
 			rotation = (float)Math.toRadians(value.floatValue());
 		}
 
-		public JsonModelFace build(JsonModelObject model) {
+		public JsonModelFace build(FaceType face, JsonModelElement element, JsonModelObject model) {
 			JsonModelFace next = new JsonModelFace();
 			next.cullface = cullface;
 			next.tintindex = tintindex;
@@ -115,6 +120,10 @@ public class FastModelJsonLoader {
 				next.texture = model.textures.get(texture.substring(1));
 			} else {
 				next.texture = texture;
+			}
+			
+			if(!was_uv_defined) {
+				uv = Maths.generateUv(face, element.from, element.to);
 			}
 			
 			Vector4f next_uv = new Vector4f();
@@ -204,7 +213,8 @@ public class FastModelJsonLoader {
 		public Vector3f to = new Vector3f(16, 16, 16);
 		
 		@JsonProperty(required = false)
-		public boolean shade = false;
+		// This is true by default
+		public boolean shade = true;
 		
 		@JsonProperty(required = false)
 		private String __comment;
@@ -252,7 +262,7 @@ public class FastModelJsonLoader {
 				
 				for(FaceType type : faces.keySet()) {
 					JsonModelFace face = faces.get(type);
-					next.faces.put(type, face.build(model));
+					next.faces.put(type, face.build(type, this, model));
 				}
 			}
 			
@@ -318,8 +328,9 @@ public class FastModelJsonLoader {
 		@JsonProperty(required = false)
 		private Map<String, JsonDisplayElement> display = Map.of();
 
+		// This field is true by default
 		@JsonProperty(required = false)
-		private Boolean ambientocclusion;
+		private Boolean ambientocclusion = true; 
 		
 		@JsonProperty(required = false)
 		private String gui_light;

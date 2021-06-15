@@ -10,6 +10,7 @@ import com.hardcoded.lwjgl.LwjglWindow;
 import com.hardcoded.lwjgl.data.Texture;
 import com.hardcoded.lwjgl.input.Input;
 import com.hardcoded.main.ProjectEdit;
+import com.hardcoded.mc.general.files.Blocks;
 import com.hardcoded.mc.general.files.Position;
 import com.hardcoded.mc.general.world.World;
 import com.hardcoded.mc.general.world.WorldUtils;
@@ -120,6 +121,18 @@ public class GuiToolList {
 					(y2 - y1 + 1),
 					(z2 - z1 + 1)
 				);
+				
+				if(Input.isKeyDown(GLFW.GLFW_KEY_L)) {
+					// Fill the area with blocks
+					
+					for(int i = x1; i <= x2; i++) {
+						for(int j = y1; j <= y2; j++) {
+							for(int k = z1; k <= z2; k++) {
+								world.setBlock(Blocks.STONE, i, j, k);
+							}
+						}
+					}
+				}
 			}
 			
 			GL11.glPopMatrix();

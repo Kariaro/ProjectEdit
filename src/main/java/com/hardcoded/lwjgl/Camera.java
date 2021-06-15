@@ -32,15 +32,19 @@ public class Camera {
 		delta.y = mouse.y - cy;
 		mouse.x = cx;
 		mouse.y = cy;
+		
+		speed += Input.getScrollDeltaY() / 10.0f;
+		if(speed < 0) speed = 0;
+		if(speed > 3) speed = 3;
 	}
 	
-	public int speedMod = 1;
+	private float speed = 1;
 	public void update() {
 		updateMouse();
 		
 		if(LwjglWindow.isMouseCaptured()) {
-			rx -= delta.x / 2.0f;
-			ry -= delta.y / 2.0f;
+			rx -= delta.x / 4.0f;
+			ry -= delta.y / 4.0f;
 		}
 		
 		if(ry < -90) ry = -90;
@@ -55,13 +59,6 @@ public class Camera {
 		boolean backwards = Input.isKeyDown(GLFW_KEY_S);
 		boolean up = Input.isKeyDown(GLFW_KEY_SPACE);
 		boolean down = Input.isKeyDown(GLFW_KEY_LEFT_SHIFT);
-		if(Input.pollKey(GLFW_KEY_LEFT_CONTROL)) {
-			speedMod++;
-			if(speedMod > 4) {
-				speedMod = 1;
-			}
-		}
-		
 		int xd = 0;
 		int yd = 0;
 		int zd = 0;
@@ -78,7 +75,7 @@ public class Camera {
 		float yy = yd;
 		
 		float time_delta = LwjglWindow.getDeltaTime();
-		float speed = 10 * (float)Math.pow(5, speedMod - 1);
+		float speed = this.speed * 10 * (float)Math.pow(5, this.speed - 1);
 		speed *= time_delta;
 		
 		x += xx * speed;
@@ -98,7 +95,6 @@ public class Camera {
 			.translate(-x, -y, -z);
 	}
 	
-
 	public float near = 0.1f;
 	public float far = 100000; // 10000
 	public Matrix4f getProjectionMatrix() {
@@ -114,41 +110,18 @@ public class Camera {
 			.translate(-x, -y, -z);
 	}
 	
-	public Matrix4f getProjectionMatrixNoTranslate() {
-		float width = LwjglWindow.getWidth();
-		float height = LwjglWindow.getHeight();
-		
-		Matrix4f projectionMatrix = new Matrix4f();
-		projectionMatrix.setPerspective(MathUtils.toRadians(LwjglSettings.getFov()), width / height, near, far);
-		return projectionMatrix
-			.rotate(MathUtils.toRadians(ry), 1, 0, 0)
-			.rotate(MathUtils.toRadians(rx), 0, 1, 0)
-			.rotate(MathUtils.toRadians(rz), 0, 0, 1);
-	}
-	
-	
-	
-	public float getYaw() {
-		return rx;
-	}
-	
-	public float getPitch() {
-		return ry;
-	}
-	
 	/**
 	 * Returns the raycast of the ray at the specified pixel position
 	 */
 	public Vector3f getScreenRaycast(float x, float y) {
 		int width = LwjglWindow.getWidth();
 		int height = LwjglWindow.getHeight();
-		return getProjectionMatrixNoTranslate()
+		
+		return new Matrix4f()
+			.setPerspective(MathUtils.toRadians(LwjglSettings.getFov()), width / (float)height, near, far)
+			.rotate(MathUtils.toRadians(ry), 1, 0, 0)
+			.rotate(MathUtils.toRadians(rx), 0, 1, 0)
+			.rotate(MathUtils.toRadians(rz), 0, 0, 1)
 			.unproject(x, height - y, 1, new int[] { 0, 0, width, height }, new Vector3f());
 	}
-	
-//	public Vector3f getScreenRaycast(float x, float y) {
-//		int width = LwjglWindow.getWidth();
-//		int height = LwjglWindow.getHeight();
-//		return getProjectionMatrixNoTranslate().unproject(x, height - y, 1, new int[] { 0, 0, width, height }, new Vector3f());
-//	}
 }

@@ -10,6 +10,8 @@ import java.util.zip.ZipFile;
 
 import javax.imageio.ImageIO;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.joml.Matrix4f;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -25,6 +27,8 @@ import com.hardcoded.mc.general.world.IBlockState.IBlockStateList;
  * @author HardCoded
  */
 public class VersionResourceReader {
+	private static final Logger LOGGER = LogManager.getLogger(VersionResourceReader.class);
+	
 	private final ZipFile file;
 	
 	public VersionResourceReader(File file) throws IOException {
@@ -93,12 +97,14 @@ public class VersionResourceReader {
 	
 	public void resolveState(IBlockData state) {
 		JSONObject json = getBlockState(state.getName());
-
+		
+		boolean is_multipart = false;
 		List<JSONObject> model_data_list = null;
 		if(json.has("variants")) {
 			model_data_list = resolve_variants(state, json.getJSONObject("variants"));
 		} else if(json.has("multipart")) {
 			model_data_list = resolve_multipart(state, json.getJSONArray("multipart"));
+			is_multipart = true;
 		} else {
 			System.out.println("Other: " + json);
 			throw new UnsupportedOperationException();
@@ -119,29 +125,40 @@ public class VersionResourceReader {
 		for(JSONObject model_data : model_data_list) {
 			Matrix4f matrix = new Matrix4f();
 			
-			if(model_data.has("y")) {
-				matrix.translateLocal(-8, -8, -8)
-					.rotateLocalY(-(float)Math.toRadians(model_data.getNumber("y").floatValue()))
-					.translateLocal(8, 8, 8);
-			}
-			
 			if(model_data.has("x")) {
 				matrix.translateLocal(-8, -8, -8)
 					.rotateLocalX(-(float)Math.toRadians(model_data.getNumber("x").floatValue()))
 					.translateLocal(8, 8, 8);
 			}
 			
-			String path = model_data.getString("model");
-			// 0.5 ms: 400 ms
-			((BlockData)state).model_transform.add(matrix);
-			((BlockData)state).model_objects.add(FastModelJsonLoader.loadModel(path));
+			if(model_data.has("y")) {
+				matrix.translateLocal(-8, -8, -8)
+					.rotateLocalY(-(float)Math.toRadians(model_data.getNumber("y").floatValue()))
+					.translateLocal(8, 8, 8);
+			}
+			
+			@SuppressWarnings("unused")
+			boolean uvlock = false;
+			if(model_data.has("uvlock")) {
+				uvlock = model_data.getBoolean("uvlock");
+			}
+			
+			if(!model_data.has("model")) {
+				LOGGER.error("Failed to find model of resource: {}", model_data);
+			} else {
+				String path = model_data.getString("model");
+				((BlockData)state).model_transform.add(matrix);
+				((BlockData)state).model_objects.add(FastModelJsonLoader.loadModel(path));
+			}
 			
 			if(isWeighted) {
 				// TODO: Figure out how to render weighted block picking
 				break;
 			}
 			
-			break;
+			if(!is_multipart) {
+				break;
+			}
 		}
 	}
 	
@@ -150,7 +167,9 @@ public class VersionResourceReader {
 //		System.out.println("Multipart: " + array);
 //		System.out.println("--------------------------------------------\n");
 		
-		List<JSONObject> model_data = null;
+		IBlockStateList stateList = state.getStateList();
+		
+		List<JSONObject> model_data = new ArrayList<>();
 		for(int i = 0; i < array.length(); i++) {
 			JSONObject model_case = array.getJSONObject(i);
 			
@@ -174,16 +193,18 @@ public class VersionResourceReader {
 					JSONArray or_list = when.getJSONArray("OR");
 					
 					for(int j = 0; j < or_list.length(); j++) {
-						if(state.getStateList().matches(convertMultipartWhenToString(or_list.getJSONObject(0)))) {
-							model_data = models;
+						if(stateList.matchesAllowOr(convertMultipartWhenToString(or_list.getJSONObject(j)))) {
+//							model_data = models;
+							model_data.addAll(models);
 							break;
 						}
 					}
-				} else if(state.getStateList().matches(convertMultipartWhenToString(when))) {
-					model_data = models;
+				} else if(stateList.matchesAllowOr(convertMultipartWhenToString(when))) {
+//					model_data = models;
+					model_data.addAll(models);
 				}
 			} else {
-				model_data = models;
+				model_data.addAll(models);
 			}
 		}
 		

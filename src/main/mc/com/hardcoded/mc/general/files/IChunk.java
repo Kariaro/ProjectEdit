@@ -36,6 +36,11 @@ public interface IChunk {
 		}
 		
 		@Override
+		public boolean isDirty() {
+			return false;
+		}
+		
+		@Override
 		public World getWorld() {
 			return null;
 		}
@@ -52,9 +57,14 @@ public interface IChunk {
 	};
 	
 	World getWorld();
+	
 	IBlockData getBlock(int x, int y, int z);
+	
 	void setBlock(IBlockData state, int x, int y, int z);
+	
 	boolean isLoaded();
+	
+	boolean isDirty();
 	
 	int getX();
 	int getZ();

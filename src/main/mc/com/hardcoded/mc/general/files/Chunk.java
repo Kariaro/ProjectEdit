@@ -8,6 +8,7 @@ public class Chunk implements IChunk {
 	
 	public final int chunk_x;
 	public final int chunk_z;
+	public boolean isDirty;
 	
 	public Chunk(int x, int z) {
 		for(int i = 0, len = sections.length; i < len; i++) {
@@ -26,11 +27,19 @@ public class Chunk implements IChunk {
 	
 	public void setBlock(IBlockData state, int x, int y, int z) {
 		getSection(y / 16).setBlock(state, x & 15, y & 15, z & 15);
+		
+		// Mark this chunk as dirty
+		isDirty = true;
 	}
 	
 	public IChunkSection getSection(int y) {
 		if(y < 0 || y >= sections.length) return IChunkSection.UNLOADED;
 		return sections[y];
+	}
+	
+	@Override
+	public boolean isDirty() {
+		return isDirty;
 	}
 	
 	@Override

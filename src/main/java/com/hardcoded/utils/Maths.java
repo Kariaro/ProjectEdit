@@ -29,6 +29,24 @@ public class Maths {
 		return array;
 	}
 	
+	public static Vector4f generateUv(FaceType face, Vector3f from, Vector3f to) {
+		switch(face) {
+			case south: // back
+			case north: // front
+				return new Vector4f(from.x, from.y, to.x, to.y);
+			case east: // right
+			case west: // left
+				return new Vector4f(from.z, from.y, to.z, to.y);
+			case up: // up
+			case down: // down
+				return new Vector4f(from.x, from.z, to.x, to.z);
+			default:
+				break;
+		}
+		
+		throw new UnsupportedOperationException();
+	}
+	
 	public static float[] getModelVertexes(FaceType face, Vector3f from, Vector3f to) {
 		switch(face) {
 			case south: // back

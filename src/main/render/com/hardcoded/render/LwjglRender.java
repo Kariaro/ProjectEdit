@@ -1,6 +1,5 @@
 package com.hardcoded.render;
 
-import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
 
 import java.awt.image.BufferedImage;
@@ -91,7 +90,8 @@ public class LwjglRender {
 		
 		File[] files = Minecraft.getSaves();
 		if(files.length > 0) {
-			File save = files[2]; // 4
+			File save = files[4]; // 2
+			// 4
 			
 			LOGGER.info("Loading savefile: '{}'", save);
 			world = ProjectEdit.getInstance().loadWorld(save);
@@ -112,8 +112,8 @@ public class LwjglRender {
 	}
 	
 	public void update() {
-		glfwSwapBuffers(window);
-		glfwPollEvents();
+		GLFW.glfwSwapBuffers(window);
+		GLFW.glfwPollEvents();
 		camera.update();
 	}
 	

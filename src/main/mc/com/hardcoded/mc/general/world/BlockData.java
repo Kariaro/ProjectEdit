@@ -230,7 +230,8 @@ public class BlockData implements IBlockData {
 			|| id == Blocks.SOUL_TORCH.getBlockId()
 			
 			|| id == Blocks.SPAWNER.getBlockId()
-		;
+			
+			|| id == Blocks.COBWEB.getBlockId()
 			
 //			|| id == Blocks.ACACIA_LEAVES.getBlockId()
 //			|| id == Blocks.BIRCH_LEAVES.getBlockId()
@@ -238,6 +239,7 @@ public class BlockData implements IBlockData {
 //			|| id == Blocks.JUNGLE_LEAVES.getBlockId()
 //			|| id == Blocks.OAK_LEAVES.getBlockId()
 //			|| id == Blocks.SPRUCE_LEAVES.getBlockId()
+		;
 	}
 	
 	@Override

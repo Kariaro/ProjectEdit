@@ -6,15 +6,18 @@ import org.lwjgl.glfw.*;
  * @author HardCoded
  */
 public class Input {
-	public static final boolean[] keys = new boolean[65536];
-	public static final boolean[] keys_poll = new boolean[65536];
-	public static final boolean[] mouse_buttons = new boolean[256];
-	public static double mouse_x = -1;
-	public static double mouse_y = -1;
+	private static final boolean[] keys = new boolean[65536];
+	private static final boolean[] keys_poll = new boolean[65536];
+	private static final boolean[] mouse_buttons = new boolean[256];
+	private static double mouse_x = -1;
+	private static double mouse_y = -1;
+	private static double scroll_delta_y = 0;
+	private static double scroll_delta_x = 0;
 	
 	private GLFWKeyCallback keyboard;
 	private GLFWCursorPosCallback mouse;
 	private GLFWMouseButtonCallback mouse_button;
+	private GLFWScrollCallback mouse_wheel;
 	
 	public Input() {
 		keyboard = new GLFWKeyCallback() {
@@ -48,6 +51,14 @@ public class Input {
 				mouse_buttons[button] = (action != GLFW.GLFW_RELEASE);
 			}
 		};
+		
+		mouse_wheel = new GLFWScrollCallback() {
+			@Override
+			public void invoke(long window, double xoffset, double yoffset) {
+				scroll_delta_x = xoffset;
+				scroll_delta_y = yoffset;
+			}
+		};
 	}
 	
 	public static boolean pollKey(int key) {
@@ -63,6 +74,23 @@ public class Input {
 	
 	public static float getMouseY() {
 		return (float)mouse_y;
+	}
+	
+	public static float getScrollDeltaX() {
+		return (float)scroll_delta_x;
+	}
+	
+	public static float getScrollDeltaY() {
+		return (float)scroll_delta_y;
+	}
+	
+	/**
+	 * This method is used to flush delta states that    should be reset after
+	 * calling <code>GLFW.glfwPollEvents();</code>
+	 */
+	public static void flush() {
+		scroll_delta_x = 0;
+		scroll_delta_y = 0;
 	}
 	
 	public static boolean isControlDown() {
@@ -95,5 +123,9 @@ public class Input {
 	
 	public GLFWMouseButtonCallback getMouseButton() {
 		return mouse_button;
+	}
+	
+	public GLFWScrollCallback getMouseWheel() {
+		return mouse_wheel;
 	}
 }

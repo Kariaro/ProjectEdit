@@ -16,6 +16,7 @@ import org.lwjgl.system.windows.User32;
 import com.hardcoded.lwjgl.async.LwjglAsyncThread;
 import com.hardcoded.lwjgl.input.Input;
 import com.hardcoded.lwjgl.util.LoadingException;
+import com.hardcoded.main.ProjectEdit;
 import com.hardcoded.render.LwjglRender;
 
 /**
@@ -93,6 +94,7 @@ public class LwjglWindow implements Runnable {
 		glfwSetKeyCallback(window, input.getKeyboard());
 		glfwSetCursorPosCallback(window, input.getMouse());
 		glfwSetMouseButtonCallback(window, input.getMouseButton());
+		glfwSetScrollCallback(window, input.getMouseWheel());
 		
 		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 		glfwSetFramebufferSizeCallback(window, new GLFWFramebufferSizeCallback() {
@@ -190,6 +192,8 @@ public class LwjglWindow implements Runnable {
 				try {
 					render.render();
 					render.update();
+					
+					Input.flush();
 					frames++;
 				} catch(Exception e) {
 					e.printStackTrace();

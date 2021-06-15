@@ -140,6 +140,35 @@ public interface IBlockState {
 			
 			return true;
 		}
+
+		public boolean matchesAllowOr(Map<String, String> states) {
+			for(String key : states.keySet()) {
+				// This is the value this state holds
+				String value = Objects.toString(map.get(key), null);
+				if(value == null) return false;
+				
+				String val = states.get(key);
+				
+				// The first character in the value must never be '|'
+				if(val.indexOf('|') < 0) {
+					if(!val.equals(value)) return false;
+				} else {
+					boolean match = false;
+					String[] array = val.split("|");
+					for(String str : array) {
+						if(str.equals(value)) {
+							match = true;
+							break;
+						}
+					}
+					
+					if(!match) return false;
+				}
+				
+			}
+			
+			return true;
+		}
 	}
 	
 	static class States {

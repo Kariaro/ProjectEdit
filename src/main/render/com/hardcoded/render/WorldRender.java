@@ -178,12 +178,19 @@ public class WorldRender {
 		
 		public void render() {
 			if(unloaded) return;
+			if(chunk.isDirty()) {
+				chunk.isDirty = false;
+				exec.submit(this::reload);
+			}
+			
 			if(isDirty) {
 				isDirty = false;
-				unloadMeshes();
 				
-				mesh = builder.build();
-				builder = null;
+				unloadMeshes();
+				if(builder != null) {
+					mesh = builder.build();
+					builder = null;
+				}
 			}
 			
 			if(mesh != null) {
@@ -344,9 +351,8 @@ public class WorldRender {
 						continue;
 					}
 					
-					boolean test = true;
 					ChunkBlob blob = chunk_map.get(idx);
-					if(blob == null && test) {
+					if(blob == null) {
 						IChunk chunk = world.getChunk(i, j);
 						if(!chunk.isLoaded()) continue;
 						
@@ -355,17 +361,12 @@ public class WorldRender {
 							final ChunkBlob testblob = blob;
 							time_map.put(blob, now + timeout);
 							chunk_map.put(idx, blob);
-							exec.submit(() -> {
-								try {
-									testblob.reload();
-								} catch(Exception e) {
-									e.printStackTrace();
-								}
-							});
+							exec.submit(testblob::reload);
 						} else {
 							continue;
 						}
 					}
+					
 //					float dist = (i - x) * (i - x) + (j - z) * (j - z) + y * y / 8;
 //					int lod = (int)(Math.log(Math.sqrt(dist) * 2 - 10));
 					

@@ -34,6 +34,10 @@ public class World {
 		return getChunk(Math.floorDiv(x, 16), Math.floorDiv(z, 16)).getBlock(x & 15, y, z & 15);
 	}
 	
+	public void setBlock(IBlockData state, int x, int y, int z) {
+		getChunk(Math.floorDiv(x, 16), Math.floorDiv(z, 16)).setBlock(state, x & 15, y, z & 15);
+	}
+	
 	public File getFolder() {
 		return folder;
 	}
