@@ -1,20 +1,21 @@
 package com.hardcoded.mc.general.files;
 
 import com.hardcoded.mc.general.world.IBlockData;
+import com.hardcoded.mc.general.world.World;
 
 public class Chunk implements IChunk {
 	private ChunkSection[] sections = new ChunkSection[16];
 	
-	public final int x;
-	public final int z;
+	public final int chunk_x;
+	public final int chunk_z;
 	
 	public Chunk(int x, int z) {
 		for(int i = 0, len = sections.length; i < len; i++) {
 			sections[i] = new ChunkSection();
 		}
 		
-		this.x = x;
-		this.z = z;
+		this.chunk_x = x;
+		this.chunk_z = z;
 	}
 	
 	@Override
@@ -33,6 +34,21 @@ public class Chunk implements IChunk {
 	}
 	
 	@Override
+	public int getX() {
+		return chunk_x;
+	}
+	
+	@Override
+	public int getZ() {
+		return chunk_z;
+	}
+	
+	@Override
+	public World getWorld() {
+		return null;
+	}
+	
+	@Override
 	public boolean isLoaded() {
 		return true;
 	}
@@ -40,8 +56,8 @@ public class Chunk implements IChunk {
 	@Override
 	public int hashCode() {
 		// Chunks that are 1 million blocks appart in x or z will have the same hash
-		return (((x >>> 16) ^ (x & 65535)) << 16)
-			 | (((z >>> 16) ^ (z & 65535)));
+		return (((chunk_x >>> 16) ^ (chunk_x & 65535)) << 16)
+			 | (((chunk_z >>> 16) ^ (chunk_z & 65535)));
 	}
 	
 	@Override

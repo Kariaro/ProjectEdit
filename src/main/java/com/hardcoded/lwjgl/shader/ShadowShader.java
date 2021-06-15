@@ -3,10 +3,9 @@ package com.hardcoded.lwjgl.shader;
 import org.joml.Matrix4f;
 
 /**
- * A shadow shader.
+ * A shadow shader
  * 
  * @author HardCoded
- * @since v0.2
  */
 public class ShadowShader extends Shader {
 	protected int load_mvpMatrix;

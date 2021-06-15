@@ -1,7 +1,7 @@
 package com.hardcoded.lwjgl.util;
 
 /**
- * This exception is used when something goes wrong during object loading.
+ * This exception is used when something goes wrong during object loading
  * 
  * @author HardCoded
  */

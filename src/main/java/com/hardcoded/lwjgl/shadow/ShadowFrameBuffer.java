@@ -4,7 +4,7 @@ import java.nio.ByteBuffer;
 
 import org.lwjgl.opengl.*;
 
-import com.hardcoded.render.LwjglRender;
+import com.hardcoded.lwjgl.LwjglWindow;
 
 /**
  * The frame buffer for the shadow pass. This class sets up the depth texture
@@ -55,7 +55,7 @@ public class ShadowFrameBuffer {
 	 */
 	public void unbindFrameBuffer() {
 		GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0);
-		GL11.glViewport(0, 0, LwjglRender.width, LwjglRender.height);
+		GL11.glViewport(0, 0, LwjglWindow.getWidth(), LwjglWindow.getHeight());
 	}
 
 	/**

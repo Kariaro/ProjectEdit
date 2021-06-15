@@ -14,10 +14,10 @@ import org.apache.logging.log4j.Logger;
 /**
  * A constant singleton
  */
-public class LwjglConstants {
-	private static final Logger LOGGER = LogManager.getLogger(LwjglConstants.class);
+public class LwjglSettings {
+	private static final Logger LOGGER = LogManager.getLogger(LwjglSettings.class);
 	private static final DecimalFormat FLOAT_FORMAT = new DecimalFormat("#.#####", DecimalFormatSymbols.getInstance(Locale.US));
-	private static final LwjglConstants instance = new LwjglConstants();
+	private static final LwjglSettings instance = new LwjglSettings();
 	
 	// max_fps
 	private static final String KEY_FOV = "fov";
@@ -34,7 +34,7 @@ public class LwjglConstants {
 	private int renderDistance;
 	private float fov;
 	
-	private LwjglConstants() {
+	private LwjglSettings() {
 		resetValues();
 	}
 	

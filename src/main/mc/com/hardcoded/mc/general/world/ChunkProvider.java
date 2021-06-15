@@ -36,7 +36,7 @@ public class ChunkProvider {
 		return getRegion(region_x, region_z);
 	}
 	
-	protected IRegion getRegion(int x, int z) {
+	public IRegion getRegion(int x, int z) {
 		// Get the index of this region
 		final long index = get_index(x, z);
 		
@@ -60,7 +60,7 @@ public class ChunkProvider {
 	}
 	
 	private synchronized IRegion loadRegion(int x, int z) {
-		File file = new File(world.getFile(), "region/r." + x + "." + z + ".mca");
+		File file = new File(world.getFolder(), "region/r." + x + "." + z + ".mca");
 		
 		if(!file.exists()) {
 			return IRegion.UNLOADED;

@@ -33,7 +33,7 @@ public class TextureAtlas {
 	 *  C C E E E C C
 	 * </pre>
 	 */
-	private static final int PADDING_PIXELS = 8;
+	private final int PADDING_PIXELS;
 	
 	private static final int ATLAS_MAP_WIDTH = WIDTH / ALIGN;
 	private static final int ATLAS_MAP_HEIGHT = HEIGHT / ALIGN;
@@ -43,30 +43,14 @@ public class TextureAtlas {
 	private final BufferedImage image;
 	private Texture atlas;
 	
-//	private JFrame frame;
-//	private JLabel label;
 	public TextureAtlas() {
+		this(8);
+	}
+	
+	public TextureAtlas(int padding_pixels) {
 		this.image = new BufferedImage(WIDTH, HEIGHT, BufferedImage.TYPE_INT_ARGB);
 		this.atlas_path_to_id = new HashMap<>();
-		
-//		frame = new JFrame("Test Atlas");
-//		frame.setSize(1034, 1034);
-//		JPanel panel = new JPanel();
-//		panel.setLayout(null);
-//		label = new JLabel(new ImageIcon(image));
-//		Dimension dim = new Dimension(1034, 1034);
-//		frame.setBackground(Color.black);
-//		label.setPreferredSize(dim);
-//		label.setMinimumSize(dim);
-//		label.setMaximumSize(dim);
-//		label.setSize(dim);
-//		panel.add(label);
-//		panel.setPreferredSize(dim);
-//		frame.setContentPane(panel);
-//		frame.pack();
-//		frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-//		frame.setResizable(false);
-//		frame.setVisible(true);
+		this.PADDING_PIXELS = padding_pixels;
 	}
 	
 	public synchronized int addTexture(String path, BufferedImage bi) {
@@ -76,57 +60,6 @@ public class TextureAtlas {
 		
 		int id = findSpace(bi.getWidth(), bi.getHeight());
 		if(id < 0) {
-//			System.out.println("Failed");
-//			try {
-//				Scanner scanner = new Scanner(System.in);
-//				
-//				while(true) {
-//					String str = scanner.next();
-//					int num = 1;
-//					try {
-//						num = Integer.valueOf(str);
-//					} catch(Exception e) {
-//						e.printStackTrace();
-//						continue;
-//					}
-//					
-//					int bi_width = num;
-//					int bi_height = num;
-//					
-//					id = findSpace(bi_width, bi_height);
-//					
-//					int aw = (bi_width + PADDING_PIXELS * 2 + ALIGN - 1) / ALIGN;
-//					int ah = (bi_height + PADDING_PIXELS * 2 + ALIGN - 1) / ALIGN;
-//					
-//					try {
-//						BufferedImage bi2 = new BufferedImage(1034, 1034, BufferedImage.TYPE_INT_ARGB);
-//						Graphics2D gr = bi2.createGraphics();
-//						gr.drawImage(image, 5, 5, null);
-//						gr.setColor(Color.black);
-//						gr.drawRect(5, 5, 1024, 1024);
-//						
-//						{
-//							int ix = id % ATLAS_MAP_WIDTH;
-//							int iy = id / ATLAS_MAP_WIDTH;
-//							
-//							int ixp = ix * ALIGN;
-//							int iyp = iy * ALIGN;
-//							
-//							gr.setColor(Color.red);
-//							gr.fillRect(5 + ixp, 5 + iyp, aw * ALIGN, ah * ALIGN);
-//						}
-//						
-//						label.setIcon(new ImageIcon(bi2));
-//						label.repaint();
-//						frame.repaint();
-//						Thread.sleep(1);
-//					} catch(InterruptedException e) {
-//						e.printStackTrace();
-//					}
-//				}
-//			} catch(Exception e) {
-//				e.printStackTrace();
-//			}
 			throw new ArrayIndexOutOfBoundsException("Atlas map could not fit texture: bi[ width=" + bi.getWidth() + ", height=" + bi.getHeight() + "]; " + bi);
 		}
 		
@@ -152,32 +85,6 @@ public class TextureAtlas {
 				atlas_map[x + y * ATLAS_MAP_WIDTH] = uv;
 			}
 		}
-		
-//		try {
-//			BufferedImage bi2 = new BufferedImage(1034, 1034, BufferedImage.TYPE_INT_ARGB);
-//			Graphics2D gr = bi2.createGraphics();
-//			gr.drawImage(image, 5, 5, null);
-//			gr.setColor(Color.black);
-//			gr.drawRect(5, 5, 1024, 1024);
-//			
-//			{
-//				int ix = id % ATLAS_MAP_WIDTH;
-//				int iy = id / ATLAS_MAP_WIDTH;
-//				
-//				int ixp = ix * ALIGN;
-//				int iyp = iy * ALIGN;
-//				
-//				gr.setColor(Color.red);
-//				gr.fillRect(5 + ixp, 5 + iyp, aw * ALIGN, ah * ALIGN);
-//			}
-//			
-//			label.setIcon(new ImageIcon(bi2));
-//			label.repaint();
-//			frame.repaint();
-//			Thread.sleep(5);
-//		} catch(InterruptedException e) {
-//			e.printStackTrace();
-//		}
 		
 		atlas_path_to_id.put(path, id);
 		return id;
@@ -215,6 +122,14 @@ public class TextureAtlas {
 		g.setBackground(new Color(0, true));
 		g.clearRect(x1, y1, bi.getWidth(), bi.getHeight());
 		g.drawImage(bi, x1, y1, null);
+	}
+	
+	public boolean hasImage(String path) {
+		return atlas_path_to_id.containsKey(path);
+	}
+	
+	public int getImageId(String path) {
+		return atlas_path_to_id.getOrDefault(path, -1);
 	}
 	
 	public void compile() {
@@ -344,8 +259,6 @@ public class TextureAtlas {
 
 		public void modify(float[] uvs) {
 			final int len = uvs.length;
-//			float xc = 0;
-//			float yc = 0;
 			
 			// Transform from texture coordinates to this coordinates
 			for(int i = 0; i < len; i += 2) {
@@ -357,23 +270,7 @@ public class TextureAtlas {
 				
 				uvs[i] = x;
 				uvs[i + 1] = y;
-				
-//				xc += x;
-//				yc += y;
 			}
-			
-			// Remove edges picking the wrong color
-//			float epsilon = - (1 / 64.0f);
-//			xc /= len * 0.5f;
-//			yc /= len * 0.5f;
-//			
-//			for(int i = 0; i < len; i += 2) {
-//				float dx = (uvs[i] - xc) * epsilon;
-//				float dy = (uvs[i + 1] - yc) * epsilon;
-//				
-//				uvs[i] += dx;
-//				uvs[i + 1] += dy;
-//			}
 		}
 	}
 }

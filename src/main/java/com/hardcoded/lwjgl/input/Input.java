@@ -69,6 +69,14 @@ public class Input {
 		return keys[GLFW.GLFW_KEY_LEFT_CONTROL] || keys[GLFW.GLFW_KEY_RIGHT_CONTROL];
 	}
 	
+	public static boolean isShiftDown() {
+		return keys[GLFW.GLFW_KEY_LEFT_SHIFT] || keys[GLFW.GLFW_KEY_RIGHT_SHIFT];
+	}
+	
+	public static boolean isAltDown() {
+		return keys[GLFW.GLFW_KEY_LEFT_ALT] || keys[GLFW.GLFW_KEY_RIGHT_ALT];
+	}
+	
 	public static boolean isKeyDown(int key) {
 		return keys[key];
 	}

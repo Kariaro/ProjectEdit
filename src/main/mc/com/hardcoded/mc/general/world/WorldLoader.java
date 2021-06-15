@@ -13,15 +13,15 @@ import com.hardcoded.mc.general.files.*;
 import com.hardcoded.mc.general.nbt.NBTBase;
 import com.hardcoded.mc.general.nbt.NBTTagCompound;
 import com.hardcoded.mc.general.world.RegionChunk.SubChunk;
-import com.hardcoded.utils.NotNull;
+import com.hardcoded.utils.Nonnull;
 import com.hardcoded.utils.StreamUtils;
 
 public class WorldLoader {
 	private static final Logger LOGGER = LogManager.getLogger(WorldLoader.class);
 	
-	@NotNull
+	@Nonnull
 	public static IRegion loadRegion(World world, int x, int z) {
-		File file = new File(world.getFile(), "region/r." + x + "." + z + ".mca");
+		File file = new File(world.getFolder(), "region/r." + x + "." + z + ".mca");
 		LOGGER.info("Loading region: { x: {}, z: {} }", x, z);
 		
 		if(!file.exists()) {
@@ -57,7 +57,7 @@ public class WorldLoader {
 		return IRegion.UNLOADED;
 	}
 	
-	@NotNull
+	@Nonnull
 	private static Chunk createChunk(int x, int z, RegionChunk rc) {
 		Chunk chunk = new Chunk(x, z);
 		
@@ -79,9 +79,9 @@ public class WorldLoader {
 		return chunk;
 	}
 	
-	@NotNull
+	@Nonnull
 	public static NBTTagCompound loadLevelDat(World world) {
-		File file = new File(world.getFile(), "level.dat");
+		File file = new File(world.getFolder(), "level.dat");
 		
 		if(!file.exists()) {
 			return new NBTTagCompound();

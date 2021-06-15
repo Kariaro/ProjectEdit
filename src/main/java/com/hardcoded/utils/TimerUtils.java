@@ -31,6 +31,7 @@ public class TimerUtils {
 	
 	public static final void beginAverage() {
 		average = true;
+		times = 0;
 		total = 0;
 	}
 	
@@ -38,7 +39,10 @@ public class TimerUtils {
 		average = false;
 		double result = (total / (times + 0.0));
 		total = 0;
-		times = 0;
 		return result;
+	}
+	
+	public static final long getTimes() {
+		return times;
 	}
 }

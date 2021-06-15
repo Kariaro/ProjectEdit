@@ -62,6 +62,11 @@ public class MeshBuilder {
 		return this;
 	}
 	
+	public MeshBuilder color(float[] array) {
+		colors.add(array);
+		return this;
+	}
+	
 	public MeshBuilder normal(float x, float y, float z) {
 		normals.add(x, y, z);
 		return this;

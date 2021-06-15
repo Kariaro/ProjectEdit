@@ -3,7 +3,9 @@ package com.hardcoded.render;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
 
+import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,15 +19,17 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
 
 import com.hardcoded.lwjgl.Camera;
-import com.hardcoded.lwjgl.LwjglWindow;
 import com.hardcoded.lwjgl.data.TextureAtlas;
 import com.hardcoded.lwjgl.input.Input;
 import com.hardcoded.lwjgl.shader.MeshShader;
 import com.hardcoded.lwjgl.shader.ShadowShader;
 import com.hardcoded.lwjgl.shadow.ShadowFrameBuffer;
 import com.hardcoded.lwjgl.util.MathUtils;
+import com.hardcoded.main.ProjectEdit;
 import com.hardcoded.mc.general.Minecraft;
-import com.hardcoded.mc.general.files.*;
+import com.hardcoded.mc.general.files.Blocks;
+import com.hardcoded.mc.general.files.IChunk;
+import com.hardcoded.mc.general.files.IRegion;
 import com.hardcoded.mc.general.world.World;
 import com.hardcoded.render.gui.GuiRender;
 import com.hardcoded.render.utils.RenderUtil;
@@ -35,25 +39,21 @@ public class LwjglRender {
 	private static final Logger LOGGER = LogManager.getLogger(LwjglRender.class);
 	
 	public static final TextureAtlas atlas = new TextureAtlas();
-	public static final float NEAR_PLANE = 0.01f;
 	
-	@Deprecated
-	public static int height;
-	@Deprecated
-	public static int width;
-	
-	private final LwjglWindow parent;
 	private final long window;
 	private GuiRender gui;
 	
+	// Initialized from ProjectEdit.getInstance().getWorld()
+	public World world;
+	// Initialized from ProjectEdit.getInstance().getCamera()
 	public Camera camera;
+	
 	private WorldRender world_render;
-	public LwjglRender(LwjglWindow parent, long window, int width, int height) {
-		this.parent = parent;
+	public LwjglRender(long window, int width, int height) {
 		this.window = window;
 		
+		camera = ProjectEdit.getInstance().getCamera();
 		world_render = new WorldRender(this);
-		camera = new Camera(window);
 		gui = new GuiRender(this);
 		
 		setViewport(width, height);
@@ -67,9 +67,6 @@ public class LwjglRender {
 	}
 	
 	public void setViewport(int width, int height) {
-		LwjglRender.height = height;
-		LwjglRender.width = width;
-		
 		GL11.glViewport(0, 0, width, height);
 		GL11.glLoadIdentity();
 		GL11.glMatrixMode(GL11.GL_PROJECTION_MATRIX);
@@ -78,7 +75,6 @@ public class LwjglRender {
 	}
 	
 	private File version_jar;
-	public World world;
 	
 	public ShadowShader shadowShader;
 	public MeshShader meshShader;
@@ -95,15 +91,10 @@ public class LwjglRender {
 		
 		File[] files = Minecraft.getSaves();
 		if(files.length > 0) {
-			File save = files[3];
+			File save = files[2]; // 4
 			
-			LOGGER.info("Loading savefile '{}'", save);
-			
-			try {
-				world = new World(save);
-			} catch(Exception e) {
-				e.printStackTrace();
-			}
+			LOGGER.info("Loading savefile: '{}'", save);
+			world = ProjectEdit.getInstance().loadWorld(save);
 			
 			version_jar = new File(Minecraft.getVersionFolder(world.getVersion()), world.getVersion() + ".jar");
 			LOGGER.info("Version file: '{}'", version_jar);
@@ -111,40 +102,13 @@ public class LwjglRender {
 			try {
 				VersionResourceReader reader = new VersionResourceReader(version_jar);
 				reader.loadBlocks();
-				
-//				TimerUtils.begin();
-//				Set<IBlockData> states = BlockDataManager.getStates();
-//				int count = 0;
-//				TimerUtils.beginAverage();
-//				for(IBlockData state : states) {
-//					BlockData dta = (BlockData)state;
-//					reader.resolveState(state);
-//					
-//					System.out.printf("\rLoading: (%d) / (%d)", count++, states.size());
-//					for(IBlockData child : dta.getChildren()) {
-//						reader.resolveState(child);
-//					}
-//				}
-//				
-//				System.out.println();
-//				double average = TimerUtils.endAverage();
-//				
-//				double time = TimerUtils.end() / 1000000.0;
-//				System.out.printf("Took: %.4f ms, per item (%.4f)\n", time, time / (states.size() + 0.0));
-//				System.out.printf("Average: %.8f ms\n", average / 1000000.0);
-				
 				atlas.compile();
-			} catch(Exception e) {
-				LOGGER.trace(e);
+			} catch(IOException e) {
 				e.printStackTrace();
 			}
 		} else {
 			LOGGER.warn("Could not find any savefiles");
 		}
-	}
-	
-	public int getFps() {
-		return parent.getFps();
 	}
 	
 	public void update() {
@@ -167,10 +131,13 @@ public class LwjglRender {
 		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
 		GL11.glClearColor(0.3f, 0.3f, 0.3f, 1);
 		
-		Matrix4f projectionView = camera.getProjectionMatrix(width, height);
+		Matrix4f projectionView = camera.getProjectionMatrix();
+		
+		// Get the current loaded world
+		World world = ProjectEdit.getInstance().getWorld();
 		
 		{
-			int mvp_scale = (int)(Math.log(camera.y - 256) - 1);
+			int mvp_scale = (int)(Math.sqrt(Math.max(camera.y / 16 - 8, 0)));
 			if(mvp_scale < 1) mvp_scale = 1;
 			boolean updateShadowMap = false;
 			int cmx = Math.floorDiv((int)camera.x, 16) * 16;
@@ -192,13 +159,14 @@ public class LwjglRender {
 				step = (int)(step);
 				
 				int x = last_mvp_x;
+				int y = last_mvp_y;
 				int z = last_mvp_z;
 				
 				float angle = (float)Math.toRadians(step);
 				mvpMatrix.rotateLocalX(-(float)Math.PI / 2.0f);
 				mvpMatrix.rotateZ(0.8f);
 				mvpMatrix.rotateY(angle);
-				mvpMatrix.translate(-x, -100, -z);
+				mvpMatrix.translate(-x, -y, -z);
 			}
 			
 			int radius = 16;
@@ -216,8 +184,7 @@ public class LwjglRender {
 				GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
 				GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT);
 				GL11.glEnable(GL11.GL_DEPTH_TEST);
-				
-				world_render.renderWorld(world, camera, projectionView, radius);
+//				world_render.renderWorld(world, camera, projectionView, radius);
 				shadowShader.unbind();
 				frameBuffer.unbindFrameBuffer();
 			}
@@ -257,8 +224,8 @@ public class LwjglRender {
 			
 			GL11.glPushMatrix();
 			GL11.glLoadMatrixf(projectionView.get(new float[16]));
-			drawLoadedChunks();
-//			drawFrustumChunks(projectionView, radius);
+			drawLoadedChunks(world);
+//			drawFrustumChunks(world, projectionView, radius);
 			GL11.glPopMatrix();
 			
 			GL11.glPushMatrix();
@@ -278,7 +245,7 @@ public class LwjglRender {
 					GL11.glEnd();
 				}
 				
-//				{ 
+//				{
 //					GL13.glActiveTexture(GL13.GL_TEXTURE0);
 //					GL11.glBindTexture(GL11.GL_TEXTURE_2D, frameBuffer.getShadowMap());
 //					GL11.glColor4d(1, 1, 1, 1);
@@ -301,27 +268,76 @@ public class LwjglRender {
 	}
 	
 	private int displayList;
-	private int last_size = -1;
-	void drawLoadedChunks() {
-		List<IRegion> copy = new ArrayList<>(world.getChunkProvider().getRegions());
-		int size = 0;
-		for(IRegion region : copy) {
-			size += (region instanceof Region) ? 1:0;
+	private boolean has_regions;
+//	private TextureAtlas chunk_atlas = new TextureAtlas();
+	void drawLoadedChunks(World world) {
+		if(!has_regions) {
+			File regions = new File(world.getFolder(), "region");
+			if(!regions.isDirectory()) return;
+			
+			File[] list = regions.listFiles();
+			if(list == null) return;
+			
+			List<IRegion> copy = new ArrayList<>();
+			for(File file : list) {
+				String[] part = file.getName().split("\\.");
+				int x = Integer.valueOf(part[1]);
+				int z = Integer.valueOf(part[2]);
+				IRegion region = world.getChunkProvider().getRegion(x, z);
+				copy.add(region);
+			}
+			has_regions = true;
+			
+			displayList = GL11.glGenLists(1);
+			GL11.glNewList(displayList, GL11.GL_COMPILE);
+			drawRegionGeometryOld(copy);
+			GL11.glEndList();
+//			drawRegionGeometryNew(copy);
 		}
 		
-		if(size == last_size) {
-			GL11.glCallList(displayList);
-			return;
-		}
-		last_size = size;
-		
-		if(displayList != 0) {
-			GL11.glDeleteLists(displayList, 0);
-		}
-		
-		displayList = GL11.glGenLists(1);
-		GL11.glNewList(displayList, GL11.GL_COMPILE);
-		
+//		chunk_atlas.bind();
+		GL11.glCallList(displayList);
+//		chunk_atlas.unbind();
+	}
+	
+//	void drawRegionGeometryNew(List<IRegion> copy) {
+//		float yo = -0.1f;
+//		
+//		Map<IRegion, Integer> map = new HashMap<>();
+//		
+//		for(IRegion region : copy) {
+//			if(!region.isLoaded()) continue;
+//			BufferedImage bi = genImage(region);
+//			
+//			int id = chunk_atlas.addTexture(region.getX() + "." + region.getZ(), bi);
+//			map.put(region, id);
+//		}
+//		
+//		GL11.glNewList(displayList, GL11.GL_COMPILE);
+//		GL11.glEnable(GL11.GL_TEXTURE);
+//		GL11.glBegin(GL11.GL_TRIANGLES);
+//		GL11.glColor3f(1, 1, 1);
+//		for(Map.Entry<IRegion, Integer> entry : map.entrySet()) {
+//			IRegion region = entry.getKey();
+//			int id = entry.getValue();
+//			
+//			int rx = region.getX() * 512;
+//			int rz = region.getZ() * 512;
+//			
+//			AtlasUv uv = chunk_atlas.getUv(id);
+//			GL11.glTexCoord2f(uv.x1, uv.y1); GL11.glVertex3f(rx      , yo, rz      );
+//			GL11.glTexCoord2f(uv.x1, uv.y2); GL11.glVertex3f(rx      , yo, rz + 512);
+//			GL11.glTexCoord2f(uv.x2, uv.y2); GL11.glVertex3f(rx + 512, yo, rz + 512);
+//			GL11.glTexCoord2f(uv.x1, uv.y1); GL11.glVertex3f(rx      , yo, rz      );
+//			GL11.glTexCoord2f(uv.x2, uv.y2); GL11.glVertex3f(rx + 512, yo, rz + 512);
+//			GL11.glTexCoord2f(uv.x2, uv.y1); GL11.glVertex3f(rx + 512, yo, rz      );
+//		}
+//		GL11.glEndList();
+//		
+//		chunk_atlas.compile();
+//	}
+	
+	void drawRegionGeometryOld(List<IRegion> copy) {
 		float yo = -0.1f;
 		GL11.glBegin(GL11.GL_TRIANGLES);
 		GL11.glColor3f(0.7f, 0.7f, 0.7f);
@@ -335,8 +351,8 @@ public class LwjglRender {
 			for(int i = 0; i < len; i++) {
 				int x = i & 31;
 				int z = i / 32;
-				
 				if(((x ^ z) & 1) != 0) {
+					GL11.glColor3f(0.7f, 0.7f, 0.7f);
 					if(region.hasChunk(x, z)) {
 						int gx = rx + x * 16;
 						int gz = rz + z * 16;
@@ -381,13 +397,29 @@ public class LwjglRender {
 				}
 			}
 		}
-		GL11.glEnd();
 		
-		GL11.glEndList();
-		GL11.glCallList(displayList);
+		GL11.glEnd();
 	}
 	
-	void drawFrustumChunks(Matrix4f projectionView, int radius) {
+	BufferedImage genImage(IRegion region) {
+		BufferedImage bi = new BufferedImage(32, 32, BufferedImage.TYPE_INT_ARGB);
+		final int len = 32 * 32;
+		for(int i = 0; i < len; i++) {
+			int x = i & 31;
+			int z = i / 32;
+			
+			if(region.hasChunk(x, z)) {
+				int col = ((x ^ z) & 1) != 0 ? 0xFFB2B2B2:0xFF7F7F7F;
+				bi.setRGB(x, z, col);
+			} else {
+				bi.setRGB(x, z, 0);
+			}
+		}
+		
+		return bi;
+	}
+	
+	void drawFrustumChunks(World world, Matrix4f projectionView, int radius) {
 		int x = Math.floorDiv((int)camera.x, 16);
 		int z = Math.floorDiv((int)camera.z, 16);
 		final int xs = x - radius;

@@ -3,8 +3,6 @@ package com.hardcoded.mc.general.nbt;
 import java.util.Arrays;
 import java.util.List;
 
-import org.apache.commons.lang3.ArrayUtils;
-
 import com.hardcoded.mc.general.ByteBuf;
 
 public class NBTTagByteArray extends NBTBase {
@@ -27,7 +25,6 @@ public class NBTTagByteArray extends NBTBase {
 	}
 	
 	public NBTTagByteArray(List<Byte> list, int offset, int length) {
-		ArrayUtils.toPrimitive(list.toArray(Byte[]::new));
 		setArray(list, offset, length);
 	}
 	

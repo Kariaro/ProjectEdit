@@ -8,7 +8,7 @@ import com.hardcoded.mc.general.ByteBuf;
 import com.hardcoded.mc.general.world.RegionChunk;
 import com.hardcoded.mc.general.world.RegionChunk.SubChunk;
 import com.hardcoded.mc.general.world.RegionFile;
-import com.hardcoded.utils.NotNull;
+import com.hardcoded.utils.Nonnull;
 
 public class Region implements IRegion {
 	private RegionFile regionFile;
@@ -55,7 +55,7 @@ public class Region implements IRegion {
 		return IChunk.UNLOADED;
 	}
 	
-	@NotNull
+	@Nonnull
 	private static Chunk createChunk(int x, int z, RegionChunk rc) {
 		Chunk chunk = new Chunk(x, z);
 		

@@ -3,6 +3,7 @@ package com.hardcoded.utils;
 import org.joml.Math;
 import org.joml.Matrix4f;
 
+import com.hardcoded.mc.general.files.Blocks;
 import com.hardcoded.mc.general.world.BlockData;
 import com.hardcoded.render.utils.FloatArray;
 import com.hardcoded.render.utils.MeshBuilder;
@@ -32,7 +33,6 @@ public class FastModelRenderer {
 				
 				for(ModelElement element : bs.model_objects.get(i).elements) {
 					for(FaceType type : element.faces.keySet()) {
-//						FaceType test = FaceType.getFromNormal(mat.transformDirection(type.normal()));
 						FaceType test = type.rotate(mat);
 						
 						if(type != FaceType.none && (test.getFlags() & faces) == 0) continue;
@@ -79,7 +79,8 @@ public class FastModelRenderer {
 						if(type == FaceType.none || (test.getFlags() & faces) != 0) {
 							ModelFace face = element.faces.get(type);
 							builder.uv(face.uv);
-							
+
+							float[] color = getFaceColor(test);
 							float[] vertex = face.vertex;
 							for(int vi = 0, len = vertex.length; vi < len; vi += 3) {
 								float ax = vertex[vi];
@@ -89,15 +90,29 @@ public class FastModelRenderer {
 						        float py = Math.fma(m01, ax, Math.fma(m11, ay, Math.fma(m21, az, m31)));
 						        float pz = Math.fma(m02, ax, Math.fma(m12, ay, Math.fma(m22, az, m32)));
 						        builder.pos(px, py, pz);
+						        builder.color(color);
 							}
 						}
 					}
 				}
 			}
 		}
+		
+		static float[] getFaceColor(FaceType face) {
+			switch(face.getFlags()) {
+				case Blocks.FACE_BACK:
+				case Blocks.FACE_FRONT:
+					return new float[] { 0.9f, 0.9f, 0.9f };
+				case Blocks.FACE_LEFT:
+				case Blocks.FACE_RIGHT:
+					return new float[] { 0.7f, 0.7f, 0.7f };
+				case Blocks.FACE_UP:
+					return new float[] { 1.0f, 1.0f, 1.0f };
+				default:
+					return new float[] { 0.5f, 0.5f, 0.5f };
+			}
+		}
 	}
-	
-
 	
 //	static void renderFaceFast(ModelFace face, FloatList vertexBuffer, Matrix4f mat) {
 //		float[] vertex = face.vertex;

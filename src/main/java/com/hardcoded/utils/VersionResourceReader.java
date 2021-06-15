@@ -270,6 +270,11 @@ public class VersionResourceReader {
 		final int size = queue.size();
 		
 		int threads = Runtime.getRuntime().availableProcessors() - 1;
+		// 1: 2262,1858
+		// 2: 1597,3296
+		// 3: 1370,0111
+		// 4: 1312,8602
+		threads = 2;
 		List<Thread> workers = new ArrayList<>();
 		
 		Runnable loader = () -> {
@@ -288,6 +293,8 @@ public class VersionResourceReader {
 		};
 		
 		TimerUtils.begin();
+
+		TimerUtils.beginAverage();
 		try {
 			for(int i = 0; i < threads; i++) {
 				Thread thread = new Thread(loader, "Resource-Loader-Worker#" + i);
@@ -302,8 +309,10 @@ public class VersionResourceReader {
 		} catch(InterruptedException e) {
 			e.printStackTrace();
 		}
+		double average = TimerUtils.endAverage() / 1000000.0;
 		double time = TimerUtils.end() / 1000000.0;
 		
 		System.out.printf("\nTook: %.4f ms, per item (%.4f)\n", time, time / (size + 0.0));
+		System.out.printf("\nAverage: %.4f ms per item. Items %d\n", average, TimerUtils.getTimes());
 	}
 }

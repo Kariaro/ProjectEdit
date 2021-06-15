@@ -23,7 +23,7 @@ import com.hardcoded.render.LwjglRender;
  */
 public class LwjglWindow implements Runnable {
 	private static final Logger LOGGER = LogManager.getLogger(LwjglWindow.class);
-	private static LwjglWindow INSTANCE;
+	private static LwjglWindow instance;
 			
 	public static final BufferedImage ICON = null;
 	public static final int TARGET_FPS = 120;
@@ -35,12 +35,15 @@ public class LwjglWindow implements Runnable {
 	private int fps;
 	private Input input;
 	
+	private int width;
+	private int height;
+	
 	private Thread runningThread;
 	private Thread asyncThread;
 	public LwjglWindow() {
-		INSTANCE = this;
+		instance = this;
 		tasks = new ConcurrentLinkedDeque<>();
-		LwjglConstants.getFov();
+		LwjglSettings.getFov();
 	}
 	
 	public synchronized void start() {
@@ -72,11 +75,13 @@ public class LwjglWindow implements Runnable {
 
 		int height = (int)(540 * 1.5);
 		int width = (int)(960);
+		this.width = width;
+		this.height = height;
 		
 		glfwWindowHint(GLFW_SAMPLES, 4);
 		glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
 		glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
-		window = glfwCreateWindow(width, height, "NMinecraftEditor - viewer", NULL, NULL);
+		window = glfwCreateWindow(width, height, "ProjectEdit - viewer", NULL, NULL);
 		if(window == NULL) {
 			throw new LoadingException("Failed to initialize the window: window == NULL");
 		}
@@ -93,6 +98,8 @@ public class LwjglWindow implements Runnable {
 		glfwSetFramebufferSizeCallback(window, new GLFWFramebufferSizeCallback() {
 			public void invoke(long window, int width, int height) {
 				render.setViewport(width, height);
+				LwjglWindow.this.width = width;
+				LwjglWindow.this.height = height;
 			}
 		});
 		
@@ -105,7 +112,6 @@ public class LwjglWindow implements Runnable {
 //			glfwSetWindowIcon(window, buffer);
 //		}
 		
-		// TODO: For this to work on multiple operative systems we must not use WGL
 		GL.createCapabilities();
 		GL.createCapabilitiesWGL();
 		
@@ -127,7 +133,7 @@ public class LwjglWindow implements Runnable {
 		asyncThread.start();
 		
 		WGL.wglMakeCurrent(dc, context_1);
-		render = new LwjglRender(this, window, width, height);
+		render = new LwjglRender(window, width, height);
 		glfwShowWindow(window);
 		
 		return true;
@@ -224,7 +230,7 @@ public class LwjglWindow implements Runnable {
 	 * @return {@code true} if the current thread is running on the main thread
 	 */
 	public static boolean isCurrentThread() {
-		return Thread.currentThread() == INSTANCE.runningThread;
+		return Thread.currentThread() == instance.runningThread;
 	}
 	
 	/**
@@ -232,6 +238,15 @@ public class LwjglWindow implements Runnable {
 	 * @param runnable a task
 	 */
 	public static void runLater(Runnable runnable) {
-		INSTANCE.tasks.add(runnable);
+		instance.tasks.add(runnable);
+	}
+	
+	
+	public static int getWidth() {
+		return instance.width;
+	}
+	
+	public static int getHeight() {
+		return instance.height;
 	}
 }

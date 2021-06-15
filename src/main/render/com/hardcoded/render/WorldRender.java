@@ -11,8 +11,9 @@ import org.lwjgl.opengl.GL11;
 import com.hardcoded.lwjgl.Camera;
 import com.hardcoded.lwjgl.mesh.Mesh;
 import com.hardcoded.mc.general.files.*;
-import com.hardcoded.mc.general.world.*;
-import com.hardcoded.render.utils.LodUtils;
+import com.hardcoded.mc.general.world.BlockData;
+import com.hardcoded.mc.general.world.IBlockData;
+import com.hardcoded.mc.general.world.World;
 import com.hardcoded.render.utils.MeshBuilder;
 import com.hardcoded.utils.FastModelRenderer;
 
@@ -109,15 +110,6 @@ public class WorldRender {
 			 | (world.getBlock(x    , y    , z + 1).isOpaque() ? Blocks.FACE_FRONT:0)
 			 | (world.getBlock(x    , y    , z - 1).isOpaque() ? Blocks.FACE_BACK:0);
 	}
-	
-//	private static int getShownFacesLod(World world, int x, int y, int z, int o) {
-//		return (world.getBlock(x + o, y    , z    ).isOpaque() ? Blocks.FACE_RIGHT:0)
-//			 | (world.getBlock(x - o, y    , z    ).isOpaque() ? Blocks.FACE_LEFT:0)
-//			 | (world.getBlock(x    , y + o, z    ).isOpaque() ? Blocks.FACE_UP:0)
-//			 | (world.getBlock(x    , y - o, z    ).isOpaque() ? Blocks.FACE_DOWN:0)
-//			 | (world.getBlock(x    , y    , z + o).isOpaque() ? Blocks.FACE_FRONT:0)
-//			 | (world.getBlock(x    , y    , z - o).isOpaque() ? Blocks.FACE_BACK:0);
-//	}
 
 	private ChunkList list;
 	public void renderWorld(World world, Camera camera, Matrix4f projectionView, int radius) {
@@ -134,16 +126,11 @@ public class WorldRender {
 		this.render = render;
 	}
 	
-	private static final int LOD_LEVELS = 5;
 	private class ChunkBlob {
 		private final Position pos;
 		private final World world;
 		private final Chunk chunk;
 		private final ChunkSectionBlob[] sections;
-		
-		// 5 lod levels
-		private final MeshBuilder[] builders = new MeshBuilder[LOD_LEVELS];
-		private final Mesh[] lods = new Mesh[LOD_LEVELS];
 		
 		private ChunkBlob(World world, Chunk chunk, int world_x, int world_z) {
 			this.world = world;
@@ -161,77 +148,59 @@ public class WorldRender {
 			return sections;
 		}
 		
-//		private MeshBuilder builder;
 		public void reload() {
 			if(unloaded) return;
 			
 			// No calls to GL in here
+			MeshBuilder buffer = new MeshBuilder(
+				MeshBuilder._VERTS |
+				MeshBuilder._UV |
+				MeshBuilder._COLOR
+			);
 			
-			for(int lod = 0; lod < 1; lod++) {
-				MeshBuilder buffer = new MeshBuilder();
-				for(int y = 0; y < 16; y++) {
-					if(unloaded) return;
-					ChunkSectionBlob section = sections[y];
-					if(section.doesRender()) {
-						section.render(buffer, lod);
-					}
+			for(int y = 0; y < 16; y++) {
+				if(unloaded) return;
+				ChunkSectionBlob section = sections[y];
+				if(section.doesRender()) {
+					section.render(buffer);
 				}
-				
-				builders[lod] = buffer;
 			}
 			
 			if(unloaded) return;
+			this.builder = buffer;
 			this.isDirty = true;
 		}
 		
 		private boolean isDirty = false;
 		private boolean unloaded = false;
+		private MeshBuilder builder;
+		private Mesh mesh;
 		
-		public void render(int lod) {
+		public void render() {
 			if(unloaded) return;
-			
-			if(lod < 0) lod = 0;
-			if(lod > 4) lod = 4;
-			lod = 0;
 			if(isDirty) {
 				isDirty = false;
 				unloadMeshes();
 				
-				for(int i = 0; i < LOD_LEVELS; i++) {
-					
-				}
-				lods[0] = builders[0].build();
-				builders[0] = null;
+				mesh = builder.build();
+				builder = null;
 			}
 			
-			Mesh mesh = lods[lod];
 			if(mesh != null) {
 				mesh.render();
 			}
 		}
 		
 		public void unloadMeshes() {
-			for(int i = 0; i < LOD_LEVELS; i++) {
-				Mesh m = lods[i];
-				
-				if(m != null) {
-					m.cleanUp();
-				}
-				
-				lods[i] = null;
+			if(mesh != null) {
+				mesh.cleanUp();
+				mesh = null;
 			}
 		}
 		
 		public void unload() {
 			unloaded = true;
 			unloadMeshes();
-			for(int i = 0; i < LOD_LEVELS; i++) {
-				builders[i] = null;
-			}
-//			if(mesh != null) {
-//				mesh.cleanUp();
-//				mesh = null;
-//			}
 		}
 	}
 	
@@ -246,67 +215,43 @@ public class WorldRender {
 			this.pos = pos.offset(0, 0, 0);
 		}
 		
-//		public void render(MeshBuilder builder) {
-//			final int bx = pos.getBlockX();
-//			final int by = pos.getBlockY();
-//			final int bz = pos.getBlockZ();
-//			
-//			for(int i = 0; i < 4096; i++) {
-//				int x = (i & 15);
-//				int y = ((i >> 4) & 15);
-//				int z = (i >> 8);
-//				
-//				IBlockData state = section.getBlock(x, y, z);
-//				if(state.isAir()) continue;
-//				
-//				final int wx = bx + x;
-//				final int wy = by + y;
-//				final int wz = bz + z;
-//				int flags = getShownFaces(world, wx, wy, wz);
-//				if(flags != 0) {
-//					render_cube(state, x + bx, y + by, z + bz, builder, flags);
-//				}
-//			}
-//		}
-		
-		public void render(MeshBuilder builder, int lod) {
-			if(lod > 4) lod = 4;
-			
-			final int len = 1 << (4 - lod);
-			final int size = 16 / len;
-			
-			final int len_sq = len * len;
-			final int len_vol = len * len * len;
-			
+		public void render(MeshBuilder builder) {
 			final int bx = pos.getBlockX();
 			final int by = pos.getBlockY();
 			final int bz = pos.getBlockZ();
 			
-			int verts_start = builder.verts.size();
-			
-			for(int xyz = 0; xyz < len_vol; xyz++) {
-				int x = xyz % len;
-				int z = (xyz / len) % len;
-				int y = xyz / len_sq;
-				
-				IBlockData state = LodUtils.getCommonBlock(section, x * size, y * size, z * size, size);
-				if(state.isAir()) continue;
-				
-				int faces = LodUtils.getShownFaces(world, bx + x * size, by + y * size, bz + z * size, size);
-				if(faces != 0) {
-					render_cube(state, x, y, z, builder, faces);
+			if(!(section instanceof ChunkSection)) {
+				for(int i = 0; i < 4096; i++) {
+					int x = (i & 15);
+					int y = ((i >> 4) & 15);
+					int z = (i >> 8);
+					
+					IBlockData state = section.getBlock(x, y, z);
+					if(state.isAir()) continue;
+					
+					final int wx = bx + x;
+					final int wy = by + y;
+					final int wz = bz + z;
+					int flags = getShownFaces(world, wx, wy, wz);
+					if(flags != 0) {
+						render_cube(state, x + bx, y + by, z + bz, builder, flags);
+					}
 				}
+				return;
 			}
 			
-			final int verts_end = builder.verts.size();
-			for(int i = verts_start; i < verts_end; i += 3) {
-				float x = builder.verts.get(i    );
-				float y = builder.verts.get(i + 1);
-				float z = builder.verts.get(i + 2);
+			ChunkSection sec = (ChunkSection)section;
+			for(int i = 0; i < 4096; i++) {
+				IBlockData state = sec.blocks[i];
+				if(state == null || state.isAir()) continue;
 				
-				builder.verts.set(i    , x * size + bx);
-				builder.verts.set(i + 1, y * size + by);
-				builder.verts.set(i + 2, z * size + bz);
+				final int wx = bx + (i & 15);
+				final int wy = by + (i >> 8);
+				final int wz = bz + ((i >> 4) & 15);
+				int flags = getShownFaces(world, wx, wy, wz);
+				if(flags != 0) {
+					render_cube(state, wx, wy, wz, builder, flags);
+				}
 			}
 		}
 		
@@ -338,7 +283,6 @@ public class WorldRender {
 			long now = System.currentTimeMillis();
 			
 			int x = Math.floorDiv((int)camera.x, 16);
-			int y = Math.floorDiv((int)camera.y, 16);
 			int z = Math.floorDiv((int)camera.z, 16);
 			final int xs = x - radius - 1;
 			final int xe = x + radius + 1;
@@ -356,8 +300,8 @@ public class WorldRender {
 				
 				while(iter.hasNext()) {
 					ChunkBlob blob = iter.next();
-					int bx = blob.chunk.x;
-					int bz = blob.chunk.z;
+					int bx = blob.chunk.chunk_x;
+					int bz = blob.chunk.chunk_z;
 					
 					if(bx < uxs || bx > uxe || bz < uzs || bz > uze) {
 						if(now > time_map.get(blob)) {
@@ -397,7 +341,7 @@ public class WorldRender {
 					long idx = ((long)(i) & 0xffffffffL) | (((long)j) << 32L);
 					
 					if(!intersect.testAab(new Vector3f(i * 16, 0, j * 16), new Vector3f(i * 16 + 16, 256, j * 16 + 16))) {
-						//continue;
+						continue;
 					}
 					
 					boolean test = true;
@@ -422,11 +366,11 @@ public class WorldRender {
 							continue;
 						}
 					}
-					float dist = (i - x) * (i - x) + (j - z) * (j - z) + y * y / 8;
-					int lod = (int)(Math.log(Math.sqrt(dist) * 2 - 10));
+//					float dist = (i - x) * (i - x) + (j - z) * (j - z) + y * y / 8;
+//					int lod = (int)(Math.log(Math.sqrt(dist) * 2 - 10));
 					
 					if(blob != null) {
-						blob.render(0);
+						blob.render();
 						count++;
 					}
 				}

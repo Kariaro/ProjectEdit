@@ -9,10 +9,10 @@ import com.hardcoded.lwjgl.Camera;
 import com.hardcoded.lwjgl.LwjglWindow;
 import com.hardcoded.lwjgl.data.Texture;
 import com.hardcoded.lwjgl.input.Input;
+import com.hardcoded.main.ProjectEdit;
 import com.hardcoded.mc.general.files.Position;
 import com.hardcoded.mc.general.world.World;
 import com.hardcoded.mc.general.world.WorldUtils;
-import com.hardcoded.render.LwjglRender;
 import com.hardcoded.render.utils.RenderUtil;
 
 public class GuiToolList {
@@ -31,23 +31,23 @@ public class GuiToolList {
 		box_selected = Texture.loadResource("/images/box_selected.png", GL11.GL_NEAREST);
 	}
 	
+	private Position pos1;
+	private Position pos2;
+	private boolean dragging;
+	
 	public void render() {
-		Camera camera = gui.render.camera;
-		World world = gui.render.world;
+		World world = ProjectEdit.getInstance().getWorld();
+		Camera camera = ProjectEdit.getInstance().getCamera();
 		
 		for(int i = 0; i < 8; i++) {
 			renderBox(i, 0, i * 72, 72, 72);
 		}
 		
 		if(index == 0) {
-			float width = LwjglRender.width;
-			float height = LwjglRender.height;
-			
-			Matrix4f proj = camera.getProjectionMatrix(width, height);
+			Matrix4f proj = camera.getProjectionMatrix();
 			Vector3f cam = camera.getPosition();
-			Vector3f ray = RenderUtil.getRay(proj, (int)width, (int)height, Input.getMouseX(), Input.getMouseY())
-					.sub(cam);
 			
+			Vector3f ray = camera.getScreenRaycast(Input.getMouseX(), Input.getMouseY());
 			Position pos = WorldUtils.raycastBlock(world, cam, ray, 100);
 			
 			GL11.glPushMatrix();
@@ -61,6 +61,18 @@ public class GuiToolList {
 			GL11.glEnd();
 			
 			if(pos != null) {
+				if(Input.isMouseDown(GLFW.GLFW_MOUSE_BUTTON_1)) {
+					if(!dragging) {
+						pos1 = pos;
+						pos2 = null;
+						dragging = true;
+					} else {
+						pos2 = pos;
+					}
+				} else {
+					dragging = false;
+				}
+				
 				GL11.glColor3f(1, 1, 1);
 				
 				float e = 0.01f;
@@ -71,6 +83,42 @@ public class GuiToolList {
 					1 + 2 * e,
 					1 + 2 * e,
 					1 + 2 * e
+				);
+			}
+			
+			if(pos1 != null && pos2 != null) {
+				int x1 = pos1.getBlockX();
+				int y1 = pos1.getBlockY();
+				int z1 = pos1.getBlockZ();
+				int x2 = pos2.getBlockX();
+				int y2 = pos2.getBlockY();
+				int z2 = pos2.getBlockZ();
+				
+				if(x2 < x1) {
+					int tmp = x1;
+					x1 = x2;
+					x2 = tmp;
+				}
+				
+				if(y2 < y1) {
+					int tmp = y1;
+					y1 = y2;
+					y2 = tmp;
+				}
+				
+				if(z2 < z1) {
+					int tmp = z1;
+					z1 = z2;
+					z2 = tmp;
+				}
+				
+				RenderUtil.drawWireBlock(
+					x1,
+					y1,
+					z1,
+					(x2 - x1 + 1),
+					(y2 - y1 + 1),
+					(z2 - z1 + 1)
 				);
 			}
 			

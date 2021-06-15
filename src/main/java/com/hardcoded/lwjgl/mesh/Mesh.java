@@ -17,7 +17,7 @@ public class Mesh {
 		this(
 			vertexs,
 			uvs,
-			createEmptyFloatArray((vertexs.length / 3) * 4, 0.0f)
+			createEmptyFloatArray(vertexs.length, 1.0f)
 		);
 	}
 	
@@ -62,7 +62,7 @@ public class Mesh {
 			colBuffer.put(colors).flip();
 			GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vboId);
 			GL15.glBufferData(GL15.GL_ARRAY_BUFFER, colBuffer, GL15.GL_STATIC_DRAW);
-			GL20.glVertexAttribPointer(2, 4, GL11.GL_FLOAT, false, 0, 0);
+			GL20.glVertexAttribPointer(2, 3, GL11.GL_FLOAT, false, 0, 0);
 			
 			GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
 			GL30.glBindVertexArray(0);

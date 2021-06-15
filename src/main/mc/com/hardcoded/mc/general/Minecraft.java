@@ -5,7 +5,7 @@ import java.io.File;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.hardcoded.utils.NotNull;
+import com.hardcoded.utils.Nonnull;
 
 /**
  * This class provies information about where the game is located and more.
@@ -20,23 +20,23 @@ public class Minecraft {
 		
 	}
 	
-	@NotNull
+	@Nonnull
 	public static File getMinecraftPath() {
 		return new File(System.getProperty("user.home"), "AppData/Roaming/.minecraft");
 	}
 	
-	@NotNull
+	@Nonnull
 	public static File[] getSaves() {
 		File[] array = new File(getMinecraftPath(), "saves").listFiles();
 		return array == null ? new File[0]:array;
 	}
 	
-	@NotNull
+	@Nonnull
 	public static File getVersionsPath() {
 		return new File(getMinecraftPath(), "versions");
 	}
 	
-	@NotNull
+	@Nonnull
 	public static File getVersionFolder(String name) {
 		return new File(getMinecraftPath(), "versions/" + name);
 	}

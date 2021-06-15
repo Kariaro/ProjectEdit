@@ -2,16 +2,16 @@ package com.hardcoded.utils;
 
 import org.joml.Math;
 import org.joml.Vector3f;
-import org.joml.Vector4fc;
+import org.joml.Vector4f;
 
 import com.hardcoded.lwjgl.data.Texture;
 import com.hardcoded.utils.FastModelJsonLoader.FaceType;
 
 public class Maths {
-	public static float[] getModelUvs(Vector4fc uv, Texture texture) {
+	public static float[] getModelUvs(Vector4f uv, Texture texture) {
 		float[] array = new float[] {
-			uv.x(), uv.w(), uv.z(), uv.w(), uv.z(), uv.y(),
-			uv.x(), uv.w(), uv.z(), uv.y(), uv.x(), uv.y()
+			uv.x, uv.w, uv.z, uv.w, uv.z, uv.y,
+			uv.x, uv.w, uv.z, uv.y, uv.x, uv.y
 		};
 		
 		if(texture != null && uv != null) {

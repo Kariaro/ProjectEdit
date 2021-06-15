@@ -1,5 +1,6 @@
 package com.hardcoded.utils;
 
+import java.awt.image.BufferedImage;
 import java.lang.Math;
 import java.text.NumberFormat;
 import java.util.*;
@@ -56,13 +57,6 @@ public class FastModelJsonLoader {
 			if(normal.y < -0.7) return FaceType.down;
 			return FaceType.none;
 		}
-		
-//		public FaceType rotateXZ(int xstep, int zstep) {
-//			return getFromNormal(normal()
-//				.rotateX((float)(xstep * java.lang.Math.PI / 2.0f))
-//				.rotateY((float)(zstep * java.lang.Math.PI / 2.0f))
-//			);
-//		}
 		
 		public int getFlags() {
 			return flags;
@@ -127,10 +121,10 @@ public class FastModelJsonLoader {
 			next.uv = uv.get(next_uv);
 			
 			if(rotation != 0) {
-				float cx = (uv.x() + uv.z()) / 2.0f;
-				float cy = (uv.y() + uv.w()) / 2.0f;
-				Vector3f p1 = new Vector3f(uv.x() - cx, uv.y() - cy, 0);
-				Vector3f p2 = new Vector3f(uv.z() - cx, uv.w() - cy, 0);
+				float cx = (uv.x + uv.z) / 2.0f;
+				float cy = (uv.y + uv.w) / 2.0f;
+				Vector3f p1 = new Vector3f(uv.x - cx, uv.y - cy, 0);
+				Vector3f p2 = new Vector3f(uv.z - cx, uv.w - cy, 0);
 				p1.rotateZ(rotation);
 				p2.rotateZ(rotation);
 				next_uv.set(
@@ -143,11 +137,6 @@ public class FastModelJsonLoader {
 			
 			return next;
 		}
-		
-//		@Override
-//		public String toString() {
-//			return String.format("face{ texture=\"%s\" }", texture);
-//		}
 	}
 	
 	static class JsonRotation {
@@ -449,44 +438,16 @@ public class FastModelJsonLoader {
 			rotation.apply(face.vertex, 9);
 			rotation.apply(face.vertex, 12);
 			rotation.apply(face.vertex, 15);
-			
-//			switch(rotation.axis) {
-//				case x: {
-//					Maths.fastRotateX(face.vertex, rotation.origin, 0, rotation.angle);
-//					Maths.fastRotateX(face.vertex, rotation.origin, 3, rotation.angle);
-//					Maths.fastRotateX(face.vertex, rotation.origin, 6, rotation.angle);
-//					Maths.fastRotateX(face.vertex, rotation.origin, 9, rotation.angle);
-//					Maths.fastRotateX(face.vertex, rotation.origin, 12, rotation.angle);
-//					Maths.fastRotateX(face.vertex, rotation.origin, 15, rotation.angle);
-//					break;
-//				}
-//				case y: {
-//					Maths.fastRotateY(face.vertex, rotation.origin, 0, rotation.angle);
-//					Maths.fastRotateY(face.vertex, rotation.origin, 3, rotation.angle);
-//					Maths.fastRotateY(face.vertex, rotation.origin, 6, rotation.angle);
-//					Maths.fastRotateY(face.vertex, rotation.origin, 9, rotation.angle);
-//					Maths.fastRotateY(face.vertex, rotation.origin, 12, rotation.angle);
-//					Maths.fastRotateY(face.vertex, rotation.origin, 15, rotation.angle);
-//					break;
-//				}
-//				case z: {
-//					Maths.fastRotateZ(face.vertex, rotation.origin, 0, rotation.angle);
-//					Maths.fastRotateZ(face.vertex, rotation.origin, 3, rotation.angle);
-//					Maths.fastRotateZ(face.vertex, rotation.origin, 6, rotation.angle);
-//					Maths.fastRotateZ(face.vertex, rotation.origin, 9, rotation.angle);
-//					Maths.fastRotateZ(face.vertex, rotation.origin, 12, rotation.angle);
-//					Maths.fastRotateZ(face.vertex, rotation.origin, 15, rotation.angle);
-//					break;
-//				}
-//			}
 		}
 		
-		// 0.54
 		private static ModelFace createModelFace(FaceType type, JsonModelElement element, JsonModelFace json) {
 			ModelFace face = new ModelFace();
 			
-			// 0.9ms
-			int id = LwjglRender.atlas.addTexture(json.texture, resource.readBufferedImage(json.texture));
+			int id = LwjglRender.atlas.getImageId(json.texture);
+			if(id < 0) {
+				BufferedImage image = resource.readBufferedImage(json.texture);
+				id = LwjglRender.atlas.addTexture(json.texture, image);
+			}
 			
 			face.textureId = id;
 			face.vertex = Maths.getModelVertexes(type, element.from, element.to);
@@ -510,10 +471,7 @@ public class FastModelJsonLoader {
 		try {
 			JsonModelObject loaded = new JsonModelObject(path).build();
 			
-			// Average: 7,77621525 ms
-			TimerUtils.begin();
 			FastModel.ModelObject object = FastModel.createModelObject(loaded);
-			TimerUtils.end();
 			cache_modles.put(path, object);
 			return object;
 		} catch(Exception e) {

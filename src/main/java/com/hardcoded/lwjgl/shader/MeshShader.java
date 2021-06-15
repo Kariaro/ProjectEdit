@@ -1,5 +1,10 @@
 package com.hardcoded.lwjgl.shader;
 
+/**
+ * A mesh shader
+ * 
+ * @author HardCoded
+ */
 public class MeshShader extends ShaderObjectImpl {
 	public MeshShader() {
 		super(

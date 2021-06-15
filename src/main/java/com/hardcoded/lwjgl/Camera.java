@@ -10,12 +10,11 @@ import com.hardcoded.lwjgl.input.Input;
 import com.hardcoded.lwjgl.util.MathUtils;
 
 /**
- * A simple camera implementation.
+ * A simple camera implementation
  * 
  * @author HardCoded
  */
 public class Camera {
-	private final long window;
 	public float x;
 	public float y;
 	public float z;
@@ -24,31 +23,22 @@ public class Camera {
 	public float ry;
 	public float rz;
 	
-	public Camera(long window) {
-		this.window = window;
-	}
-	
 	private Vector2f mouse = new Vector2f(0, 0);
 	private Vector2f delta = new Vector2f(0, 0);
 	private void updateMouse() {
-		double[] x = new double[1];
-		double[] y = new double[1];
-		glfwGetCursorPos(window, x, y);
-		
-		delta.x = mouse.x - (float)x[0];
-		delta.y = mouse.y - (float)y[0];
-		mouse.x = (float)x[0];
-		mouse.y = (float)y[0];
+		float cx = Input.getMouseX();
+		float cy = Input.getMouseY();
+		delta.x = mouse.x - cx;
+		delta.y = mouse.y - cy;
+		mouse.x = cx;
+		mouse.y = cy;
 	}
 	
-	public boolean fast = false;
 	public int speedMod = 1;
 	public void update() {
 		updateMouse();
 		
-		boolean captureMouse = LwjglWindow.isMouseCaptured();
-		
-		if(captureMouse) {
+		if(LwjglWindow.isMouseCaptured()) {
 			rx -= delta.x / 2.0f;
 			ry -= delta.y / 2.0f;
 		}
@@ -88,7 +78,6 @@ public class Camera {
 		float yy = yd;
 		
 		float time_delta = LwjglWindow.getDeltaTime();
-		
 		float speed = 10 * (float)Math.pow(5, speedMod - 1);
 		speed *= time_delta;
 		
@@ -109,9 +98,15 @@ public class Camera {
 			.translate(-x, -y, -z);
 	}
 	
-	public Matrix4f getProjectionMatrix(float fov, float width, float height) {
+
+	public float near = 0.1f;
+	public float far = 100000; // 10000
+	public Matrix4f getProjectionMatrix() {
+		float width = LwjglWindow.getWidth();
+		float height = LwjglWindow.getHeight();
+		
 		Matrix4f projectionMatrix = new Matrix4f();
-		projectionMatrix.setPerspective((float)Math.toRadians(fov), width / height, 0.1f, 10000);
+		projectionMatrix.setPerspective(MathUtils.toRadians(LwjglSettings.getFov()), width / height, near, far);
 		return projectionMatrix
 			.rotate(MathUtils.toRadians(ry), 1, 0, 0)
 			.rotate(MathUtils.toRadians(rx), 0, 1, 0)
@@ -119,14 +114,16 @@ public class Camera {
 			.translate(-x, -y, -z);
 	}
 	
-	public Matrix4f getProjectionMatrix(float width, float height) {
+	public Matrix4f getProjectionMatrixNoTranslate() {
+		float width = LwjglWindow.getWidth();
+		float height = LwjglWindow.getHeight();
+		
 		Matrix4f projectionMatrix = new Matrix4f();
-		projectionMatrix.setPerspective(MathUtils.toRadians(LwjglConstants.getFov()), width / height, 0.1f, 10000);
+		projectionMatrix.setPerspective(MathUtils.toRadians(LwjglSettings.getFov()), width / height, near, far);
 		return projectionMatrix
 			.rotate(MathUtils.toRadians(ry), 1, 0, 0)
 			.rotate(MathUtils.toRadians(rx), 0, 1, 0)
-			.rotate(MathUtils.toRadians(rz), 0, 0, 1)
-			.translate(-x, -y, -z);
+			.rotate(MathUtils.toRadians(rz), 0, 0, 1);
 	}
 	
 	
@@ -138,4 +135,20 @@ public class Camera {
 	public float getPitch() {
 		return ry;
 	}
+	
+	/**
+	 * Returns the raycast of the ray at the specified pixel position
+	 */
+	public Vector3f getScreenRaycast(float x, float y) {
+		int width = LwjglWindow.getWidth();
+		int height = LwjglWindow.getHeight();
+		return getProjectionMatrixNoTranslate()
+			.unproject(x, height - y, 1, new int[] { 0, 0, width, height }, new Vector3f());
+	}
+	
+//	public Vector3f getScreenRaycast(float x, float y) {
+//		int width = LwjglWindow.getWidth();
+//		int height = LwjglWindow.getHeight();
+//		return getProjectionMatrixNoTranslate().unproject(x, height - y, 1, new int[] { 0, 0, width, height }, new Vector3f());
+//	}
 }
