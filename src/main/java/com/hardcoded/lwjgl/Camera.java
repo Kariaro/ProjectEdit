@@ -7,7 +7,7 @@ import org.joml.Vector2f;
 import org.joml.Vector3f;
 
 import com.hardcoded.lwjgl.input.Input;
-import com.hardcoded.lwjgl.util.MathUtils;
+import com.hardcoded.utils.MathUtils;
 
 /**
  * A simple camera implementation

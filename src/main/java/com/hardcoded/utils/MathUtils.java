@@ -1,4 +1,4 @@
-package com.hardcoded.lwjgl.util;
+package com.hardcoded.utils;
 
 import java.lang.Math;
 
@@ -35,5 +35,9 @@ public class MathUtils {
 			.translate(0.5f, 0.5f, 0.5f)
 			.scale(0.5f, 0.5f, 0.5f)
 		).mul(mvpMatrix);
+	}
+	
+	public static void decomposeMatrix(Matrix4f matrix, Vector3f translation, Vector3f scale, Quaternionf rotation) {
+		throw new UnsupportedOperationException();
 	}
 }

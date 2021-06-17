@@ -85,7 +85,7 @@ public class Input {
 	}
 	
 	/**
-	 * This method is used to flush delta states that    should be reset after
+	 * This method is used to flush delta states that should be reset after
 	 * calling <code>GLFW.glfwPollEvents();</code>
 	 */
 	public static void flush() {

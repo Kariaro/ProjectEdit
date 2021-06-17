@@ -146,6 +146,30 @@ public class TextureAtlas {
 	}
 	
 	/**
+	 * Remove all images loaded in this atlas and delete textures.
+	 */
+	public void dispose() {
+		if(atlas != null) {
+			atlas.cleanup();
+			atlas = null;
+		}
+		
+		// Clear map
+		for(int i = 0, len = atlas_map.length; i < len; i++) {
+			atlas_map[i] = null;
+		}
+		
+		atlas_path_to_id.clear();
+		
+		// Clear image
+		Graphics2D g = image.createGraphics();
+		g.setBackground(new Color(0, true));
+		g.clearRect(0, 0, image.getWidth(), image.getHeight());
+		g.dispose();
+	}
+	
+	
+	/**
 	 * Find the first index inside this atlas that has enough space
 	 * to draw an image with the dimensions {@code width} x {@code height} pixels.
 	 * 
@@ -176,7 +200,6 @@ public class TextureAtlas {
 			return - 1;
 		}
 		
-//		System.out.printf("size: (%d x %d)\n", tw, th);
 		for(int y = 0; y <= ye; y++) {
 			for(int x = 0; x <= xe; x++) {
 				// First we need to check if we can find 'tw' empty spaces

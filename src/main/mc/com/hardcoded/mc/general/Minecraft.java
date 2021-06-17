@@ -40,4 +40,9 @@ public class Minecraft {
 	public static File getVersionFolder(String name) {
 		return new File(getMinecraftPath(), "versions/" + name);
 	}
+	
+	@Nonnull
+	public static File getSave(String name) {
+		return new File(getMinecraftPath(), "saves/" + name);
+	}
 }

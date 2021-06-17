@@ -10,6 +10,7 @@ import org.lwjgl.opengl.GL11;
 
 import com.hardcoded.lwjgl.Camera;
 import com.hardcoded.lwjgl.mesh.Mesh;
+import com.hardcoded.mc.constants.Direction;
 import com.hardcoded.mc.general.files.*;
 import com.hardcoded.mc.general.world.BlockData;
 import com.hardcoded.mc.general.world.IBlockData;
@@ -21,7 +22,7 @@ public class WorldRender {
 	private static void render_cube(IBlockData state, float x, float y, float z, MeshBuilder builder, int faces) {
 		BlockData bs = (BlockData)state;
 		if(bs.model_objects.isEmpty()) return;
-		FastModelRenderer.Fast.renderModelFast(bs, x, y, z, builder, faces);
+		FastModelRenderer.renderModelFast(bs, x, y, z, builder, faces);
 	}
 	
 	public static void renderBlock(float x, float y, float z, Vector4f col) {
@@ -35,7 +36,7 @@ public class WorldRender {
 	public static void renderBlock(float x, float y, float z, float rc, float gc, float bc, float ac, float xs, float ys, float zs, int faces) {
 		float d = -0.1f;
 		
-		if((faces & Blocks.FACE_BACK) != 0) {
+		if((faces & Direction.FACE_BACK) != 0) {
 			GL11.glBegin(GL11.GL_TRIANGLE_FAN);
 				GL11.glColor4f(rc + d, gc, bc, ac);
 				GL11.glVertex3f(x     , y + ys, z);
@@ -46,7 +47,7 @@ public class WorldRender {
 			GL11.glEnd();
 		}
 		
-		if((faces & Blocks.FACE_FRONT) != 0) {
+		if((faces & Direction.FACE_FRONT) != 0) {
 			GL11.glBegin(GL11.GL_TRIANGLE_FAN);
 				GL11.glColor4f(rc, gc, bc + d, ac);
 				GL11.glVertex3f(x     , y     , z + zs);
@@ -57,7 +58,7 @@ public class WorldRender {
 			GL11.glEnd();
 		}
 		
-		if((faces & Blocks.FACE_RIGHT) != 0) {
+		if((faces & Direction.FACE_RIGHT) != 0) {
 			GL11.glBegin(GL11.GL_TRIANGLE_FAN);
 				GL11.glColor4f(rc, gc + d, bc, ac);
 				GL11.glVertex3f(x + xs, y + ys, z     );
@@ -68,7 +69,7 @@ public class WorldRender {
 			GL11.glEnd();
 		}
 		
-		if((faces & Blocks.FACE_LEFT) != 0) {
+		if((faces & Direction.FACE_LEFT) != 0) {
 			GL11.glBegin(GL11.GL_TRIANGLE_FAN);
 				GL11.glColor4f(rc + d, gc + d, bc, ac);
 				GL11.glVertex3f(x, y + ys, z + zs);
@@ -79,7 +80,7 @@ public class WorldRender {
 			GL11.glEnd();
 		}
 		
-		if((faces & Blocks.FACE_UP) != 0) {
+		if((faces & Direction.FACE_UP) != 0) {
 			GL11.glBegin(GL11.GL_TRIANGLE_FAN);
 				GL11.glColor4f(rc + d, gc, bc + d, ac);
 				GL11.glVertex3f(x     , y + ys, z     );
@@ -90,7 +91,7 @@ public class WorldRender {
 			GL11.glEnd();
 		}
 		
-		if((faces & Blocks.FACE_DOWN) != 0) {
+		if((faces & Direction.FACE_DOWN) != 0) {
 			GL11.glBegin(GL11.GL_TRIANGLE_FAN);
 				GL11.glColor4f(rc, gc + d, bc + d, ac);
 				GL11.glVertex3f(x     , y, z + zs);
@@ -103,12 +104,12 @@ public class WorldRender {
 	}
 	
 	private static int getShownFaces(World world, int x, int y, int z) {
-		return (world.getBlock(x + 1, y    , z    ).isOpaque() ? Blocks.FACE_RIGHT:0)
-			 | (world.getBlock(x - 1, y    , z    ).isOpaque() ? Blocks.FACE_LEFT:0)
-			 | (world.getBlock(x    , y + 1, z    ).isOpaque() ? Blocks.FACE_UP:0)
-			 | (world.getBlock(x    , y - 1, z    ).isOpaque() ? Blocks.FACE_DOWN:0)
-			 | (world.getBlock(x    , y    , z + 1).isOpaque() ? Blocks.FACE_FRONT:0)
-			 | (world.getBlock(x    , y    , z - 1).isOpaque() ? Blocks.FACE_BACK:0);
+		return (world.getBlock(x + 1, y    , z    ).isOpaque() ? Direction.FACE_RIGHT:0)
+			 | (world.getBlock(x - 1, y    , z    ).isOpaque() ? Direction.FACE_LEFT:0)
+			 | (world.getBlock(x    , y + 1, z    ).isOpaque() ? Direction.FACE_UP:0)
+			 | (world.getBlock(x    , y - 1, z    ).isOpaque() ? Direction.FACE_DOWN:0)
+			 | (world.getBlock(x    , y    , z + 1).isOpaque() ? Direction.FACE_FRONT:0)
+			 | (world.getBlock(x    , y    , z - 1).isOpaque() ? Direction.FACE_BACK:0);
 	}
 
 	private ChunkList list;
@@ -208,6 +209,7 @@ public class WorldRender {
 		public void unload() {
 			unloaded = true;
 			unloadMeshes();
+			builder = null;
 		}
 	}
 	
@@ -275,6 +277,10 @@ public class WorldRender {
 		exec.shutdown();
 	}
 	
+	public void unloadCache() {
+		list.unloadCache();
+	}
+	
 	private class ChunkList {
 		private final Map<Long, ChunkBlob> chunk_map;
 		private final Map<ChunkBlob, Long> time_map;
@@ -284,6 +290,15 @@ public class WorldRender {
 			chunk_map = new HashMap<>();
 			time_map = new HashMap<>();
 			this.world = world;
+		}
+		
+		public void unloadCache() {
+			for(ChunkBlob blob : time_map.keySet()) {
+				blob.unload();
+			}
+			
+			time_map.clear();
+			chunk_map.clear();
 		}
 		
 		public void render(Camera camera, Matrix4f projectionView, int radius) {
@@ -334,7 +349,7 @@ public class WorldRender {
 					}
 				}
 				
-				world.unloadRegionsNotFound(loaded_regions);
+//				world.unloadRegionsNotFound(loaded_regions);
 			}
 			
 			long loaded = load_limit;
@@ -353,6 +368,10 @@ public class WorldRender {
 					
 					ChunkBlob blob = chunk_map.get(idx);
 					if(blob == null) {
+						if(exec.getQueue().size() > 300) {
+							continue;
+						}
+						
 						IChunk chunk = world.getChunk(i, j);
 						if(!chunk.isLoaded()) continue;
 						

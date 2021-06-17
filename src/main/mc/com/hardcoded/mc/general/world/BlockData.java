@@ -2,8 +2,6 @@ package com.hardcoded.mc.general.world;
 
 import java.util.*;
 
-import org.joml.Matrix4f;
-
 import com.hardcoded.mc.general.files.Blocks;
 import com.hardcoded.mc.general.world.IBlockState.IBlockStateList;
 import com.hardcoded.utils.FastModelJsonLoader.FastModel;
@@ -22,7 +20,6 @@ public class BlockData implements IBlockData {
 	protected boolean occluding;
 	protected int rgb;
 	
-	public List<Matrix4f> model_transform = new ArrayList<>();
 	public List<FastModel.ModelObject> model_objects = new ArrayList<>();
 	
 	public BlockData(String name, List<IBlockState> states) {

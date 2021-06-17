@@ -1,6 +1,7 @@
 #version 130
 
 in vec2 pass_Uv;
+in vec4 pass_Position;
 in vec3 pass_Color;
 in vec4 pass_ShadowCoords;
 
@@ -29,5 +30,12 @@ void main() {
 	float lightFactor = calcLightFactor();
 	dif = vec4(dif.rgb * lightFactor, dif.a);
 	
-	out_Color = vec4(dif.rgb * pass_Color.rgb, dif.a);
+	/*
+	vec3 pos_rgb = vec3(
+		fract(pass_Position.x * 16),
+		fract(pass_Position.y * 16),
+		fract(pass_Position.z * 16)
+	);
+	*/
+	out_Color = vec4(dif.rgb * pass_Color.rgb /* * 0.9 + pos_rgb.rgb * 0.1 */, dif.a);
 }

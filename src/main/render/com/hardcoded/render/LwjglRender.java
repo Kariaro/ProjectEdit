@@ -4,26 +4,27 @@ import static org.lwjgl.opengl.GL11.*;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.lang.Math;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.imageio.ImageIO;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.joml.FrustumIntersection;
-import org.joml.Matrix4f;
-import org.joml.Vector3f;
+import org.joml.*;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
 
 import com.hardcoded.lwjgl.Camera;
+import com.hardcoded.lwjgl.LwjglWindow;
 import com.hardcoded.lwjgl.data.TextureAtlas;
 import com.hardcoded.lwjgl.input.Input;
 import com.hardcoded.lwjgl.shader.MeshShader;
 import com.hardcoded.lwjgl.shader.ShadowShader;
 import com.hardcoded.lwjgl.shadow.ShadowFrameBuffer;
-import com.hardcoded.lwjgl.util.MathUtils;
 import com.hardcoded.main.ProjectEdit;
 import com.hardcoded.mc.general.Minecraft;
 import com.hardcoded.mc.general.files.Blocks;
@@ -32,7 +33,9 @@ import com.hardcoded.mc.general.files.IRegion;
 import com.hardcoded.mc.general.world.World;
 import com.hardcoded.render.gui.GuiRender;
 import com.hardcoded.render.utils.RenderUtil;
-import com.hardcoded.utils.VersionResourceReader;
+import com.hardcoded.utils.*;
+import com.hardcoded.utils.FastModelJsonLoader.FaceType;
+import com.hardcoded.utils.FastModelJsonLoader.TestXY;
 
 public class LwjglRender {
 	private static final Logger LOGGER = LogManager.getLogger(LwjglRender.class);
@@ -74,6 +77,7 @@ public class LwjglRender {
 	}
 	
 	private File version_jar;
+	private VersionResourceReader reader;
 	
 	public ShadowShader shadowShader;
 	public MeshShader meshShader;
@@ -91,6 +95,10 @@ public class LwjglRender {
 		File[] files = Minecraft.getSaves();
 		if(files.length > 0) {
 			File save = files[4]; // 2
+			
+			save = Minecraft.getSave("nec");
+			save = Minecraft.getSave("2Test_Lighting");
+//			save = Minecraft.getSave("11BlockModels");
 			// 4
 			
 			LOGGER.info("Loading savefile: '{}'", save);
@@ -100,8 +108,9 @@ public class LwjglRender {
 			LOGGER.info("Version file: '{}'", version_jar);
 			
 			try {
-				VersionResourceReader reader = new VersionResourceReader(version_jar);
+				reader = new VersionResourceReader(version_jar);
 				reader.loadBlocks();
+				debug_id = atlas.addTexture("projectedit:debug_faces", ImageIO.read(LwjglRender.class.getResourceAsStream("/images/debug_faces.png")));
 				atlas.compile();
 			} catch(IOException e) {
 				e.printStackTrace();
@@ -127,6 +136,10 @@ public class LwjglRender {
 	private int last_mvp_scale = 1;
 	public ShadowFrameBuffer frameBuffer;
 	
+	private Vector3f camera_pos;
+	private Matrix4f camera_view;
+	private int debug_id;
+	
 	public void render() {
 		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
 		GL11.glClearColor(0.3f, 0.3f, 0.3f, 1);
@@ -135,6 +148,32 @@ public class LwjglRender {
 		
 		// Get the current loaded world
 		World world = ProjectEdit.getInstance().getWorld();
+		
+		if(Input.isKeyDown(GLFW.GLFW_KEY_U) || camera_pos == null) {
+			camera_pos = camera.getPosition();
+			camera_view = camera.getProjectionMatrix();
+		}
+		
+		if(Input.pollKey(GLFW.GLFW_KEY_K)) {
+			// Unload rendered chunks
+			world_render.unloadCache();
+			// Unload model cache
+			FastModelJsonLoader.unloadCache();
+			// Unload all textures
+			atlas.dispose();
+			// Reload models
+			reader.loadBlocks();
+			
+			// Add debug texture
+			try {
+				debug_id = atlas.addTexture("projectedit:debug_faces", ImageIO.read(LwjglRender.class.getResourceAsStream("/images/debug_faces.png")));
+			} catch(Exception e) {
+				e.printStackTrace();
+			}
+			
+			// Recompile textures
+			atlas.compile();
+		}
 		
 		{
 			int mvp_scale = (int)(Math.sqrt(Math.max(camera.y / 16 - 8, 0)));
@@ -169,7 +208,7 @@ public class LwjglRender {
 				mvpMatrix.translate(-x, -y, -z);
 			}
 			
-			int radius = 16;
+			int radius = 8;
 			
 			GL11.glEnable(GL11.GL_DEPTH_TEST);
 			GL11.glEnable(GL11.GL_CULL_FACE);
@@ -194,6 +233,8 @@ public class LwjglRender {
 			GL13.glActiveTexture(GL13.GL_TEXTURE0);
 			GL11.glBindTexture(GL11.GL_TEXTURE_2D, atlas.getTextureId());
 			
+			GL11.glEnable(GL11.GL_BLEND);
+			GL11.glBlendFunc(GL11.GL_ONE, GL11.GL_ONE_MINUS_SRC_ALPHA);
 			{
 				meshShader.bind();
 				meshShader.setShadowMapSpace(MathUtils.getShadowSpaceMatrix(mvpMatrix));
@@ -201,6 +242,7 @@ public class LwjglRender {
 				world_render.renderWorld(world, camera, projectionView, radius);
 				meshShader.unbind();
 			}
+			GL11.glDisable(GL11.GL_BLEND);
 			
 			atlas.unbind();
 			
@@ -225,7 +267,7 @@ public class LwjglRender {
 			GL11.glPushMatrix();
 			GL11.glLoadMatrixf(projectionView.get(new float[16]));
 			drawLoadedChunks(world);
-//			drawFrustumChunks(world, projectionView, radius);
+//			drawFrustumChunks(world, camera_view, camera_pos, radius);
 			GL11.glPopMatrix();
 			
 			GL11.glPushMatrix();
@@ -256,6 +298,99 @@ public class LwjglRender {
 //						GL11.glTexCoord2d(0, 1); GL11.glVertex3d(  0, 300, 256);
 //					GL11.glEnd();
 //				}
+				
+			{
+				Vector3f from = new Vector3f(0, 0, 0);
+				Vector3f to = new Vector3f(16, 16, 16);
+				
+				GL11.glBegin(GL11.GL_TRIANGLES);
+				for(int y = 0; y < 360; y += 90) {
+					for(int x = 0; x < 360; x += 90) {
+						int idx = (x / 90) + (y / 90) * 4;
+						
+						Matrix4f mat = new Matrix4f()
+							.translateLocal(-8, -8, -8)
+							.rotateLocalX(MathUtils.toRadians(-x))
+							.rotateLocalY(MathUtils.toRadians(-y))
+							.translateLocal(8, 8, 8);
+						
+						for(FaceType face : FaceType.FACES) {
+							FaceType frot = face.rotate(mat);
+							float[] vertex = Maths.getModelVertexes(face, from, to);
+							float[] color = FastModelRenderer.getFaceColor(frot);
+							color = FastModelRenderer.getDebugFaceColor(face);
+							
+							float[] uv = Maths.getModelUv(face, atlas, debug_id, from, to);
+							GL11.glColor3f(color[0], color[1], color[2]);
+							for(int vi = 0, ui = 0; vi < vertex.length; vi += 3, ui += 2) {
+								float xp = vertex[vi];
+								float yp = vertex[vi + 1];
+								float zp = vertex[vi + 2];
+								
+								Vector3f v = mat.transformPosition(new Vector3f(xp, yp, zp));
+								xp = v.x;
+								yp = v.y;
+								zp = v.z;
+								
+								GL11.glTexCoord2f(uv[ui], uv[ui + 1]);
+								GL11.glVertex3f(xp / 16.0f + idx * 2, yp / 16.0f + 100 + ((y / 90) & 1), zp / 16.0f);
+							}
+						}
+					}
+				}
+				
+				for(int y = 0; y < 360; y += 90) {
+					for(int x = 0; x < 360; x += 90) {
+						int idx = (x / 90) + (y / 90) * 4;
+						
+						Matrix4f mat = new Matrix4f()
+							.translateLocal(-8, -8, -8)
+							.rotateLocalX(MathUtils.toRadians(-x))
+							.rotateLocalY(MathUtils.toRadians(-y))
+							.translateLocal(8, 8, 8);
+
+						TestXY testXY = TestXY.testGet(x, y);
+						for(FaceType face : FaceType.FACES) {
+							FaceType frot = face.rotate(mat);
+							float[] vertex = Maths.getModelVertexes(face, from, to);
+							float[] color = FastModelRenderer.getFaceColor(frot);
+							color = FastModelRenderer.getDebugFaceColor(face);
+							
+							float[] uv = Maths.getModelUv(face, atlas, atlas.getImageId("minecraft:block/magenta_glazed_terracotta"), from, to);
+							{
+								Vector4f v_uv = Maths.generateUv(face, from, to);
+//								if(x == 90 && y == 90) {
+//									if(frot == FaceType.north) {
+//										System.out.println(testXY);
+//										uv = FastModelJsonLoader.rotateUvTest(v_uv, 270);
+//									} else {
+//										uv = FastModelJsonLoader.rotateUvTest(v_uv, testXY.getTextureRotation(frot));
+//									}
+//								} else {
+//								}
+								uv = FastModelJsonLoader.rotateUvTest(v_uv, testXY.getTextureRotation(frot));
+								atlas.transformModelUv(atlas.getImageId("minecraft:block/magenta_glazed_terracotta"), uv);
+							}
+							
+							GL11.glColor3f(color[0], color[1], color[2]);
+							for(int vi = 0, ui = 0; vi < vertex.length; vi += 3, ui += 2) {
+								float xp = vertex[vi];
+								float yp = vertex[vi + 1];
+								float zp = vertex[vi + 2];
+								
+								Vector3f v = mat.transformPosition(new Vector3f(xp, yp, zp));
+								xp = v.x;
+								yp = v.y;
+								zp = v.z;
+								
+								GL11.glTexCoord2f(uv[ui], uv[ui + 1]);
+								GL11.glVertex3f(xp / 16.0f + idx * 2, yp / 16.0f + 105 + ((y / 90) & 1), zp / 16.0f);
+							}
+						}
+					}
+				}
+				GL11.glEnd();
+			}
 			GL11.glPopMatrix();
 		}
 		
@@ -419,7 +554,7 @@ public class LwjglRender {
 		return bi;
 	}
 	
-	void drawFrustumChunks(World world, Matrix4f projectionView, int radius) {
+	void drawFrustumChunks(World world, Matrix4f projectionView, Vector3f camera, int radius) {
 		int x = Math.floorDiv((int)camera.x, 16);
 		int z = Math.floorDiv((int)camera.z, 16);
 		final int xs = x - radius;
@@ -428,6 +563,8 @@ public class LwjglRender {
 		final int ze = z + radius;
 		
 		FrustumIntersection intersect = new FrustumIntersection(projectionView);
+		
+		RenderUtil.drawFrustum(projectionView, camera, LwjglWindow.getWidth(), LwjglWindow.getHeight(), 20, 100);
 		
 		GL11.glLineWidth(1.0f);
 		for(int i = xs; i <= xe; i++) {

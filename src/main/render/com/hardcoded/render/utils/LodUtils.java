@@ -1,8 +1,10 @@
 package com.hardcoded.render.utils;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Map.Entry;
 
+import com.hardcoded.mc.constants.Direction;
 import com.hardcoded.mc.general.files.Blocks;
 import com.hardcoded.mc.general.files.IChunk;
 import com.hardcoded.mc.general.files.IChunkSection;
@@ -79,11 +81,11 @@ public class LodUtils {
 		// When this method is called xyz should be aligned with size.
 		final int o = size;
 		
-		return (getCommonBlock(world, x + o, y    , z    , size).isOpaque() ? Blocks.FACE_RIGHT:0)
-			 | (getCommonBlock(world, x - o, y    , z    , size).isOpaque() ? Blocks.FACE_LEFT:0)
-			 | (getCommonBlock(world, x    , y + o, z    , size).isOpaque() ? Blocks.FACE_UP:0)
-			 | (getCommonBlock(world, x    , y - o, z    , size).isOpaque() ? Blocks.FACE_DOWN:0)
-			 | (getCommonBlock(world, x    , y    , z + o, size).isOpaque() ? Blocks.FACE_FRONT:0)
-			 | (getCommonBlock(world, x    , y    , z - o, size).isOpaque() ? Blocks.FACE_BACK:0);
+		return (getCommonBlock(world, x + o, y    , z    , size).isOpaque() ? Direction.FACE_RIGHT:0)
+			 | (getCommonBlock(world, x - o, y    , z    , size).isOpaque() ? Direction.FACE_LEFT:0)
+			 | (getCommonBlock(world, x    , y + o, z    , size).isOpaque() ? Direction.FACE_UP:0)
+			 | (getCommonBlock(world, x    , y - o, z    , size).isOpaque() ? Direction.FACE_DOWN:0)
+			 | (getCommonBlock(world, x    , y    , z + o, size).isOpaque() ? Direction.FACE_FRONT:0)
+			 | (getCommonBlock(world, x    , y    , z - o, size).isOpaque() ? Direction.FACE_BACK:0);
 	}
 }

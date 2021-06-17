@@ -9,6 +9,7 @@ public class Chunk implements IChunk {
 	public final int chunk_x;
 	public final int chunk_z;
 	public boolean isDirty;
+	public Status status;
 	
 	public Chunk(int x, int z) {
 		for(int i = 0, len = sections.length; i < len; i++) {

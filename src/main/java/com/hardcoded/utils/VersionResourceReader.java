@@ -3,8 +3,6 @@ package com.hardcoded.utils;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.util.*;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -22,6 +20,8 @@ import com.hardcoded.mc.general.world.BlockData;
 import com.hardcoded.mc.general.world.BlockDataManager;
 import com.hardcoded.mc.general.world.IBlockData;
 import com.hardcoded.mc.general.world.IBlockState.IBlockStateList;
+import com.hardcoded.utils.FastModelJsonLoader.FastModel.ModelDelegate;
+import com.hardcoded.utils.FastModelJsonLoader.FastModel.ModelObject;
 
 /**
  * @author HardCoded
@@ -125,19 +125,29 @@ public class VersionResourceReader {
 		for(JSONObject model_data : model_data_list) {
 			Matrix4f matrix = new Matrix4f();
 			
+			int x = 0;
+			int y = 0;
 			if(model_data.has("x")) {
-				matrix.translateLocal(-8, -8, -8)
-					.rotateLocalX(-(float)Math.toRadians(model_data.getNumber("x").floatValue()))
-					.translateLocal(8, 8, 8);
+				x = model_data.getNumber("x").intValue();
 			}
 			
 			if(model_data.has("y")) {
+				y = model_data.getNumber("y").intValue();
+			}
+			
+			{
+//				Quaternionf quat = new Quaternionf()
+//					.rotateAxis(MathUtils.toRadians(-y), 0, 1, 0)
+//					.rotateAxis(MathUtils.toRadians(-x), 1, 0, 0)
+//				;
+				
 				matrix.translateLocal(-8, -8, -8)
-					.rotateLocalY(-(float)Math.toRadians(model_data.getNumber("y").floatValue()))
+//					.rotateLocal(quat)
+					.rotateLocalX(MathUtils.toRadians(-x))
+					.rotateLocalY(MathUtils.toRadians(-y))
 					.translateLocal(8, 8, 8);
 			}
 			
-			@SuppressWarnings("unused")
 			boolean uvlock = false;
 			if(model_data.has("uvlock")) {
 				uvlock = model_data.getBoolean("uvlock");
@@ -147,8 +157,11 @@ public class VersionResourceReader {
 				LOGGER.error("Failed to find model of resource: {}", model_data);
 			} else {
 				String path = model_data.getString("model");
-				((BlockData)state).model_transform.add(matrix);
-				((BlockData)state).model_objects.add(FastModelJsonLoader.loadModel(path));
+				
+				ModelObject model = FastModelJsonLoader.loadModel(path);
+				ModelDelegate delegate = new ModelDelegate(matrix, uvlock, model);//, x, y);
+				
+				((BlockData)state).model_objects.add(delegate);
 			}
 			
 			if(isWeighted) {
@@ -163,15 +176,23 @@ public class VersionResourceReader {
 	}
 	
 	private List<JSONObject> resolve_multipart(IBlockData state, JSONArray array) {
-//		System.out.println("################################################################");
-//		System.out.println("Multipart: " + array);
-//		System.out.println("--------------------------------------------\n");
+		boolean debug = false;
+		if(state.getName().equals("black_stained_glass_pane")) {
+			debug = true;
+			System.out.println("################################################################");
+			System.out.println("State: " + state);
+			System.out.println("Multipart: " + array);
+			System.out.println("--------------------------------------------\n");
+		}
 		
 		IBlockStateList stateList = state.getStateList();
 		
 		List<JSONObject> model_data = new ArrayList<>();
 		for(int i = 0; i < array.length(); i++) {
 			JSONObject model_case = array.getJSONObject(i);
+			if(debug) {
+				System.out.println("    " + model_case);
+			}
 			
 			List<JSONObject> models = new ArrayList<>();
 			{
@@ -194,13 +215,25 @@ public class VersionResourceReader {
 					
 					for(int j = 0; j < or_list.length(); j++) {
 						if(stateList.matchesAllowOr(convertMultipartWhenToString(or_list.getJSONObject(j)))) {
-//							model_data = models;
 							model_data.addAll(models);
 							break;
 						}
 					}
+				} else if(when.has("AND")) {
+					JSONArray and_list = when.getJSONArray("AND");
+					
+					boolean match_all = true;
+					for(int j = 0; j < and_list.length(); j++) {
+						if(!stateList.matchesAllowOr(convertMultipartWhenToString(and_list.getJSONObject(j)))) {
+							match_all = false;
+							break;
+						}
+					}
+					
+					if(match_all) {
+						model_data.addAll(models);
+					}
 				} else if(stateList.matchesAllowOr(convertMultipartWhenToString(when))) {
-//					model_data = models;
 					model_data.addAll(models);
 				}
 			} else {
@@ -208,6 +241,12 @@ public class VersionResourceReader {
 			}
 		}
 		
+		if(debug) {
+			System.out.println("LOADED:");
+			for(JSONObject object : model_data) {
+				System.out.println("    : " + object);
+			}
+		}
 		return model_data;
 	}
 	
@@ -236,6 +275,8 @@ public class VersionResourceReader {
 		}
 		
 		if(key == null) return null;
+		
+//		System.out.println(state + ", " + key);
 		Object obj = variants.get(key);
 		
 		List<JSONObject> model_data = null;
@@ -285,51 +326,31 @@ public class VersionResourceReader {
 	 * </pre>
 	 */
 	public void loadBlocks() {
-		ConcurrentLinkedQueue<IBlockData> queue = new ConcurrentLinkedQueue<>(BlockDataManager.getStates());
+		Set<IBlockData> states = BlockDataManager.getStates();
+		final int size = states.size();
 		
-		final AtomicInteger count = new AtomicInteger();
-		final int size = queue.size();
-		
-		int threads = Runtime.getRuntime().availableProcessors() - 1;
-		// 1: 2262,1858
-		// 2: 1597,3296
-		// 3: 1370,0111
-		// 4: 1312,8602
-		threads = 2;
-		List<Thread> workers = new ArrayList<>();
-		
-		Runnable loader = () -> {
-			while(!queue.isEmpty()) {
-				IBlockData data = queue.poll();
-				if(data == null) break;
-				
-				BlockData dta = (BlockData)data;
-				resolveState(data);
-				
-				System.out.printf("\rLoading: (%d) / (%d)", count.getAndIncrement(), size);
-				for(IBlockData child : dta.getChildren()) {
-					resolveState(child);
-				}
-			}
-		};
-		
+		int count = 0;
 		TimerUtils.begin();
 
 		TimerUtils.beginAverage();
 		try {
-			for(int i = 0; i < threads; i++) {
-				Thread thread = new Thread(loader, "Resource-Loader-Worker#" + i);
-				thread.start();
-				workers.add(thread);
+			for(IBlockData data : states) {
+				BlockData dta = (BlockData)data;
+				dta.model_objects.clear();
+				resolveState(data);
+				
+				System.out.printf("\rLoading: (%d) / (%d)", count++, size);
+				for(IBlockData child : dta.getChildren()) {
+					BlockData dta2 = (BlockData)child;
+					dta2.model_objects.clear();
+					resolveState(child);
+				}
 			}
-			
-			for(int i = 0; i < threads; i++) {
-				Thread worker = workers.get(i);
-				worker.join();
-			}
-		} catch(InterruptedException e) {
+		} catch(Exception e) {
+			LOGGER.error("Failed to load all states: {}", e);
 			e.printStackTrace();
 		}
+		
 		double average = TimerUtils.endAverage() / 1000000.0;
 		double time = TimerUtils.end() / 1000000.0;
 		

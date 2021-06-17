@@ -125,7 +125,7 @@ public interface IBlockState {
 			for(String key : states.keySet()) {
 				String val = states.get(key);
 				Object value = map.get(key);
-				if(value == null || !val.equals(value.toString())) return false;
+				if(value == null || !val.equalsIgnoreCase(value.toString())) return false;
 			}
 			
 			return true;
@@ -135,7 +135,7 @@ public interface IBlockState {
 			for(String part : state.split(",")) {
 				String[] obj = part.split("=");
 				Object value = map.get(obj[0]);
-				if(value == null || !value.toString().equals(obj[1])) return false;
+				if(value == null || !value.toString().equalsIgnoreCase(obj[1])) return false;
 			}
 			
 			return true;
@@ -151,12 +151,12 @@ public interface IBlockState {
 				
 				// The first character in the value must never be '|'
 				if(val.indexOf('|') < 0) {
-					if(!val.equals(value)) return false;
+					if(!val.equalsIgnoreCase(value)) return false;
 				} else {
 					boolean match = false;
 					String[] array = val.split("|");
 					for(String str : array) {
-						if(str.equals(value)) {
+						if(str.equalsIgnoreCase(value)) {
 							match = true;
 							break;
 						}
