@@ -63,7 +63,7 @@ public class FastModelRenderer {
 				for(FaceType type : element.faces.keySet()) {
 					ModelFace face = element.faces.get(type);
 					
-					if((type.getFlags() & faces) != 0) {
+					if(face.cullface == null || (face.cullface.getFlags() & faces) != 0) {
 						float[] uv = face.uv;
 						float[] vertex = face.vertex;
 						builder.uv(uv);

@@ -2,7 +2,6 @@ package com.hardcoded.mc.general.world;
 
 import org.joml.Vector3f;
 
-import com.hardcoded.mc.general.files.IChunk;
 import com.hardcoded.mc.general.files.Position;
 
 public class WorldUtils {

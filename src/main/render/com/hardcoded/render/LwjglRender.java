@@ -5,18 +5,20 @@ import static org.lwjgl.opengl.GL11.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.lang.Math;
+import java.nio.ByteBuffer;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 import javax.imageio.ImageIO;
 
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.joml.*;
 import org.lwjgl.glfw.GLFW;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL13;
+import org.lwjgl.opengl.*;
+import org.lwjgl.system.MemoryUtil;
 
 import com.hardcoded.lwjgl.Camera;
 import com.hardcoded.lwjgl.LwjglWindow;
@@ -92,12 +94,46 @@ public class LwjglRender {
 			throw e;
 		}
 		
+		try {
+			GL43.glDebugMessageCallback(new GLDebugMessageCallback() {
+				@Override
+				public void invoke(int source, int type, int id, int severity, int length, long message, long userParam) {
+					Level level = getSeverityLevel(severity);
+					String msg = getMessage(message, length);
+					
+					LOGGER.log(level, "[DEBUG MESSAGE CALLBACK]: {}", msg);
+				}
+				
+				private String getMessage(long pointer, int length) {
+					ByteBuffer buffer = MemoryUtil.memByteBuffer(pointer, length);
+					return new String(buffer.array());
+				}
+				
+				private Level getSeverityLevel(int severity) {
+					switch(severity) {
+						case GL43.GL_DEBUG_SEVERITY_HIGH:
+							return Level.ERROR;
+						case GL43.GL_DEBUG_SEVERITY_MEDIUM:
+							return Level.WARN;
+						case GL43.GL_DEBUG_SEVERITY_LOW:
+							return Level.WARN;
+						default:
+						case GL43.GL_DEBUG_SEVERITY_NOTIFICATION:
+							return Level.DEBUG;
+					}
+				}
+			}, GL43.GL_DEBUG_CALLBACK_USER_PARAM | GL43.GL_DEBUG_CALLBACK_FUNCTION);
+		} catch(Exception e) {
+			throw e;
+		}
+		
 		File[] files = Minecraft.getSaves();
 		if(files.length > 0) {
 			File save = files[4]; // 2
 			
 			save = Minecraft.getSave("nec");
 			save = Minecraft.getSave("2Test_Lighting");
+			save = Minecraft.getSave("Connected Cities");
 //			save = Minecraft.getSave("11BlockModels");
 			// 4
 			
@@ -208,7 +244,7 @@ public class LwjglRender {
 				mvpMatrix.translate(-x, -y, -z);
 			}
 			
-			int radius = 8;
+			int radius = 16;
 			
 			GL11.glEnable(GL11.GL_DEPTH_TEST);
 			GL11.glEnable(GL11.GL_CULL_FACE);
@@ -234,7 +270,7 @@ public class LwjglRender {
 			GL11.glBindTexture(GL11.GL_TEXTURE_2D, atlas.getTextureId());
 			
 			GL11.glEnable(GL11.GL_BLEND);
-			GL11.glBlendFunc(GL11.GL_ONE, GL11.GL_ONE_MINUS_SRC_ALPHA);
+			GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
 			{
 				meshShader.bind();
 				meshShader.setShadowMapSpace(MathUtils.getShadowSpaceMatrix(mvpMatrix));

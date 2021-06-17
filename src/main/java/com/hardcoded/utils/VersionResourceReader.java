@@ -136,13 +136,7 @@ public class VersionResourceReader {
 			}
 			
 			{
-//				Quaternionf quat = new Quaternionf()
-//					.rotateAxis(MathUtils.toRadians(-y), 0, 1, 0)
-//					.rotateAxis(MathUtils.toRadians(-x), 1, 0, 0)
-//				;
-				
 				matrix.translateLocal(-8, -8, -8)
-//					.rotateLocal(quat)
 					.rotateLocalX(MathUtils.toRadians(-x))
 					.rotateLocalY(MathUtils.toRadians(-y))
 					.translateLocal(8, 8, 8);
@@ -159,7 +153,7 @@ public class VersionResourceReader {
 				String path = model_data.getString("model");
 				
 				ModelObject model = FastModelJsonLoader.loadModel(path);
-				ModelDelegate delegate = new ModelDelegate(matrix, uvlock, model);//, x, y);
+				ModelDelegate delegate = new ModelDelegate(matrix, uvlock, model);
 				
 				((BlockData)state).model_objects.add(delegate);
 			}

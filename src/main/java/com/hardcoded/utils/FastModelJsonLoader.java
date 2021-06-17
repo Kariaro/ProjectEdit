@@ -158,7 +158,7 @@ public class FastModelJsonLoader {
 		public static final FaceType[] FACES = FaceType.values();
 		
 		private final int flags;
-		private final Vector3f normal;
+		private final Vector3fc normal;
 		private final Axis axis;
 		private FaceType(int flags, Axis axis, Vector3f normal) {
 			this.flags = flags;
@@ -167,7 +167,7 @@ public class FastModelJsonLoader {
 		}
 		
 		public Vector3f getNormal() {
-			return normal;
+			return normal.get(new Vector3f());
 		}
 		
 		public Axis getAxis() {
@@ -813,7 +813,7 @@ public class FastModelJsonLoader {
 		}
 		
 		public static class ModelFace {
-			private int rotation;
+//			private int rotation;
 			public int textureId;
 			public FaceType cullface;
 			public float[] vertex;
@@ -863,7 +863,8 @@ public class FastModelJsonLoader {
 			}
 			
 			face.textureId = id;
-			face.rotation = json.rotation;
+//			face.rotation = json.rotation;
+			face.cullface = json.cullface;
 			face.vertex = Maths.getModelVertexes(type, element.from, element.to);
 			face.uv = json.built_uv.clone();
 			LwjglRender.atlas.transformModelUv(id, face.uv);

@@ -108,8 +108,8 @@ public class WorldRender {
 			 | (world.getBlock(x - 1, y    , z    ).isOpaque() ? Direction.FACE_LEFT:0)
 			 | (world.getBlock(x    , y + 1, z    ).isOpaque() ? Direction.FACE_UP:0)
 			 | (world.getBlock(x    , y - 1, z    ).isOpaque() ? Direction.FACE_DOWN:0)
-			 | (world.getBlock(x    , y    , z + 1).isOpaque() ? Direction.FACE_FRONT:0)
-			 | (world.getBlock(x    , y    , z - 1).isOpaque() ? Direction.FACE_BACK:0);
+			 | (world.getBlock(x    , y    , z - 1).isOpaque() ? Direction.FACE_FRONT:0)
+			 | (world.getBlock(x    , y    , z + 1).isOpaque() ? Direction.FACE_BACK:0);
 	}
 
 	private ChunkList list;
@@ -213,6 +213,7 @@ public class WorldRender {
 		}
 	}
 	
+	// TODO: Sort transparent textures so they display correctly
 	private static class ChunkSectionBlob {
 		private final World world;
 		private final IChunkSection section;
@@ -349,7 +350,7 @@ public class WorldRender {
 					}
 				}
 				
-//				world.unloadRegionsNotFound(loaded_regions);
+				world.unloadRegionsNotFound(loaded_regions);
 			}
 			
 			long loaded = load_limit;

@@ -4,19 +4,21 @@ import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.system.MemoryUtil.*;
 
 import java.awt.image.BufferedImage;
+import java.nio.ByteBuffer;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.*;
-import org.lwjgl.opengl.GL;
-import org.lwjgl.opengl.WGL;
+import org.lwjgl.opengl.*;
+import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.system.windows.User32;
 
 import com.hardcoded.lwjgl.async.LwjglAsyncThread;
 import com.hardcoded.lwjgl.input.Input;
 import com.hardcoded.lwjgl.util.LoadingException;
-import com.hardcoded.main.ProjectEdit;
 import com.hardcoded.render.LwjglRender;
 
 /**
@@ -135,6 +137,7 @@ public class LwjglWindow implements Runnable {
 		asyncThread.start();
 		
 		WGL.wglMakeCurrent(dc, context_1);
+		
 		render = new LwjglRender(window, width, height);
 		glfwShowWindow(window);
 		
