@@ -8,27 +8,6 @@ import com.hardcoded.lwjgl.data.TextureAtlas;
 import com.hardcoded.utils.FastModelJsonLoader.FaceType;
 
 public class Maths {
-//	public static float[] getModelUvs(Vector4f uv, Texture texture) {
-//		float[] array = new float[] {
-//			uv.x, uv.w, uv.z, uv.w, uv.z, uv.y,
-//			uv.x, uv.w, uv.z, uv.y, uv.x, uv.y
-//		};
-//		
-//		if(texture != null && uv != null) {
-//			float width = texture.width;
-//			float height = texture.height;
-//			if(width < 1) width = 1;
-//			if(height < 1) height = 1;
-//			
-//			for(int i = 0; i < 12; i += 2) {
-//				array[i] /= (float)width;
-//				array[i + 1] /= (float)height;
-//			}
-//		}
-//		
-//		return array;
-//	}
-	
 	public static Vector4f generateUv(FaceType face, Vector3f from, Vector3f to) {
 		switch(face) {
 			case south: // back

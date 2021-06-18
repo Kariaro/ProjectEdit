@@ -395,15 +395,6 @@ public class LwjglRender {
 							float[] uv = Maths.getModelUv(face, atlas, atlas.getImageId("minecraft:block/magenta_glazed_terracotta"), from, to);
 							{
 								Vector4f v_uv = Maths.generateUv(face, from, to);
-//								if(x == 90 && y == 90) {
-//									if(frot == FaceType.north) {
-//										System.out.println(testXY);
-//										uv = FastModelJsonLoader.rotateUvTest(v_uv, 270);
-//									} else {
-//										uv = FastModelJsonLoader.rotateUvTest(v_uv, testXY.getTextureRotation(frot));
-//									}
-//								} else {
-//								}
 								uv = FastModelJsonLoader.rotateUvTest(v_uv, testXY.getTextureRotation(frot));
 								atlas.transformModelUv(atlas.getImageId("minecraft:block/magenta_glazed_terracotta"), uv);
 							}

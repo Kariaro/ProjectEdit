@@ -42,16 +42,7 @@ public class Texture {
 		this.name = path;
 		this.path = path;
 		
-		//load(buf, interpolation);
-		
 		cacheTextureId.put(path, this);
-		
-//		if(!LwjglAsyncThread.isCurrentThread()) {
-//			LwjglAsyncThread.runAsync(() -> {
-//				loadData(interpolation);
-//			});
-//			return;
-//		}
 		
 		loadData(interpolation);
 	}

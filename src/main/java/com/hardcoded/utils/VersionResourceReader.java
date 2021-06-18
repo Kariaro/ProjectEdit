@@ -170,23 +170,11 @@ public class VersionResourceReader {
 	}
 	
 	private List<JSONObject> resolve_multipart(IBlockData state, JSONArray array) {
-		boolean debug = false;
-		if(state.getName().equals("black_stained_glass_pane")) {
-			debug = true;
-			System.out.println("################################################################");
-			System.out.println("State: " + state);
-			System.out.println("Multipart: " + array);
-			System.out.println("--------------------------------------------\n");
-		}
-		
 		IBlockStateList stateList = state.getStateList();
 		
 		List<JSONObject> model_data = new ArrayList<>();
 		for(int i = 0; i < array.length(); i++) {
 			JSONObject model_case = array.getJSONObject(i);
-			if(debug) {
-				System.out.println("    " + model_case);
-			}
 			
 			List<JSONObject> models = new ArrayList<>();
 			{
@@ -235,12 +223,6 @@ public class VersionResourceReader {
 			}
 		}
 		
-		if(debug) {
-			System.out.println("LOADED:");
-			for(JSONObject object : model_data) {
-				System.out.println("    : " + object);
-			}
-		}
 		return model_data;
 	}
 	
@@ -269,8 +251,6 @@ public class VersionResourceReader {
 		}
 		
 		if(key == null) return null;
-		
-//		System.out.println(state + ", " + key);
 		Object obj = variants.get(key);
 		
 		List<JSONObject> model_data = null;

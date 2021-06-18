@@ -387,9 +387,6 @@ public class WorldRender {
 						}
 					}
 					
-//					float dist = (i - x) * (i - x) + (j - z) * (j - z) + y * y / 8;
-//					int lod = (int)(Math.log(Math.sqrt(dist) * 2 - 10));
-					
 					if(blob != null) {
 						blob.render();
 						count++;
