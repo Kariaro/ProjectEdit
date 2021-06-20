@@ -12,6 +12,7 @@ public class BlockData implements IBlockData {
 	protected final String namespace;
 	protected final String name;
 	protected final int id;
+	protected final IBlockData defaultState;
 	
 	/**
 	 * This could change between runns
@@ -23,6 +24,7 @@ public class BlockData implements IBlockData {
 	public List<FastModel.ModelObject> model_objects = new ArrayList<>();
 	
 	public BlockData(String name, List<IBlockState> states) {
+		this.defaultState = this;
 		this.namespace = name.substring(0, name.indexOf(':'));
 		this.name = name.substring(name.indexOf(':') + 1);
 		this.id = name.hashCode();
@@ -71,7 +73,7 @@ public class BlockData implements IBlockData {
 				}
 				
 				this.children.add(
-					new BlockData(name, list)
+					new BlockData(name, this, list)
 					.setColor(rgb)
 					.setOccluding(occluding)
 				);
@@ -79,7 +81,8 @@ public class BlockData implements IBlockData {
 		}
 	}
 	
-	public BlockData(String name, IBlockStateList stateList) {
+	private BlockData(String name, IBlockData defaultState, IBlockStateList stateList) {
+		this.defaultState = defaultState;
 		this.namespace = name.substring(0, name.indexOf(':'));
 		this.name = name.substring(name.indexOf(':') + 1);
 		this.id = name.hashCode();
@@ -254,6 +257,11 @@ public class BlockData implements IBlockData {
 	@Override
 	public IBlockStateList getStateList() {
 		return stateList;
+	}
+	
+	@Override
+	public IBlockData getDefaultState() {
+		return defaultState;
 	}
 	
 	@Override

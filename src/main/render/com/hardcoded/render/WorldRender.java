@@ -279,7 +279,9 @@ public class WorldRender {
 	}
 	
 	public void unloadCache() {
-		list.unloadCache();
+		if(list != null) {
+			list.unloadCache();
+		}
 	}
 	
 	private class ChunkList {

@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.hardcoded.mc.constants.Direction;
 import com.hardcoded.mc.general.world.BlockData;
+import com.hardcoded.mc.general.world.IBlockData;
 import com.hardcoded.render.utils.MeshBuilder;
 import com.hardcoded.utils.FastModelJsonLoader.FaceType;
 import com.hardcoded.utils.FastModelJsonLoader.FastModel.ModelElement;
@@ -51,6 +52,12 @@ public class FastModelRenderer {
 				return new float[] { 0.1f, 0.1f, 0.5f };
 			default:
 				return new float[] { 0.0f, 0.0f, 0.0f };
+		}
+	}
+	
+	public static void renderModel(IBlockData bs, float x, float y, float z, MeshBuilder builder, int faces) {
+		if(bs instanceof BlockData) {
+			renderModelFast((BlockData)bs, x, y, z, builder, faces);
 		}
 	}
 	

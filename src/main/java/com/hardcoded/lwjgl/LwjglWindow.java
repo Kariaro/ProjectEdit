@@ -4,16 +4,12 @@ import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.system.MemoryUtil.*;
 
 import java.awt.image.BufferedImage;
-import java.nio.ByteBuffer;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.*;
 import org.lwjgl.opengl.*;
-import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.system.windows.User32;
 
 import com.hardcoded.lwjgl.async.LwjglAsyncThread;
@@ -29,7 +25,7 @@ public class LwjglWindow implements Runnable {
 	private static LwjglWindow instance;
 			
 	public static final BufferedImage ICON = null;
-	public static final int TARGET_FPS = 120;
+	public static final int TARGET_FPS = 60000;
 	
 	protected final ConcurrentLinkedDeque<Runnable> tasks;
 	private LwjglRender render;

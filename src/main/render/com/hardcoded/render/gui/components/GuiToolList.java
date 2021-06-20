@@ -1,4 +1,4 @@
-package com.hardcoded.render.gui;
+package com.hardcoded.render.gui.components;
 
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -12,17 +12,20 @@ import com.hardcoded.lwjgl.input.Input;
 import com.hardcoded.main.ProjectEdit;
 import com.hardcoded.mc.general.files.Blocks;
 import com.hardcoded.mc.general.files.Position;
+import com.hardcoded.mc.general.world.IBlockData;
 import com.hardcoded.mc.general.world.World;
 import com.hardcoded.mc.general.world.WorldUtils;
+import com.hardcoded.render.gui.GuiComponent;
+import com.hardcoded.render.gui.GuiRender;
 import com.hardcoded.render.utils.RenderUtil;
 
-public class GuiToolList {
+public class GuiToolList extends GuiComponent {
 	private Texture box;
 	private Texture box_highlight;
 	private Texture box_selected;
 	private int index = -1;
 	
-	private final GuiRender gui;
+	private GuiRender gui;
 	
 	public GuiToolList(GuiRender gui) {
 		this.gui = gui;
@@ -36,12 +39,18 @@ public class GuiToolList {
 	private Position pos2;
 	private boolean dragging;
 	
+	@Override
+	public void tick() {
+		
+	}
+	
+	@Override
 	public void render() {
 		World world = ProjectEdit.getInstance().getWorld();
 		Camera camera = ProjectEdit.getInstance().getCamera();
 		
 		for(int i = 0; i < 8; i++) {
-			renderBox(i, 0, i * 72, 72, 72);
+			renderBox(x + i, y, i * 72, 72, 72);
 		}
 		
 		if(index == 0) {
@@ -122,13 +131,18 @@ public class GuiToolList {
 					(z2 - z1 + 1)
 				);
 				
+				IBlockData selected = gui.selectedBlock;
+				if(selected == null) {
+					selected = Blocks.STONE;
+				}
+				
 				if(Input.isKeyDown(GLFW.GLFW_KEY_L)) {
 					// Fill the area with blocks
 					
 					for(int i = x1; i <= x2; i++) {
 						for(int j = y1; j <= y2; j++) {
 							for(int k = z1; k <= z2; k++) {
-								world.setBlock(Blocks.STONE, i, j, k);
+								world.setBlock(selected, i, j, k);
 							}
 						}
 					}

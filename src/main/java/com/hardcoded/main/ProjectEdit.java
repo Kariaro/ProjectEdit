@@ -9,6 +9,7 @@ import com.hardcoded.api.IProjectEdit;
 import com.hardcoded.lwjgl.Camera;
 import com.hardcoded.lwjgl.LwjglWindow;
 import com.hardcoded.mc.general.world.World;
+import com.hardcoded.render.LwjglRender;
 
 /**
  * This is the initial starting point for the editor application.
@@ -17,9 +18,11 @@ import com.hardcoded.mc.general.world.World;
  */
 public class ProjectEdit implements IProjectEdit {
 	private static final Logger LOGGER = LogManager.getLogger(ProjectEdit.class);
+	private static final Unsafe unsafe = new Unsafe();
 	private static ProjectEdit instance;
 	
 	private LwjglWindow window;
+	private LwjglRender render;
 	private World world;
 	private Camera camera;
 	
@@ -63,7 +66,24 @@ public class ProjectEdit implements IProjectEdit {
 		return window;
 	}
 	
+	public LwjglRender getRender() {
+		return render;
+	}
+	
 	public static ProjectEdit getInstance() {
 		return instance;
+	}
+	
+	public static Unsafe getUnsafe() {
+		return unsafe;
+	}
+	
+	public static final class Unsafe {
+		private Unsafe() {}
+		
+		@Deprecated
+		public void setRender(LwjglRender render) {
+			instance.render = render;
+		}
 	}
 }

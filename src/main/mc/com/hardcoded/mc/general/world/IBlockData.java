@@ -26,5 +26,7 @@ public interface IBlockData {
 	
 	IBlockStateList getStateList();
 	
+	IBlockData getDefaultState();
+	
 	boolean isOpaque();
 }
