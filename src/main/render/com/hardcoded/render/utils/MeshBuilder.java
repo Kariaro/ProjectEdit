@@ -18,11 +18,11 @@ public class MeshBuilder {
 	private final int flags;
 	public FloatArray verts;
 	public FloatArray uvs;
-	private FloatArray colors;
+	public FloatArray colors;
 	private FloatArray normals;
 	
 	public MeshBuilder() {
-		this(_VERTS | _UV);
+		this(_VERTS | _UV | _COLOR);
 	}
 	
 	public MeshBuilder(int flags) {

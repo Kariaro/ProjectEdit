@@ -23,16 +23,19 @@ public class LwjglSettings {
 	private static final String KEY_FOV = "fov";
 	private static final String KEY_MAX_FPS = "max_fps";
 	private static final String KEY_RENDER_DISTANCE = "render_distance";
+	private static final String KEY_TRANSPARENT_TEXTURES = "transparent_textures";
 	
 	private static final float DEFAULT_FOV = 90;
 	private static final int DEFAULT_MAX_FPS = 120;
 	private static final int DEFAULT_RENDER_DISTANCE = 8;
+	private static final boolean DEFAULT_TRANSPARENT_TEXTURES = false;
 	
 	
 	// fields
 	private int max_fps;
 	private int renderDistance;
 	private float fov;
+	private boolean transparentTextures;
 	
 	private LwjglSettings() {
 		resetValues();
@@ -42,18 +45,21 @@ public class LwjglSettings {
 		fov = DEFAULT_FOV;
 		renderDistance = DEFAULT_RENDER_DISTANCE;
 		max_fps = DEFAULT_MAX_FPS;
+		transparentTextures = DEFAULT_TRANSPARENT_TEXTURES;
 	}
 	
 	private void storeValues(Properties prop) {
 		prop.setProperty(KEY_FOV, FLOAT_FORMAT.format(fov));
 		prop.setProperty(KEY_RENDER_DISTANCE, Integer.toString(renderDistance));
 		prop.setProperty(KEY_MAX_FPS, Integer.toString(max_fps));
+		prop.setProperty(KEY_TRANSPARENT_TEXTURES, Boolean.toString(transparentTextures));
 	}
 	
 	private void loadValues(Properties prop) {
 		fov = Float.valueOf(prop.getProperty(KEY_FOV));
 		renderDistance = Integer.valueOf(prop.getProperty(KEY_RENDER_DISTANCE));
 		max_fps = Integer.valueOf(prop.getProperty(KEY_MAX_FPS));
+		transparentTextures = Boolean.valueOf(prop.getProperty(KEY_TRANSPARENT_TEXTURES));
 	}
 	
 	
@@ -115,5 +121,13 @@ public class LwjglSettings {
 	public static void setMaxFps(int fps) {
 		if(fps < 1) throw new RuntimeException("Invalid fps: " + fps);
 		instance.max_fps = fps;
+	}
+	
+	public static boolean useTransparentTextures() {
+		return instance.transparentTextures;
+	}
+	
+	public static void useTransparentTextures(boolean enable) {
+		instance.transparentTextures = enable;
 	}
 }

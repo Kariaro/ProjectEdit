@@ -8,14 +8,16 @@ import java.util.Map;
 
 import org.lwjgl.opengl.GL11;
 
-public class TextureAtlas {
-	private static final int WIDTH = 2048;
-	private static final int HEIGHT = 2048;
+import com.hardcoded.api.IResource;
+
+public class TextureAtlas extends IResource {
+	protected final int WIDTH;
+	protected final int HEIGHT;
 	
 	/**
 	 * This is the size of each box created inside this atlas
 	 */
-	private static final int ALIGN = 16;
+	protected final int ALIGN;
 	
 	/**
 	 * This is the padding amount for each texture in the atlas.
@@ -33,24 +35,30 @@ public class TextureAtlas {
 	 *  C C E E E C C
 	 * </pre>
 	 */
-	private final int PADDING_PIXELS;
+	protected final int PADDING_PIXELS;
 	
-	private static final int ATLAS_MAP_WIDTH = WIDTH / ALIGN;
-	private static final int ATLAS_MAP_HEIGHT = HEIGHT / ALIGN;
+	protected final int ATLAS_MAP_WIDTH;
+	protected final int ATLAS_MAP_HEIGHT;
 	
-	private final AtlasUv[] atlas_map = new AtlasUv[ATLAS_MAP_WIDTH * ATLAS_MAP_HEIGHT];
-	private final Map<String, Integer> atlas_path_to_id;
-	private final BufferedImage image;
-	private Texture atlas;
+	protected final AtlasUv[] atlas_map;
+	protected final Map<String, Integer> atlas_path_to_id;
+	protected final BufferedImage image;
+	protected Texture atlas;
 	
 	public TextureAtlas() {
-		this(8);
+		this(8, 16, 2048, 2048);
 	}
 	
-	public TextureAtlas(int padding_pixels) {
-		this.image = new BufferedImage(WIDTH, HEIGHT, BufferedImage.TYPE_INT_ARGB);
+	public TextureAtlas(int padding, int align, int width, int height) {
+		this.image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 		this.atlas_path_to_id = new HashMap<>();
-		this.PADDING_PIXELS = padding_pixels;
+		this.PADDING_PIXELS = padding;
+		this.WIDTH = width;
+		this.HEIGHT = height;
+		this.ALIGN = align;
+		this.ATLAS_MAP_WIDTH = WIDTH / ALIGN;
+		this.ATLAS_MAP_HEIGHT = HEIGHT / ALIGN;
+		this.atlas_map = new AtlasUv[ATLAS_MAP_WIDTH * ATLAS_MAP_HEIGHT];
 	}
 	
 	public synchronized int addTexture(String path, BufferedImage bi) {
@@ -90,7 +98,7 @@ public class TextureAtlas {
 		return id;
 	}
 	
-	private void applyImage(Graphics2D g, BufferedImage bi, int xp, int yp) {
+	protected void applyImage(Graphics2D g, BufferedImage bi, int xp, int yp) {
 		int w = bi.getWidth();
 		int h = bi.getHeight();
 		
@@ -132,23 +140,15 @@ public class TextureAtlas {
 		return atlas_path_to_id.getOrDefault(path, -1);
 	}
 	
-	public void compile() {
-		if(atlas != null) {
-			atlas.cleanup();
-			atlas = null;
-		}
-		
-		atlas = Texture.loadBufferedImageTexture(image, GL11.GL_NEAREST);
-	}
-	
-	public AtlasUv getUv(int id) {
-		return atlas_map[id];
+	public int entries() {
+		return atlas_path_to_id.size();
 	}
 	
 	/**
 	 * Remove all images loaded in this atlas and delete textures.
 	 */
-	public void dispose() {
+	@Override
+	public void unload() {
 		if(atlas != null) {
 			atlas.cleanup();
 			atlas = null;
@@ -167,6 +167,20 @@ public class TextureAtlas {
 		g.clearRect(0, 0, image.getWidth(), image.getHeight());
 		g.dispose();
 	}
+
+	@Override
+	public void reload() {
+		if(atlas != null) {
+			atlas.cleanup();
+			atlas = null;
+		}
+		
+		atlas = Texture.loadBufferedImageTexture(image, GL11.GL_NEAREST);
+	}
+	
+	public AtlasUv getUv(int id) {
+		return atlas_map[id];
+	}
 	
 	
 	/**
@@ -177,7 +191,7 @@ public class TextureAtlas {
 	 * @param height the height in pixels
 	 * @return the index or {@code -1} if no index was found
 	 */
-	private int findSpace(int width, int height) {
+	protected int findSpace(int width, int height) {
 		// Calculate the width and height of the texture if rendered on the atlas
 		int wi = width + PADDING_PIXELS * 2;
 		int he = height + PADDING_PIXELS * 2;
