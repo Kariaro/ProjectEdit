@@ -3,14 +3,15 @@
   <groupId>ProjectEdit</groupId>
   <artifactId>ProjectEdit</artifactId>
   <version>0.0.1-SNAPSHOT</version>
+  
   <build>
     <plugins>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.8.1</version>
         <configuration>
-          <source>1.8</source>
-          <target>1.8</target>
+          <source>15</source>
+          <target>15</target>
         </configuration>
       </plugin>
     </plugins>
@@ -45,24 +46,50 @@
     </dependency>
     
     <!-- https://mvnrepository.com/artifact/org.json/json -->
-	<dependency>
-	  <groupId>org.json</groupId>
-	  <artifactId>json</artifactId>
-	  <version>20210307</version>
-	</dependency>
-	
-	<!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-core -->
-	<dependency>
-	  <groupId>com.fasterxml.jackson.core</groupId>
-	  <artifactId>jackson-core</artifactId>
-	  <version>2.11.0</version>
-	</dependency>
-	
-	<!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind -->
-	<dependency>
-	  <groupId>com.fasterxml.jackson.core</groupId>
-	  <artifactId>jackson-databind</artifactId>
-	  <version>2.11.0</version>
-	</dependency>
+    <dependency>
+      <groupId>org.json</groupId>
+      <artifactId>json</artifactId>
+      <version>20210307</version>
+    </dependency>
+    
+    <!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-core -->
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-core</artifactId>
+      <version>2.11.0</version>
+    </dependency>
+    
+    <!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind -->
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <version>2.11.0</version>
+    </dependency>
+    
+    <dependency>
+      <groupId>org.lwjgl</groupId>
+      <artifactId>lwjgl</artifactId>
+      <version>3.2.3</version>
+    </dependency>
+    
+    <!-- https://mvnrepository.com/artifact/org.lwjgl/lwjgl-stb -->
+    <dependency>
+      <groupId>org.lwjgl</groupId>
+      <artifactId>lwjgl-stb</artifactId>
+      <version>3.2.3</version>
+    </dependency>
+    
+    <dependency>
+      <groupId>org.lwjgl</groupId>
+      <artifactId>lwjgl-glfw</artifactId>
+      <version>3.2.3</version>
+    </dependency>
+    
+    <!-- https://mvnrepository.com/artifact/org.lwjgl/lwjgl-opengl -->
+    <dependency>
+      <groupId>org.lwjgl</groupId>
+      <artifactId>lwjgl-opengl</artifactId>
+      <version>3.2.3</version>
+    </dependency>
   </dependencies>
 </project>
