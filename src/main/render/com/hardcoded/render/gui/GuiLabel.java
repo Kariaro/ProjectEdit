@@ -82,12 +82,7 @@ public class GuiLabel extends GuiComponent {
 	}
 	
 	@Override
-	public void tick() {
-		
-	}
-	
-	@Override
-	public void render() {
+	public void renderComponent() {
 		String msg = text;
 		if(msg == null) return;
 		
@@ -95,8 +90,8 @@ public class GuiLabel extends GuiComponent {
 		
 		float fs = font_size;
 		float sp = (fs / 2.0f) - 1;
-		float xo = x;
-		float yo = y;
+		float xo = getX();
+		float yo = getY();
 		GL11.glColor4f(color.x, color.y, color.z, color.w);
 		for(int i = 0, len = msg.length(); i < len; i++, xo += fs - sp) {
 			Integer id = glyph_map.get(msg.charAt(i));

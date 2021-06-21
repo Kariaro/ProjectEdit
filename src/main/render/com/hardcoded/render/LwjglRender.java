@@ -44,8 +44,6 @@ import com.hardcoded.utils.FastModelJsonLoader.TestXY;
 public class LwjglRender {
 	private static final Logger LOGGER = LogManager.getLogger(LwjglRender.class);
 	
-//	public static final TextureAtlas atlas = new TextureAtlas();
-	
 	private final long window;
 	private GuiRender gui;
 	
@@ -55,14 +53,12 @@ public class LwjglRender {
 	public Camera camera;
 	
 	private WorldRender world_render;
-	public LwjglRender(long window, int width, int height) {
+	public LwjglRender(long window, GuiRender render, int width, int height) {
 		this.window = window;
 		
-//		ProjectEdit.getUnsafe().setRender(this);
-		
 		camera = ProjectEdit.getInstance().getCamera();
+		this.gui = render;
 		world_render = new WorldRender(this);
-		gui = new GuiRender(this);
 		
 		setViewport(width, height);
 		

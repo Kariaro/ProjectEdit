@@ -2,29 +2,44 @@ package com.hardcoded.lwjgl.input;
 
 import org.lwjgl.glfw.*;
 
+import com.hardcoded.render.gui.GuiListener;
+import com.hardcoded.render.gui.GuiListener.GuiEvent.*;
+import com.hardcoded.render.gui.GuiRender;
+
 /**
  * @author HardCoded
  */
 public class Input {
 	private static final boolean[] keys = new boolean[65536];
 	private static final boolean[] keys_poll = new boolean[65536];
-	private static final boolean[] mouse_buttons = new boolean[256];
+	private static final boolean[] mouse_buttons = new boolean[64];
+	
+	private static boolean has_focus;
+	
+	// Gui
+	private static GuiListener focused_element;
+	
+	// Contains the last key modifiers
+	private static int LAST_MODIFIERS = 0;
+	
 	private static double mouse_x = -1;
 	private static double mouse_y = -1;
 	private static double scroll_delta_y = 0;
 	private static double scroll_delta_x = 0;
 	
 	private GLFWKeyCallback keyboard;
-	private GLFWCursorPosCallback mouse;
+	private GLFWCursorPosCallback mouse_move;
 	private GLFWMouseButtonCallback mouse_button;
 	private GLFWScrollCallback mouse_wheel;
+	private GLFWWindowFocusCallback window_focus;
 	
-	public Input() {
+	public Input(final GuiRender gui) {
 		keyboard = new GLFWKeyCallback() {
 			@Override
 			public void invoke(long window, int key, int scancode, int action, int mods) {
-				if(key < 0 || key >= keys.length) return;
+				LAST_MODIFIERS = mods;
 				
+				if(key < 0 || key >= keys.length) return;
 				boolean value = (action != GLFW.GLFW_RELEASE);
 				Input.keys[key] = value;
 				
@@ -33,33 +48,106 @@ public class Input {
 				} else if(action == GLFW.GLFW_PRESS) {
 					Input.keys_poll[key] = true;
 				}
-			}
-		};
-		
-		mouse = new GLFWCursorPosCallback() {
-			@Override
-			public void invoke(long window, double xpos, double ypos) {
-				Input.mouse_x = xpos;
-				Input.mouse_y = ypos;
+				
+				if(has_focus) {
+					GuiKeyEvent event = new GuiKeyEvent(key, action, mods);
+					if(focused_element != null) {
+						focused_element.onKeyEvent(event);
+					} else {
+						gui.processKeyEvent(event);
+					}
+					
+					if(event.isConsumed()) {
+						Input.keys_poll[key] = false;
+						Input.keys[key] = false;
+					}
+				}
 			}
 		};
 		
 		mouse_button = new GLFWMouseButtonCallback() {
 			@Override
 			public void invoke(long window, int button, int action, int mods) {
+				LAST_MODIFIERS = mods;
+				
 				if(button < 0 || button >= mouse_buttons.length) return;
 				mouse_buttons[button] = (action != GLFW.GLFW_RELEASE);
+				
+				if(has_focus) {
+					GuiMouseEvent event = new GuiMousePress((float)mouse_x, (float)mouse_y, button, action, mods);
+					focused_element = gui.processMouseEvent(event);
+					if(action == GLFW.GLFW_RELEASE) {
+						focused_element = null;
+					}
+				}
+			}
+		};
+		
+		mouse_move = new GLFWCursorPosCallback() {
+			@Override
+			public void invoke(long window, double xpos, double ypos) {
+				Input.mouse_x = xpos;
+				Input.mouse_y = ypos;
+				
+				if(has_focus) {
+					GuiMouseEvent event = new GuiMouseMove((float)xpos, (float)ypos, LAST_MODIFIERS);
+					
+					if(focused_element != null) {
+						focused_element.onMouseEvent(event);
+					} else {
+						gui.processMouseEvent(event);
+					}
+				}
 			}
 		};
 		
 		mouse_wheel = new GLFWScrollCallback() {
 			@Override
 			public void invoke(long window, double xoffset, double yoffset) {
-				scroll_delta_x = xoffset;
-				scroll_delta_y = yoffset;
+				GuiMouseEvent event = new GuiMouseScroll((float)mouse_x, (float)mouse_y, (float)yoffset, LAST_MODIFIERS);
+				if(focused_element != null) {
+					focused_element.onMouseEvent(event);
+				} else {
+					gui.processMouseEvent(event);
+				}
+				
+				if(!event.isConsumed()) {
+					scroll_delta_x = xoffset;
+					scroll_delta_y = yoffset;
+				}
+			}
+		};
+		
+		window_focus = new GLFWWindowFocusCallback() {
+			@Override
+			public void invoke(long window, boolean focused) {
+				Input.has_focus = focused;
+				Input.focused_element = null;
 			}
 		};
 	}
+	
+	public GLFWKeyCallback getKeyboard() {
+		return keyboard;
+	}
+	
+	public GLFWCursorPosCallback getMouse() {
+		return mouse_move;
+	}
+	
+	public GLFWMouseButtonCallback getMouseButton() {
+		return mouse_button;
+	}
+	
+	public GLFWScrollCallback getMouseWheel() {
+		return mouse_wheel;
+	}
+	
+	public GLFWWindowFocusCallback getFocusCallback() {
+		return window_focus;
+	}
+	
+	// GLOBAL
 	
 	public static boolean pollKey(int key) {
 		if(key < 0 || key >= keys_poll.length) return false;
@@ -113,19 +201,11 @@ public class Input {
 		return mouse_buttons[key];
 	}
 	
-	public GLFWKeyCallback getKeyboard() {
-		return keyboard;
+	public static boolean hasFocus() {
+		return has_focus;
 	}
-	
-	public GLFWCursorPosCallback getMouse() {
-		return mouse;
-	}
-	
-	public GLFWMouseButtonCallback getMouseButton() {
-		return mouse_button;
-	}
-	
-	public GLFWScrollCallback getMouseWheel() {
-		return mouse_wheel;
+
+	public static boolean isFocused(Object obj) {
+		return obj == focused_element;
 	}
 }

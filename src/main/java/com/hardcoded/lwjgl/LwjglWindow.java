@@ -9,13 +9,16 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.lwjgl.glfw.*;
-import org.lwjgl.opengl.*;
+import org.lwjgl.opengl.GL;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.WGL;
 import org.lwjgl.system.windows.User32;
 
 import com.hardcoded.lwjgl.async.LwjglAsyncThread;
 import com.hardcoded.lwjgl.input.Input;
 import com.hardcoded.lwjgl.util.LoadingException;
 import com.hardcoded.render.LwjglRender;
+import com.hardcoded.render.gui.GuiRender;
 
 /**
  * This is the main thread of the lwjgl application.
@@ -25,10 +28,12 @@ public class LwjglWindow implements Runnable {
 	private static LwjglWindow instance;
 			
 	public static final BufferedImage ICON = null;
-	public static final int TARGET_FPS = 60000;
+	public static final int TARGET_FPS = 120;
 	
 	protected final ConcurrentLinkedDeque<Runnable> tasks;
 	private LwjglRender render;
+	private GuiRender gui;
+	
 	private boolean running;
 	private long window;
 	private int fps;
@@ -88,11 +93,13 @@ public class LwjglWindow implements Runnable {
 		GLFWVidMode vidmode = glfwGetVideoMode(glfwGetPrimaryMonitor());
 		glfwSetWindowPos(window, (vidmode.width() - width) / 2, (vidmode.height() - height) / 2);
 		
-		input = new Input();
+		gui = new GuiRender();
+		input = new Input(gui);
 		glfwSetKeyCallback(window, input.getKeyboard());
 		glfwSetCursorPosCallback(window, input.getMouse());
 		glfwSetMouseButtonCallback(window, input.getMouseButton());
 		glfwSetScrollCallback(window, input.getMouseWheel());
+		glfwSetWindowFocusCallback(window, input.getFocusCallback());
 		
 		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 		glfwSetFramebufferSizeCallback(window, new GLFWFramebufferSizeCallback() {
@@ -134,7 +141,7 @@ public class LwjglWindow implements Runnable {
 		
 		WGL.wglMakeCurrent(dc, context_1);
 		
-		render = new LwjglRender(window, width, height);
+		render = new LwjglRender(window, gui, width, height);
 		glfwShowWindow(window);
 		
 		return true;
