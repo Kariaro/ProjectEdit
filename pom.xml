@@ -3,7 +3,6 @@
   <groupId>ProjectEdit</groupId>
   <artifactId>ProjectEdit</artifactId>
   <version>0.0.2-SNAPSHOT</version>
-  
   <build>
     <plugins>
       <plugin>
@@ -14,15 +13,56 @@
           <target>15</target>
         </configuration>
       </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <version>3.0.0</version>
+        <executions>
+          <execution>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>add-source</goal>
+            </goals>
+            <configuration>
+              <sources>
+                <source>src/main/mc</source>
+                <source>src/main/render</source>
+              </sources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <source>11</source>
+          <target>11</target>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
-  
+
+  <properties>
+    <lwjgl.version>3.2.3</lwjgl.version>
+    <joml.version>1.10.1</joml.version>
+    <lwjgl.natives>natives-windows</lwjgl.natives>
+  </properties>
+
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>org.lwjgl</groupId>
+        <artifactId>lwjgl-bom</artifactId>
+        <version>${lwjgl.version}</version>
+        <scope>import</scope>
+        <type>pom</type>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
   <dependencies>
-    <dependency>
-      <groupId>org.joml</groupId>
-      <artifactId>joml</artifactId>
-      <version>1.9.24</version>
-    </dependency>
     
     <!-- https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-api -->
     <dependency>
@@ -69,27 +109,76 @@
     <dependency>
       <groupId>org.lwjgl</groupId>
       <artifactId>lwjgl</artifactId>
-      <version>3.2.3</version>
+      <classifier>${lwjgl.natives}</classifier>
     </dependency>
     
     <!-- https://mvnrepository.com/artifact/org.lwjgl/lwjgl-stb -->
     <dependency>
       <groupId>org.lwjgl</groupId>
       <artifactId>lwjgl-stb</artifactId>
-      <version>3.2.3</version>
+      <classifier>${lwjgl.natives}</classifier>
     </dependency>
     
     <dependency>
       <groupId>org.lwjgl</groupId>
       <artifactId>lwjgl-glfw</artifactId>
-      <version>3.2.3</version>
+      <classifier>${lwjgl.natives}</classifier>
     </dependency>
     
     <!-- https://mvnrepository.com/artifact/org.lwjgl/lwjgl-opengl -->
     <dependency>
       <groupId>org.lwjgl</groupId>
       <artifactId>lwjgl-opengl</artifactId>
-      <version>3.2.3</version>
+      <classifier>${lwjgl.natives}</classifier>
+    </dependency>
+
+
+    <!-- LWJGL 3 Dependencies -->
+    <!-- https://mvnrepository.com/artifact/org.lwjgl/lwjgl -->
+    <dependency>
+      <groupId>org.lwjgl</groupId>
+      <artifactId>lwjgl</artifactId>
+    </dependency>
+    <!-- https://mvnrepository.com/artifact/org.lwjgl/lwjgl-glfw -->
+    <dependency>
+      <groupId>org.lwjgl</groupId>
+      <artifactId>lwjgl-glfw</artifactId>
+    </dependency>
+    <!-- https://mvnrepository.com/artifact/org.lwjgl/lwjgl-opengl -->
+    <dependency>
+      <groupId>org.lwjgl</groupId>
+      <artifactId>lwjgl-opengl</artifactId>
+    </dependency>
+    <dependency>
+      <!-- https://mvnrepository.com/artifact/org.lwjgl/lwjgl-stb -->
+      <groupId>org.lwjgl</groupId>
+      <artifactId>lwjgl-stb</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.joml</groupId>
+      <artifactId>joml</artifactId>
+      <version>${joml.version}</version>
+    </dependency>
+    <!-- LWJGL 3 Natives -->
+    <dependency>
+      <groupId>org.lwjgl</groupId>
+      <artifactId>lwjgl-stb</artifactId>
+      <classifier>${lwjgl.natives}</classifier>
+    </dependency>
+    <dependency>
+      <groupId>org.lwjgl</groupId>
+      <artifactId>lwjgl-opengl</artifactId>
+      <classifier>${lwjgl.natives}</classifier>
+    </dependency>
+    <dependency>
+      <groupId>org.lwjgl</groupId>
+      <artifactId>lwjgl-glfw</artifactId>
+      <classifier>${lwjgl.natives}</classifier>
+    </dependency>
+    <dependency>
+      <groupId>org.lwjgl</groupId>
+      <artifactId>lwjgl</artifactId>
+      <classifier>${lwjgl.natives}</classifier>
     </dependency>
   </dependencies>
 </project>
