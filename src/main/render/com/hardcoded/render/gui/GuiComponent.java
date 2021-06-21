@@ -7,17 +7,23 @@ import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL11;
 
 import com.hardcoded.lwjgl.input.Input;
+import com.hardcoded.render.gui.GuiListener.GuiEvent.GuiKeyEvent;
+import com.hardcoded.render.gui.GuiListener.GuiEvent.GuiMouseEvent;
 
 public abstract class GuiComponent {
-	protected GuiComponent parent;
-	protected int x, y, width, height;
+	private GuiComponent parent;
+	private int width;
+	private int height;
+	private int x;
+	private int y;
+	
 	protected List<GuiComponent> children;
 	
 	public GuiComponent() {
 		this.children = List.of();
 	}
 	
-	public void add(GuiComponent comp) {
+	protected void add(GuiComponent comp) {
 		if(comp == null) return;
 		
 		if(children.isEmpty()) {
@@ -30,17 +36,8 @@ public abstract class GuiComponent {
 		comp.parent = this;
 	}
 	
-	/**
-	 * Use this method for input events
-	 */
-	public abstract void tick();
-	
-	public void fireTick() {
-		tick();
-		
-		for(GuiComponent comp : children) {
-			comp.fireTick();
-		}
+	public GuiComponent getParent() {
+		return parent;
 	}
 	
 	public boolean isMouseInside() {
@@ -77,7 +74,11 @@ public abstract class GuiComponent {
 		return !(mx <= x || my <= y || mx > x + w || my > y + h);
 	}
 	
-	public abstract void render();
+	public final void render() {
+		renderComponent();
+	}
+	
+	protected abstract void renderComponent();
 	
 	public int getHeight() {
 		return height;
@@ -93,6 +94,10 @@ public abstract class GuiComponent {
 	
 	public int getY() {
 		return y;
+	}
+	
+	public boolean isFocused() {
+		return Input.isFocused(this);
 	}
 	
 	public void renderBox() {
@@ -111,5 +116,43 @@ public abstract class GuiComponent {
 			GL11.glTexCoord2f(1, 1); GL11.glVertex2f(x+w, y+h);
 			GL11.glTexCoord2f(0, 1); GL11.glVertex2f(x  , y+h);
 		GL11.glEnd();
+	}
+	
+	/**
+	 * Process this mouse event.
+	 * 
+	 * @param event the event
+	 * @return the focused component or {@code null}
+	 */
+	protected final GuiListener processMouseEvent(GuiMouseEvent event, boolean includeSelf) {
+		GuiListener focus = null;
+		for(GuiComponent comp : children) {
+			if(comp instanceof GuiListener) {
+				GuiListener result = comp.processMouseEvent(event, true);
+				if(result != null) {
+					focus = result;
+				}
+			}
+		}
+		
+		if(includeSelf && this instanceof GuiListener) {
+			((GuiListener)this).onMouseEvent(event);
+			if(event.getFocus()) {
+				event.unsetFocus();
+				return (GuiListener)this;
+			}
+		}
+		
+		return focus;
+	}
+	
+	protected final void processKeyEvent(GuiKeyEvent event) {
+		for(GuiComponent comp : children) {
+			comp.processKeyEvent(event);
+		}
+		
+		if(this instanceof GuiListener) {
+			((GuiListener)this).onKeyEvent(event);
+		}
 	}
 }

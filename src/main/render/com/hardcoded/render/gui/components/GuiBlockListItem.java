@@ -1,23 +1,20 @@
 package com.hardcoded.render.gui.components;
 
-import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL11;
 
-import com.hardcoded.lwjgl.input.Input;
 import com.hardcoded.main.ProjectEdit;
 import com.hardcoded.mc.general.world.IBlockData;
-import com.hardcoded.render.gui.*;
+import com.hardcoded.render.gui.GuiComponent;
+import com.hardcoded.render.gui.GuiImage;
 
-public class GuiBlockListItem extends GuiComponent {
+class GuiBlockListItem extends GuiComponent {
 	private GuiImage image;
-//	private GuiLabel label;
 	
 	public GuiBlockListItem() {
+		setSize(64, 64);
+		
 		image = new GuiImage();
 		image.setSize(64, 64);
-		
-//		label = new GuiLabel();
-//		label.setFontSize(24);
 	}
 	
 	public GuiBlockListItem setBlock(IBlockData data) {
@@ -36,31 +33,21 @@ public class GuiBlockListItem extends GuiComponent {
 	}
 	
 	@Override
-	public void tick() {
-		hover = isInside(x, y, 64, 64);
+	public void renderComponent() {
+		int x = getX();
+		int y = getY();
 		
-		if(Input.isMouseDown(GLFW.GLFW_MOUSE_BUTTON_1)) {
-			if(hover) {
-				selected = true;
-			} else {
-				selected = false;
-			}
-		}
-	}
-	
-	@Override
-	public void render() {
-		if(hover) {
-			GL11.glColor4f(0, 0, 0, 0.3f);
-			renderBox(x, y, 64, 64);
-		} else if(selected) {
+		if(selected) {
 			GL11.glColor4f(0, 0, 0, 0.7f);
+			renderBox(x, y, 64, 64);
+		} else if(hover) {
+			GL11.glColor4f(0, 0, 0, 0.3f);
 			renderBox(x, y, 64, 64);
 		}
 		
 		GL11.glColor4f(1, 1, 1, 1);
 		image.setLocation(x, y);
-		image.render();
+		image.renderComponent();
 	}
 	
 	@Override
