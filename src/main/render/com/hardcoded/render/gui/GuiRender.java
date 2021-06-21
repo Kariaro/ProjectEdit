@@ -3,7 +3,6 @@ package com.hardcoded.render.gui;
 import org.lwjgl.opengl.GL11;
 
 import com.hardcoded.api.IResource;
-import com.hardcoded.lwjgl.input.Input;
 import com.hardcoded.mc.general.world.IBlockData;
 import com.hardcoded.render.gui.GuiListener.GuiEvent.GuiKeyEvent;
 import com.hardcoded.render.gui.GuiListener.GuiEvent.GuiMouseEvent;
@@ -17,6 +16,7 @@ public class GuiRender extends IResource {
 	public IBlockData selectedBlock;
 	
 	public GuiRender() {
+		
 	}
 	
 	@Override
@@ -48,20 +48,15 @@ public class GuiRender extends IResource {
 
 		GL11.glEnable(GL11.GL_BLEND);
 		GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+		GL11.glEnable(GL11.GL_TEXTURE_2D);
 		GL11.glDisable(GL11.GL_DEPTH_TEST);
-		GL11.glDisable(GL11.GL_TEXTURE_2D);
 		GL11.glColor4f(1, 1, 1, 1);
+		
 		panel.render();
 		
 		GL11.glDisable(GL11.GL_BLEND);
 	}
 	
-	public boolean isInside(int x, int y, int w, int h) {
-		float mx = Input.getMouseX();
-		float my = Input.getMouseY();
-		return !(mx < x || my < y || mx > x + w || my > y + h);
-	}
-
 	public GuiListener processMouseEvent(GuiMouseEvent event) {
 		return panel.processMouseEvent(event, true);
 	}

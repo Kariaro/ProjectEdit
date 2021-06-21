@@ -6,7 +6,6 @@ import java.awt.Transparency;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
@@ -144,17 +143,6 @@ public class Texture {
 		}
 		
 		return new Texture(tex, activeId);
-	}
-	
-	public static Texture loadResourceTexture(String path, int interpolation) throws IOException, URISyntaxException {
-		File file = new File(Texture.class.getResource(path).toURI());
-		
-		String pathCheck = file.getAbsolutePath();
-		if(cacheTextureId.containsKey(pathCheck)) {
-			return new Texture(cacheTextureId.get(pathCheck), 0);
-		}
-		
-		return new Texture(file, path, 0, interpolation);
 	}
 	
 	public static Texture loadResource(String path, int interpolation) {

@@ -485,6 +485,9 @@ public class LwjglRender {
 			GL11.glPopMatrix();
 		}
 		
+		
+		GL13.glActiveTexture(GL13.GL_TEXTURE0);
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0);
 		GL11.glDisable(GL_DEPTH_TEST);
 		
 		GL11.glPushMatrix();
