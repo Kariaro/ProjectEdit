@@ -22,7 +22,7 @@ public class ProjectEdit implements IProjectEdit {
 	private static final Unsafe unsafe = new Unsafe();
 	private static ProjectEdit instance;
 	
-	public static final String VERSION = "0.0.1";
+	public static final String VERSION = "0.0.2";
 	
 	private LwjglWindow window;
 	private TextureManager textureManager;
