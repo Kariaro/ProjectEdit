@@ -30,34 +30,38 @@ public class GuiImage extends GuiComponent {
 	}
 	
 	@Override
-	public void tick() {
+	public void renderComponent() {
+		int width = getWidth();
+		int height = getHeight();
+		int x = getX();
+		int y = getY();
 		
-	}
-	
-	@Override
-	public void render() {
 		if(has_atlas) {
 			if(atlas == null || uv == null) return;
 			
+			GL11.glEnable(GL11.GL_TEXTURE_2D);
 			atlas.bind();
 			GL11.glBegin(GL11.GL_TRIANGLE_FAN);
-				GL11.glTexCoord2d(uv.x1, uv.y1); GL11.glVertex2i(x      , y       );
-				GL11.glTexCoord2d(uv.x2, uv.y1); GL11.glVertex2i(x+width, y       );
-				GL11.glTexCoord2d(uv.x2, uv.y2); GL11.glVertex2i(x+width, y+height);
-				GL11.glTexCoord2d(uv.x1, uv.y2); GL11.glVertex2i(x      , y+height);
+				GL11.glTexCoord2f(uv.x1, uv.y1); GL11.glVertex2i(x      , y       );
+				GL11.glTexCoord2f(uv.x2, uv.y1); GL11.glVertex2i(x+width, y       );
+				GL11.glTexCoord2f(uv.x2, uv.y2); GL11.glVertex2i(x+width, y+height);
+				GL11.glTexCoord2f(uv.x1, uv.y2); GL11.glVertex2i(x      , y+height);
 			GL11.glEnd();
 			atlas.unbind();
+			GL11.glDisable(GL11.GL_TEXTURE_2D);
 		} else {
 			if(texture == null) return;
 			
+			GL11.glEnable(GL11.GL_TEXTURE_2D);
 			texture.bind();
 			GL11.glBegin(GL11.GL_TRIANGLE_FAN);
-				GL11.glTexCoord2d(0, 0); GL11.glVertex2i(x      , y       );
-				GL11.glTexCoord2d(1, 0); GL11.glVertex2i(x+width, y       );
-				GL11.glTexCoord2d(1, 1); GL11.glVertex2i(x+width, y+height);
-				GL11.glTexCoord2d(0, 1); GL11.glVertex2i(x      , y+height);
+				GL11.glTexCoord2f(0, 0); GL11.glVertex2i(x      , y       );
+				GL11.glTexCoord2f(1, 0); GL11.glVertex2i(x+width, y       );
+				GL11.glTexCoord2f(1, 1); GL11.glVertex2i(x+width, y+height);
+				GL11.glTexCoord2f(0, 1); GL11.glVertex2i(x      , y+height);
 			GL11.glEnd();
 			texture.unbind();
+			GL11.glDisable(GL11.GL_TEXTURE_2D);
 		}
 	}
 }
