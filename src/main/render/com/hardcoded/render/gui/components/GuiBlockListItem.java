@@ -10,19 +10,19 @@ import com.hardcoded.render.gui.*;
 
 public class GuiBlockListItem extends GuiComponent {
 	private GuiImage image;
-	private GuiLabel label;
+//	private GuiLabel label;
 	
 	public GuiBlockListItem() {
 		image = new GuiImage();
 		image.setSize(64, 64);
 		
-		label = new GuiLabel();
-		label.setFontSize(24);
+//		label = new GuiLabel();
+//		label.setFontSize(24);
 	}
 	
 	public GuiBlockListItem setBlock(IBlockData data) {
-		image.setTexture(ProjectEdit.getInstance().getRender().iconGenerator.getTextureAtlas(), data.getName());
-		label.setText("minecraft:" + data.getName());
+		image.setTexture(ProjectEdit.getInstance().getTextureManager().getIconGenerator().getTextureAtlas(), data.getName());
+//		label.setText("minecraft:" + data.getName());
 		this.block = data;
 		return this;
 	}
@@ -61,8 +61,6 @@ public class GuiBlockListItem extends GuiComponent {
 		GL11.glColor4f(1, 1, 1, 1);
 		image.setLocation(x, y);
 		image.render();
-//		label.setLocation(x + 64 + 8, y + 20);
-//		label.render();
 	}
 	
 	@Override

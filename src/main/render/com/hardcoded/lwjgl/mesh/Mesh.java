@@ -22,10 +22,6 @@ public class Mesh {
 	}
 	
 	public Mesh(float[] vertexs, float[] uvs, float[] colors) {
-//		if(LwjglAsyncThread.isCurrentThread()) {
-//			throw new RuntimeException("Meshes can only be loaded on the main thread");
-//		}
-		
 		FloatBuffer vertBuffer = null;
 		FloatBuffer uvBuffer = null;
 		FloatBuffer colBuffer = null;

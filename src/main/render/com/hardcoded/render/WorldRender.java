@@ -181,7 +181,9 @@ public class WorldRender {
 			if(unloaded) return;
 			if(chunk.isDirty()) {
 				chunk.isDirty = false;
-				exec.submit(this::reload);
+				// When the chunk is reloading we still render it
+				reload();
+//				exec.submit(this::reload);
 			}
 			
 			if(isDirty) {

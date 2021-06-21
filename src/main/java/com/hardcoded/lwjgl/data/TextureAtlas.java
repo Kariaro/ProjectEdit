@@ -8,7 +8,9 @@ import java.util.Map;
 
 import org.lwjgl.opengl.GL11;
 
-public class TextureAtlas {
+import com.hardcoded.api.IResource;
+
+public class TextureAtlas extends IResource {
 	protected final int WIDTH;
 	protected final int HEIGHT;
 	
@@ -142,23 +144,11 @@ public class TextureAtlas {
 		return atlas_path_to_id.size();
 	}
 	
-	public void compile() {
-		if(atlas != null) {
-			atlas.cleanup();
-			atlas = null;
-		}
-		
-		atlas = Texture.loadBufferedImageTexture(image, GL11.GL_NEAREST);
-	}
-	
-	public AtlasUv getUv(int id) {
-		return atlas_map[id];
-	}
-	
 	/**
 	 * Remove all images loaded in this atlas and delete textures.
 	 */
-	public void dispose() {
+	@Override
+	public void unload() {
 		if(atlas != null) {
 			atlas.cleanup();
 			atlas = null;
@@ -176,6 +166,20 @@ public class TextureAtlas {
 		g.setBackground(new Color(0, true));
 		g.clearRect(0, 0, image.getWidth(), image.getHeight());
 		g.dispose();
+	}
+
+	@Override
+	public void reload() {
+		if(atlas != null) {
+			atlas.cleanup();
+			atlas = null;
+		}
+		
+		atlas = Texture.loadBufferedImageTexture(image, GL11.GL_NEAREST);
+	}
+	
+	public AtlasUv getUv(int id) {
+		return atlas_map[id];
 	}
 	
 	

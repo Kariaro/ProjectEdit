@@ -13,8 +13,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hardcoded.lwjgl.data.TextureAtlas;
+import com.hardcoded.main.ProjectEdit;
 import com.hardcoded.mc.constants.Direction;
-import com.hardcoded.render.LwjglRender;
 import com.hardcoded.utils.FastModelJsonLoader.FastModel.ModelDelegate;
 import com.hardcoded.utils.FastModelJsonLoader.FastModel.ModelElement;
 import com.hardcoded.utils.FastModelJsonLoader.FastModel.ModelFace;
@@ -713,7 +714,8 @@ public class FastModelJsonLoader {
 			}
 		}
 		
-		LwjglRender.atlas.transformModelUv(face.textureId, next_uv);
+		ProjectEdit.getInstance().getTextureManager().getBlockAtlas().transformModelUv(face.textureId, next_uv);
+//		LwjglRender.atlas.transformModelUv(face.textureId, next_uv);
 		return next_uv;
 	}
 	
@@ -856,18 +858,19 @@ public class FastModelJsonLoader {
 		private static ModelFace createModelFace(FaceType type, JsonModelElement element, JsonModelFace json) {
 			ModelFace face = new ModelFace();
 			
-			int id = LwjglRender.atlas.getImageId(json.texture);
+			TextureAtlas atlas = ProjectEdit.getInstance().getTextureManager().getBlockAtlas();
+			
+			int id = atlas.getImageId(json.texture);
 			if(id < 0) {
 				BufferedImage image = resource.readBufferedImage(json.texture);
-				id = LwjglRender.atlas.addTexture(json.texture, image);
+				id = atlas.addTexture(json.texture, image);
 			}
 			
 			face.textureId = id;
-//			face.rotation = json.rotation;
 			face.cullface = json.cullface;
 			face.vertex = Maths.getModelVertexes(type, element.from, element.to);
 			face.uv = json.built_uv.clone();
-			LwjglRender.atlas.transformModelUv(id, face.uv);
+			atlas.transformModelUv(id, face.uv);
 			
 			return face;
 		}

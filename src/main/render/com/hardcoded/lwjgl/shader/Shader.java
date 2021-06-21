@@ -13,10 +13,9 @@ import org.lwjgl.opengl.GL20;
 import org.lwjgl.system.MemoryStack;
 
 /**
- * A simple shader implementation.
+ * A simple shader implementation
  * 
  * @author HardCoded
- * @since v0.1
  */
 public abstract class Shader {
 	private Map<String, Integer> uniforms = new HashMap<>();

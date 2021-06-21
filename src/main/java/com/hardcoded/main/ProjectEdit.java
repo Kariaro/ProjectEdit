@@ -8,6 +8,7 @@ import org.apache.logging.log4j.Logger;
 import com.hardcoded.api.IProjectEdit;
 import com.hardcoded.lwjgl.Camera;
 import com.hardcoded.lwjgl.LwjglWindow;
+import com.hardcoded.lwjgl.icon.TextureManager;
 import com.hardcoded.mc.general.world.World;
 import com.hardcoded.render.LwjglRender;
 
@@ -21,8 +22,10 @@ public class ProjectEdit implements IProjectEdit {
 	private static final Unsafe unsafe = new Unsafe();
 	private static ProjectEdit instance;
 	
+	public static final String VERSION = "0.0.1";
+	
 	private LwjglWindow window;
-	private LwjglRender render;
+	private TextureManager textureManager;
 	private World world;
 	private Camera camera;
 	
@@ -37,6 +40,7 @@ public class ProjectEdit implements IProjectEdit {
 		instance = this;
 		camera = new Camera();
 		window = new LwjglWindow();
+		textureManager = new TextureManager();
 	}
 	
 	public void start() {
@@ -66,8 +70,13 @@ public class ProjectEdit implements IProjectEdit {
 		return window;
 	}
 	
+	@Deprecated
 	public LwjglRender getRender() {
-		return render;
+		throw new UnsupportedOperationException();
+	}
+	
+	public TextureManager getTextureManager() {
+		return textureManager;
 	}
 	
 	public static ProjectEdit getInstance() {
@@ -78,12 +87,19 @@ public class ProjectEdit implements IProjectEdit {
 		return unsafe;
 	}
 	
+	/**
+	 * Returns the current version of this software
+	 */
+	public static String getVersionString() {
+		return VERSION;
+	}
+	
 	public static final class Unsafe {
 		private Unsafe() {}
 		
 		@Deprecated
 		public void setRender(LwjglRender render) {
-			instance.render = render;
+			throw new UnsupportedOperationException();
 		}
 	}
 }

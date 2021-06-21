@@ -24,7 +24,7 @@ import com.hardcoded.lwjgl.Camera;
 import com.hardcoded.lwjgl.LwjglSettings;
 import com.hardcoded.lwjgl.LwjglWindow;
 import com.hardcoded.lwjgl.data.TextureAtlas;
-import com.hardcoded.lwjgl.icon.IconGenerator;
+import com.hardcoded.lwjgl.icon.TextureManager;
 import com.hardcoded.lwjgl.input.Input;
 import com.hardcoded.lwjgl.shader.MeshShader;
 import com.hardcoded.lwjgl.shader.ShadowShader;
@@ -34,8 +34,6 @@ import com.hardcoded.mc.general.Minecraft;
 import com.hardcoded.mc.general.files.Blocks;
 import com.hardcoded.mc.general.files.IChunk;
 import com.hardcoded.mc.general.files.IRegion;
-import com.hardcoded.mc.general.world.BlockDataManager;
-import com.hardcoded.mc.general.world.IBlockData;
 import com.hardcoded.mc.general.world.World;
 import com.hardcoded.render.gui.GuiRender;
 import com.hardcoded.render.utils.RenderUtil;
@@ -46,7 +44,7 @@ import com.hardcoded.utils.FastModelJsonLoader.TestXY;
 public class LwjglRender {
 	private static final Logger LOGGER = LogManager.getLogger(LwjglRender.class);
 	
-	public static final TextureAtlas atlas = new TextureAtlas();
+//	public static final TextureAtlas atlas = new TextureAtlas();
 	
 	private final long window;
 	private GuiRender gui;
@@ -60,7 +58,7 @@ public class LwjglRender {
 	public LwjglRender(long window, int width, int height) {
 		this.window = window;
 		
-		ProjectEdit.getUnsafe().setRender(this);
+//		ProjectEdit.getUnsafe().setRender(this);
 		
 		camera = ProjectEdit.getInstance().getCamera();
 		world_render = new WorldRender(this);
@@ -86,7 +84,8 @@ public class LwjglRender {
 	
 	private File version_jar;
 	private VersionResourceReader reader;
-	public IconGenerator iconGenerator;
+	private TextureManager textureManager;
+	private TextureAtlas atlas;
 	
 	public ShadowShader shadowShader;
 	public MeshShader meshShader;
@@ -97,8 +96,10 @@ public class LwjglRender {
 			shadowShader = new ShadowShader();
 			meshShader = new MeshShader();
 			frameBuffer = new ShadowFrameBuffer(8192, 8192);
-			iconGenerator = new IconGenerator();
-			iconGenerator.init();
+			textureManager = ProjectEdit.getInstance().getTextureManager();
+			textureManager.init();
+			
+			atlas = textureManager.getBlockAtlas();
 		} catch(Exception e) {
 			throw e;
 		}
@@ -172,7 +173,8 @@ public class LwjglRender {
 		// Unload model cache
 		FastModelJsonLoader.unloadCache();
 		// Unload all textures
-		atlas.dispose();
+		atlas.unload();
+		
 		// Reload models
 		reader.loadBlocks();
 		
@@ -184,10 +186,10 @@ public class LwjglRender {
 		}
 		
 		// Recompile textures
-		atlas.compile();
+		atlas.reload();
 		
 		// Icon generation
-		iconGenerator.loadIcons();
+		textureManager.getIconGenerator().loadIcons();
 		
 		long nanos = TimerUtils.end();
 		
@@ -213,8 +215,8 @@ public class LwjglRender {
 	private int last_mvp_scale = 1;
 	public ShadowFrameBuffer frameBuffer;
 	
-	private Vector3f camera_pos;
-	private Matrix4f camera_view;
+	protected Vector3f camera_pos;
+	protected Matrix4f camera_view;
 	private int debug_id;
 	
 	public void render() {
@@ -231,12 +233,15 @@ public class LwjglRender {
 			camera_view = camera.getProjectionMatrix();
 		}
 		
-		if(Input.pollKey(GLFW.GLFW_KEY_K)) {
-			reloadTextures();
-		}
-		
-		if(Input.isControlDown() && Input.pollKey(GLFW.GLFW_KEY_F5)) {
-			gui.init();
+		if(Input.isControlDown()) {
+			if(Input.pollKey(GLFW.GLFW_KEY_F5)) {
+				gui.init();
+			}
+			
+			if(Input.pollKey(GLFW.GLFW_KEY_T)) {
+				reloadTextures();
+				GL11.glViewport(0, 0, LwjglWindow.getWidth(), LwjglWindow.getHeight());
+			}
 		}
 		
 		{
@@ -385,7 +390,7 @@ public class LwjglRender {
 //				}
 				
 				{
-					TextureAtlas tex = iconGenerator.getTextureAtlas();
+					TextureAtlas tex = textureManager.getIconGenerator().getTextureAtlas();
 					
 					GL13.glActiveTexture(GL13.GL_TEXTURE0);
 					GL11.glBindTexture(GL11.GL_TEXTURE_2D, tex.getTextureId());

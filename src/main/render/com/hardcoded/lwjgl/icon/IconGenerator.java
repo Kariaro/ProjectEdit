@@ -6,25 +6,26 @@ import java.nio.ByteBuffer;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.*;
 
+import com.hardcoded.api.IResource;
 import com.hardcoded.lwjgl.data.TextureAtlas;
-import com.hardcoded.lwjgl.data.TextureAtlasDebugger;
 import com.hardcoded.mc.general.world.BlockDataManager;
 import com.hardcoded.mc.general.world.IBlockData;
-import com.hardcoded.render.LwjglRender;
 import com.hardcoded.render.utils.MeshBuilder;
 import com.hardcoded.utils.FastModelRenderer;
 import com.hardcoded.utils.MathUtils;
 
-public class IconGenerator {
-	private static final int ICON_WIDTH = 64;
-	private static final int ICON_HEIGHT = 64;
+public class IconGenerator extends IResource {
+	public static final int ICON_WIDTH = 64;
+	public static final int ICON_HEIGHT = 64;
 	
+	private final TextureManager manager;
 	private TextureAtlas atlas;
 	private int frameBuffer;
-	public int textureBuffer;
-	public int depthBuffer;
+	private int textureBuffer;
+	private int depthBuffer;
 	
-	public IconGenerator() {
+	public IconGenerator(TextureManager manager) {
+		this.manager = manager;
 		atlas = new TextureAtlas(0, Math.max(ICON_WIDTH, ICON_HEIGHT), 2048, 2048);
 	}
 	
@@ -36,20 +37,13 @@ public class IconGenerator {
 		return atlas;
 	}
 	
-	/**
-	 * Create the frame buffer
-	 */
+	@Override
 	public void init() {
 		// Create FrameBuffer
 		frameBuffer = GL30.glGenFramebuffers();
 		GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, frameBuffer);
 		GL11.glDrawBuffer(GL30.GL_COLOR_ATTACHMENT0);
 		GL11.glReadBuffer(GL30.GL_COLOR_ATTACHMENT0);
-
-//		storage.put(0, (byte)0xff);
-//		storage.put(1, (byte)0xff);
-//		storage.put(2, (byte)0xff);
-//		storage.put(3, (byte)0xff);
 		
 		// Create Texture
 		textureBuffer = GL11.glGenTextures();
@@ -59,7 +53,7 @@ public class IconGenerator {
 		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
 		GL32.glFramebufferTexture2D(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0, GL11.GL_TEXTURE_2D, textureBuffer, 0);
 		
-
+		// Add Depth Buffer
 		depthBuffer = GL11.glGenTextures();
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, depthBuffer);
 		GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL14.GL_DEPTH_COMPONENT16, ICON_WIDTH, ICON_HEIGHT, 0, GL11.GL_DEPTH_COMPONENT, GL11.GL_FLOAT, (ByteBuffer)null);
@@ -73,19 +67,9 @@ public class IconGenerator {
 	}
 	
 	private int generateIcon(IBlockData data) {
-//		if(atlas.entries() > 32 * 32) {
-//			atlas.dispose();
-//		}
-		
 		if(atlas.hasImage(data.getName())) {
 			return atlas.getImageId(data.getName());
 		}
-//		System.out.println(data.getName());
-		
-//		int[] pixels = drawGetPixels(data);
-//		for(int i = 0, len = pixels.length; i < len; i++) {
-//			pixels[i] |= 0xff000000;
-//		}
 		
 		int[] pixels = new int[ICON_WIDTH * ICON_HEIGHT];
 		int[] read_pixels = drawGetPixels(data);
@@ -155,13 +139,13 @@ public class IconGenerator {
 	
 	public void loadIcons() {
 		// Clear the current atlas
-		atlas.dispose();
+		atlas.unload();
 		
 		for(IBlockData data : BlockDataManager.getStates()) {
 			generateIcon(data);
 		}
 		
-		atlas.compile();
+		atlas.reload();
 	}
 	
 	public void drawBlock(IBlockData data) {
@@ -169,7 +153,6 @@ public class IconGenerator {
 		Matrix4f projMat = new Matrix4f()
 			.setOrtho(-side, side, -side, side, -10, 10);
 		
-//		float step = (System.currentTimeMillis() % 7200L) / 20.0f;
 		float t = 0.5f / 16.0f;
 		Matrix4f viewMat = new Matrix4f()
 			.translateLocal(-t, -t, -t)
@@ -190,7 +173,7 @@ public class IconGenerator {
 		float[] verts = buffer.verts.toArray();
 		float[] uv = buffer.uvs.toArray();
 		
-		LwjglRender.atlas.bind();
+		manager.getBlockAtlas().bind();
 		GL11.glBegin(GL11.GL_TRIANGLES);
 		for(int vi = 0, ui = 0, len = buffer.verts.size(); vi < len; vi += 3, ui += 2) {
 			GL11.glTexCoord2f(uv[ui], uv[ui + 1]);
@@ -198,12 +181,23 @@ public class IconGenerator {
 			GL11.glVertex3f(verts[vi] / 16.0f, verts[vi + 1] / 16.0f, verts[vi + 2] / 16.0f);
 		}
 		GL11.glEnd();
-		LwjglRender.atlas.unbind();
+		manager.getBlockAtlas().unbind();
 		
 		GL11.glPopMatrix();
 	}
 	
-	public void cleanup() {
+	@Override
+	public void unload() {
+		atlas.unload();
+	}
+	
+	@Override
+	protected void cleanup() {
+		atlas.unload();
 		
+		// Delete gl objects
+		GL11.glDeleteTextures(textureBuffer);
+		GL11.glDeleteTextures(depthBuffer);
+		GL30.glDeleteFramebuffers(frameBuffer);
 	}
 }

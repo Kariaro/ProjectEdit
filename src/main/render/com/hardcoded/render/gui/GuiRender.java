@@ -2,6 +2,7 @@ package com.hardcoded.render.gui;
 
 import org.lwjgl.opengl.GL11;
 
+import com.hardcoded.api.IResource;
 import com.hardcoded.lwjgl.LwjglWindow;
 import com.hardcoded.lwjgl.input.Input;
 import com.hardcoded.mc.general.world.IBlockData;
@@ -9,7 +10,7 @@ import com.hardcoded.render.LwjglRender;
 import com.hardcoded.render.gui.components.GuiBlockMenu;
 import com.hardcoded.render.gui.components.GuiToolList;
 
-public class GuiRender {
+public class GuiRender extends IResource {
 	protected LwjglRender render;
 	private GuiToolList tools;
 	private GuiPanel panel;
@@ -20,6 +21,7 @@ public class GuiRender {
 		this.render = render;
 	}
 	
+	@Override
 	public void init() {
 		try {
 			GuiLabel.createTextAtlas();

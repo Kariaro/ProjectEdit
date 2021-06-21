@@ -2,7 +2,6 @@ package com.hardcoded.render.gui.components;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
 
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL11;
@@ -86,11 +85,6 @@ public class GuiBlockMenu extends GuiComponent {
 	
 	@Override
 	public void tick() {
-		int block_screen_width = getBlockScreenWidth();
-		int block_screen_height = getBlockScreenHeight();
-		int xt = Math.max(1, block_screen_width / 64);
-		int yt = Math.max(1, block_screen_height / 64);
-		
 		if(isInside(x + width - 32, y + 8 + scroll_amount, 24, 32)) {
 			mouse_hover_scroll = true;
 		} else {
@@ -128,13 +122,7 @@ public class GuiBlockMenu extends GuiComponent {
 				height = 120;
 			}
 			
-			{
-				block_screen_width = getBlockScreenWidth();
-				block_screen_height = getBlockScreenHeight();
-				xt = Math.max(1, block_screen_width / 64);
-				yt = Math.max(1, block_screen_height / 64);
-			}
-			
+			// TODO: Fix gui scrolling not realigning top left block row when resizing
 		} else if(has_scroll_mouse) {
 			scroll_amount = Input.getMouseY() - 24 - y;
 		}

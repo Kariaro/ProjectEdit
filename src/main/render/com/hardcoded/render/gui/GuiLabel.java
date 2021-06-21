@@ -22,7 +22,7 @@ public class GuiLabel extends GuiComponent {
 		if(text_atlas == null) {
 			text_atlas = new TextureAtlas(2, 16, 1024, 1024);
 		} else {
-			text_atlas.dispose();
+			text_atlas.unload();
 		}
 		
 		glyph_map = new HashMap<>();
@@ -51,7 +51,7 @@ public class GuiLabel extends GuiComponent {
 		
 		g.dispose();
 		
-		text_atlas.compile();
+		text_atlas.reload();
 	}
 	
 	private float font_size = 20;
