@@ -1,0 +1,11 @@
+{
+  "plugins": [
+    "conventional-commits",
+    ["auto-plugin-auto-bumper", {"scripted": true}],
+    ["maven", {"mavenReleaseGoals": ["package"]}],
+    ["upload-assets", ["./target/ProjectEdit*.jar"]]
+  ],
+  "owner": "HardCoded",
+  "repo": "ProjectEdit",
+  "name": "HardCoded"
+}
