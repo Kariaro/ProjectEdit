@@ -10,7 +10,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.lwjgl.glfw.*;
 import org.lwjgl.opengl.GL;
-import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.WGL;
 import org.lwjgl.system.windows.User32;
 
@@ -35,6 +34,7 @@ public class LwjglWindow implements Runnable {
 	private GuiRender gui;
 	
 	private boolean running;
+	private long window_hwnd;
 	private long window;
 	private int fps;
 	private Input input;
@@ -123,6 +123,7 @@ public class LwjglWindow implements Runnable {
 		GL.createCapabilitiesWGL();
 		
 		long hwnd = GLFWNativeWin32.glfwGetWin32Window(window);
+		window_hwnd = hwnd;
 		long dc = User32.GetDC(hwnd);
 		
 		long context_1 = WGL.wglCreateContext(dc);
@@ -211,6 +212,10 @@ public class LwjglWindow implements Runnable {
 					LOGGER.info("fps: {}", fps);
 					frames = 0;
 					last += 1000;
+					
+					if(now - last > 1000) {
+						last += ((now - last) / 1000L) * 1000L;
+					}
 				}
 				
 				if(glfwWindowShouldClose(window)) {
@@ -258,5 +263,9 @@ public class LwjglWindow implements Runnable {
 	
 	public static int getHeight() {
 		return instance.height;
+	}
+	
+	public static long getWindowHwnd() {
+		return instance.window_hwnd;
 	}
 }

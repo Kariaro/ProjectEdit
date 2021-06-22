@@ -38,7 +38,12 @@ public class VersionResourceReader {
 	
 	public JSONObject getBlockState(String name) {
 		byte[] bytes = readEntry("assets/minecraft/blockstates/" + name + ".json");
-		return new JSONObject(new String(bytes));
+		
+		try {
+			return new JSONObject(new String(bytes));
+		} catch(Exception e) {
+			return null;
+		}
 	}
 	
 	public JSONObject getBlockModel(String key) {
@@ -97,6 +102,10 @@ public class VersionResourceReader {
 	
 	public void resolveState(IBlockData state) {
 		JSONObject json = getBlockState(state.getName());
+		
+		if(json == null) {
+			return;
+		}
 		
 		boolean is_multipart = false;
 		List<JSONObject> model_data_list = null;

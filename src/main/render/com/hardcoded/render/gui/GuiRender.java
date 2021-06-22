@@ -30,17 +30,12 @@ public class GuiRender extends IResource {
 		panel = new GuiPanel();
 		
 		GuiBlockMenu blockMenu = new GuiBlockMenu(this);
-		blockMenu.setBounds(72, 0, 500, 500);
+		blockMenu.setBounds(72, 18, 500, 500);
 		panel.add(blockMenu);
 		
-		tools = new GuiToolList(this);
-		tools.setLocation(0, 0);
+		tools = new GuiToolList(this, 0, 18);
 		tools.setSize(72, 72 * 8);
 		panel.add(tools);
-	}
-	
-	public void tick() {
-		if(panel == null) return;
 	}
 	
 	public void render() {
@@ -58,10 +53,13 @@ public class GuiRender extends IResource {
 	}
 	
 	public GuiListener processMouseEvent(GuiMouseEvent event) {
+		if(event.getY() < 18 || panel == null) return null;
+		
 		return panel.processMouseEvent(event, true);
 	}
 
 	public void processKeyEvent(GuiKeyEvent event) {
+		if(panel == null) return;
 		panel.processKeyEvent(event);
 	}
 }

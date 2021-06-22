@@ -15,8 +15,8 @@ public class TextureAtlasDebugger extends TextureAtlas {
 	private JFrame frame;
 	private JLabel label;
 	
-	public TextureAtlasDebugger(int padding, int align, int width, int height) {
-		super(padding, align, width, height);
+	public TextureAtlasDebugger(int padding, int align, int width, int height, boolean fillPadding, int interpolation) {
+		super(padding, align, width, height, fillPadding, interpolation);
 		
 		frame = new JFrame("TextureAtlasDebugger - Preview");
 		frame.setSize(1034, 1034);
@@ -71,6 +71,8 @@ public class TextureAtlasDebugger extends TextureAtlas {
 			}
 		}
 		
+		atlas_path_to_id.put(path, id);
+		
 		try {
 			BufferedImage bi2 = new BufferedImage(1034, 1034, BufferedImage.TYPE_INT_ARGB);
 			Graphics2D gr = bi2.createGraphics();
@@ -89,6 +91,17 @@ public class TextureAtlasDebugger extends TextureAtlas {
 				gr.fillRect(5 + ixp, 5 + iyp, aw * ALIGN, ah * ALIGN);
 			}
 			
+			gr.setColor(new Color(0, 0, 0, 0.3f));
+			for(int id_v : atlas_path_to_id.values()) {
+				AtlasUv id_uv = getUv(id_v);
+				
+				int id_x = (int)(id_uv.x1 * WIDTH);
+				int id_y = (int)(id_uv.y1 * HEIGHT);
+				int id_w = (int)((id_uv.x2 - id_uv.x1) * WIDTH);
+				int id_h = (int)((id_uv.y2 - id_uv.y1) * HEIGHT);
+				gr.drawRect(id_x + 5, id_y + 5, id_w, id_h);
+			}
+			
 			label.setIcon(new ImageIcon(bi2));
 			label.repaint();
 			frame.repaint();
@@ -97,7 +110,6 @@ public class TextureAtlasDebugger extends TextureAtlas {
 			e.printStackTrace();
 		}
 		
-		atlas_path_to_id.put(path, id);
 		return id;
 	}
 }

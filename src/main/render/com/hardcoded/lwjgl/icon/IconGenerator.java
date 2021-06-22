@@ -26,7 +26,7 @@ public class IconGenerator extends IResource {
 	
 	public IconGenerator(TextureManager manager) {
 		this.manager = manager;
-		atlas = new TextureAtlas(0, Math.max(ICON_WIDTH, ICON_HEIGHT), 2048, 2048);
+		atlas = new TextureAtlas(0, Math.max(ICON_WIDTH, ICON_HEIGHT), 2048, 2048, false);
 	}
 	
 	public int getBlockId(IBlockData data) {
