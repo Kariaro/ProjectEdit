@@ -2,10 +2,12 @@
   "plugins": [
     "conventional-commits",
     ["auto-plugin-auto-bumper", {"scripted": true}],
+    "released",
     ["maven", {"mavenReleaseGoals": ["package"]}],
     ["upload-assets", ["./target/ProjectEdit*.jar"]]
   ],
-  "owner": "HardCoded",
+  "owner": "Kariaro",
   "repo": "ProjectEdit",
-  "name": "HardCoded"
+  "name": "HardCoded",
+  "email": "25615845+Kariaro@users.noreply.github.com"
 }
