@@ -3,3 +3,10 @@
 # Intellij ignores
 .idea
 *.iml
+
+# Building
+node_modules/**
+package.json
+yarn.lock
+.env
+dependency-reduced-pom.xml
