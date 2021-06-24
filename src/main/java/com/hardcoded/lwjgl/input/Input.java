@@ -18,6 +18,7 @@ public class Input {
 	
 	// Gui
 	private static GuiListener focused_element;
+	private static boolean sendGuiEvents = true;
 	
 	// Contains the last key modifiers
 	private static int LAST_MODIFIERS = 0;
@@ -49,7 +50,7 @@ public class Input {
 					Input.keys_poll[key] = true;
 				}
 				
-				if(has_focus) {
+				if(sendGuiEvents && has_focus) {
 					GuiKeyEvent event = new GuiKeyEvent(key, action, mods);
 					if(focused_element != null) {
 						focused_element.onKeyEvent(event);
@@ -73,7 +74,7 @@ public class Input {
 				if(button < 0 || button >= mouse_buttons.length) return;
 				mouse_buttons[button] = (action != GLFW.GLFW_RELEASE);
 				
-				if(has_focus) {
+				if(sendGuiEvents && has_focus) {
 					GuiMouseEvent event = new GuiMousePress((float)mouse_x, (float)mouse_y, button, action, mods);
 					focused_element = gui.processMouseEvent(event);
 					if(action == GLFW.GLFW_RELEASE) {
@@ -89,7 +90,7 @@ public class Input {
 				Input.mouse_x = xpos;
 				Input.mouse_y = ypos;
 				
-				if(has_focus) {
+				if(sendGuiEvents && has_focus) {
 					GuiMouseEvent event = new GuiMouseMove((float)xpos, (float)ypos, LAST_MODIFIERS);
 					
 					if(focused_element != null) {
@@ -104,14 +105,19 @@ public class Input {
 		mouse_wheel = new GLFWScrollCallback() {
 			@Override
 			public void invoke(long window, double xoffset, double yoffset) {
-				GuiMouseEvent event = new GuiMouseScroll((float)mouse_x, (float)mouse_y, (float)yoffset, LAST_MODIFIERS);
-				if(focused_element != null) {
-					focused_element.onMouseEvent(event);
+				if(sendGuiEvents) {
+					GuiMouseEvent event = new GuiMouseScroll((float)mouse_x, (float)mouse_y, (float)yoffset, LAST_MODIFIERS);
+					if(focused_element != null) {
+						focused_element.onMouseEvent(event);
+					} else {
+						gui.processMouseEvent(event);
+					}
+					
+					if(!event.isConsumed()) {
+						scroll_delta_x = xoffset;
+						scroll_delta_y = yoffset;
+					}
 				} else {
-					gui.processMouseEvent(event);
-				}
-				
-				if(!event.isConsumed()) {
 					scroll_delta_x = xoffset;
 					scroll_delta_y = yoffset;
 				}
@@ -207,5 +213,10 @@ public class Input {
 
 	public static boolean isFocused(Object obj) {
 		return obj == focused_element;
+	}
+	
+	@Deprecated
+	public static void sendGuiEvents(boolean enable) {
+		Input.sendGuiEvents = enable;
 	}
 }

@@ -115,10 +115,10 @@ public class WorldRender {
 	private ChunkList list;
 	public void renderWorld(World world, Camera camera, Matrix4f projectionView, int radius) {
 		if(list == null) {
-			list = new ChunkList(world);
+			list = new ChunkList();
 		}
 		
-		list.render(camera, projectionView, radius);
+		list.render(world, camera, projectionView, radius);
 	}
 	
 	@SuppressWarnings("unused")
@@ -289,12 +289,10 @@ public class WorldRender {
 	private class ChunkList {
 		private final Map<Long, ChunkBlob> chunk_map;
 		private final Map<ChunkBlob, Long> time_map;
-		private final World world;
 		
-		public ChunkList(World world) {
+		public ChunkList() {
 			chunk_map = new HashMap<>();
 			time_map = new HashMap<>();
-			this.world = world;
 		}
 		
 		public void unloadCache() {
@@ -306,7 +304,7 @@ public class WorldRender {
 			chunk_map.clear();
 		}
 		
-		public void render(Camera camera, Matrix4f projectionView, int radius) {
+		public void render(World world, Camera camera, Matrix4f projectionView, int radius) {
 			long now = System.currentTimeMillis();
 			
 			int x = Math.floorDiv((int)camera.x, 16);

@@ -26,10 +26,11 @@ public class GuiToolList extends GuiComponent implements GuiListener {
 	private GuiRender gui;
 	private GuiIcons icons;
 	
-	public GuiToolList(GuiRender gui) {
+	public GuiToolList(GuiRender gui, int x, int y) {
 		this.gui = gui;
 		this.icons = ProjectEdit.getInstance().getTextureManager().getGuiIcons();
 		this.tools = new ArrayList<>();
+		this.setLocation(x, y);
 		
 		addTool(GuiToolEmpty::new);
 		addTool(GuiToolSelection::new);

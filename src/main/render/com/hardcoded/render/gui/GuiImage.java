@@ -17,8 +17,15 @@ public class GuiImage extends GuiComponent {
 	}
 	
 	public GuiImage setTexture(TextureAtlas atlas, String path) {
+		if(atlas == null)
+			return this;
+		
+		int id = atlas.getImageId(path);
+		if(id < 0)
+			return this;
+		
 		this.atlas = atlas;
-		this.uv = atlas.getUv(atlas.getImageId(path));
+		this.uv = atlas.getUv(id);
 		this.has_atlas = true;
 		return this;
 	}

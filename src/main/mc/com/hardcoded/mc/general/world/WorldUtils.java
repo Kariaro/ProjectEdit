@@ -6,6 +6,8 @@ import com.hardcoded.mc.general.files.Position;
 
 public class WorldUtils {
 	public static Position raycastBlock(World world, Vector3f cam, Vector3f ray, float range) {
+		if(world == null) return null;
+		
 		float ray_len = ray.length();
 		
 		// Delta xyz length

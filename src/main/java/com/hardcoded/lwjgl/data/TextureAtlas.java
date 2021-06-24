@@ -39,6 +39,8 @@ public class TextureAtlas extends IResource {
 	
 	protected final int ATLAS_MAP_WIDTH;
 	protected final int ATLAS_MAP_HEIGHT;
+	protected final boolean FILL_PADDING;
+	protected final int INTERPOLATION;
 	
 	protected final AtlasUv[] atlas_map;
 	protected final Map<String, Integer> atlas_path_to_id;
@@ -46,18 +48,24 @@ public class TextureAtlas extends IResource {
 	protected Texture atlas;
 	
 	public TextureAtlas() {
-		this(8, 16, 2048, 2048);
+		this(8, 16, 2048, 2048, true, GL11.GL_NEAREST);
 	}
 	
-	public TextureAtlas(int padding, int align, int width, int height) {
+	public TextureAtlas(int padding, int align, int width, int height, boolean fillPadding) {
+		this(padding, align, width, height, fillPadding, GL11.GL_NEAREST);
+	}
+	
+	public TextureAtlas(int padding, int align, int width, int height, boolean fillPadding, int interpolation) {
 		this.image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 		this.atlas_path_to_id = new HashMap<>();
 		this.PADDING_PIXELS = padding;
 		this.WIDTH = width;
 		this.HEIGHT = height;
 		this.ALIGN = align;
+		this.FILL_PADDING = fillPadding;
 		this.ATLAS_MAP_WIDTH = WIDTH / ALIGN;
 		this.ATLAS_MAP_HEIGHT = HEIGHT / ALIGN;
+		this.INTERPOLATION = interpolation;
 		this.atlas_map = new AtlasUv[ATLAS_MAP_WIDTH * ATLAS_MAP_HEIGHT];
 	}
 	
@@ -108,25 +116,26 @@ public class TextureAtlas extends IResource {
 		int x2 = x1 + w;
 		int y2 = y1 + h;
 		
-		// . # .
-		// #   #
-		// . # .
-		// Fill Edges
-		g.drawImage(bi, x1 - p, y1, x1, y2, 0, 0, 1, h, null);
-		g.drawImage(bi, x2, y1, x2 + p, y2, w - 1, 0, w, h, null);
-		g.drawImage(bi, x1, y1 - p, x2, y1, 0, 0, w, 1, null);
-		g.drawImage(bi, x1, y2, x2, y2 + p, 0, h - 1, w, h, null);
+		if(FILL_PADDING) {
+			// . # .
+			// #   #
+			// . # .
+			// Fill Edges
+			g.drawImage(bi, x1 - p, y1, x1, y2, 0, 0, 1, h, null);
+			g.drawImage(bi, x2, y1, x2 + p, y2, w - 1, 0, w, h, null);
+			g.drawImage(bi, x1, y1 - p, x2, y1, 0, 0, w, 1, null);
+			g.drawImage(bi, x1, y2, x2, y2 + p, 0, h - 1, w, h, null);
+			
+			// # - #
+			// |   |
+			// # - #
+			// Fill Corners
+			g.drawImage(bi, x1 - p, y1 - p, x1, y1, 0, 0, 1, 1, null);
+			g.drawImage(bi, x2, y1 - p, x2 + p, y1, w - 1, 0, w, 1, null);
+			g.drawImage(bi, x1 - p, y2, x1, y2 + p, 0, h - 1, 1, h, null);
+			g.drawImage(bi, x2, y2, x2 + p, y2 + p, w - 1, h - 1, w, h, null);
+		}
 		
-		// # - #
-		// |   |
-		// # - #
-		// Fill Corners
-		g.drawImage(bi, x1 - p, y1 - p, x1, y1, 0, 0, 1, 1, null);
-		g.drawImage(bi, x2, y1 - p, x2 + p, y1, w - 1, 0, w, 1, null);
-		g.drawImage(bi, x1 - p, y2, x1, y2 + p, 0, h - 1, 1, h, null);
-		g.drawImage(bi, x2, y2, x2 + p, y2 + p, w - 1, h - 1, w, h, null);
-		
-
 		g.setBackground(new Color(0, true));
 		g.clearRect(x1, y1, bi.getWidth(), bi.getHeight());
 		g.drawImage(bi, x1, y1, null);
@@ -175,7 +184,7 @@ public class TextureAtlas extends IResource {
 			atlas = null;
 		}
 		
-		atlas = Texture.loadBufferedImageTexture(image, GL11.GL_NEAREST);
+		atlas = Texture.loadBufferedImageTexture(image, INTERPOLATION);
 	}
 	
 	public AtlasUv getUv(int id) {
@@ -256,11 +265,22 @@ public class TextureAtlas extends IResource {
 		return -1;
 	}
 	
+	public int getWidth() {
+		return WIDTH;
+	}
+	
+	public int getHeight() {
+		return HEIGHT;
+	}
+	
 	public Texture getTexture() {
 		return atlas;
 	}
 	
 	public int getTextureId() {
+		if(atlas == null)
+			return 0;
+		
 		return atlas.textureId;
 	}
 	

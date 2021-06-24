@@ -20,7 +20,7 @@ public class GuiLabel extends GuiComponent {
 	
 	protected static void createTextAtlas() throws Exception {
 		if(text_atlas == null) {
-			text_atlas = new TextureAtlas(2, 16, 1024, 1024);
+			text_atlas = new TextureAtlas(2, 16, 1024, 1024, false);
 		} else {
 			text_atlas.unload();
 		}
