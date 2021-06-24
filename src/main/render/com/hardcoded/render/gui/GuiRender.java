@@ -3,19 +3,29 @@ package com.hardcoded.render.gui;
 import org.lwjgl.opengl.GL11;
 
 import com.hardcoded.api.IResource;
+import com.hardcoded.lwjgl.input.InputMask;
 import com.hardcoded.mc.general.world.IBlockData;
 import com.hardcoded.render.gui.GuiListener.GuiEvent.GuiKeyEvent;
 import com.hardcoded.render.gui.GuiListener.GuiEvent.GuiMouseEvent;
 import com.hardcoded.render.gui.components.GuiBlockMenu;
 import com.hardcoded.render.gui.components.GuiToolList;
 
-public class GuiRender extends IResource {
-	private GuiToolList tools;
+public class GuiRender extends IResource implements GuiListener {
+	public IBlockData selectedBlock;
 	private GuiPanel panel;
 	
-	public IBlockData selectedBlock;
-	
 	public GuiRender() {
+		// Register this to recieve global events
+		InputMask.registerListener(this);
+	}
+	
+	@Override
+	public void onMouseEvent(GuiMouseEvent event) {
+		
+	}
+
+	@Override
+	public void onKeyEvent(GuiKeyEvent event) {
 		
 	}
 	
@@ -33,7 +43,7 @@ public class GuiRender extends IResource {
 		blockMenu.setBounds(72, 18, 500, 500);
 		panel.add(blockMenu);
 		
-		tools = new GuiToolList(this, 0, 18);
+		GuiToolList tools = new GuiToolList(this, 0, 18);
 		tools.setSize(72, 72 * 8);
 		panel.add(tools);
 	}
@@ -50,16 +60,5 @@ public class GuiRender extends IResource {
 		panel.render();
 		
 		GL11.glDisable(GL11.GL_BLEND);
-	}
-	
-	public GuiListener processMouseEvent(GuiMouseEvent event) {
-		if(event.getY() < 18 || panel == null) return null;
-		
-		return panel.processMouseEvent(event, true);
-	}
-
-	public void processKeyEvent(GuiKeyEvent event) {
-		if(panel == null) return;
-		panel.processKeyEvent(event);
 	}
 }

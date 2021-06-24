@@ -10,6 +10,7 @@ import org.lwjgl.opengl.GL11;
 import com.hardcoded.lwjgl.LwjglWindow;
 import com.hardcoded.lwjgl.data.Texture;
 import com.hardcoded.lwjgl.icon.GuiIcons;
+import com.hardcoded.lwjgl.input.InputMask;
 import com.hardcoded.main.ProjectEdit;
 import com.hardcoded.render.gui.GuiComponent;
 import com.hardcoded.render.gui.GuiListener;
@@ -46,7 +47,6 @@ public class GuiToolList extends GuiComponent implements GuiListener {
 	@Override
 	public void onMouseEvent(GuiMouseEvent event) {
 		if(event.isConsumed()) return;
-		event.requestFocus();
 		
 		if(event instanceof GuiMouseMove) {
 			hoverIndex = -1;
@@ -57,15 +57,6 @@ public class GuiToolList extends GuiComponent implements GuiListener {
 					}
 				}
 			}
-		}
-		
-		if(event.isInside(this)) {
-			event.requestFocus();
-		}
-		
-		if(selectedIndex >= 0) {
-			GuiTool tool = tools.get(selectedIndex);
-			tool.onMouseEvent(event);
 		}
 		
 		if(!LwjglWindow.isMouseCaptured()) {
@@ -81,10 +72,7 @@ public class GuiToolList extends GuiComponent implements GuiListener {
 	
 	@Override
 	public void onKeyEvent(GuiKeyEvent event) {
-		if(selectedIndex >= 0) {
-			GuiTool tool = tools.get(selectedIndex);
-			tool.onKeyEvent(event);
-		}
+		
 	}
 	
 	@Override
@@ -95,6 +83,11 @@ public class GuiToolList extends GuiComponent implements GuiListener {
 		for(int i = 0, len = tools.size(); i < len; i++) {
 			GuiTool tool = tools.get(i);
 			tool.selected = i == selectedIndex;
+			
+			if(!LwjglWindow.isMouseCaptured()) {
+				InputMask.addEventMask(x, y + i * 72, 72, 72, tool, this);
+			}
+			
 			renderBox(i, x, y + i * 72, 72, 72);
 			tool.renderComponent();
 		}

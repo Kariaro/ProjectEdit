@@ -17,7 +17,6 @@ import com.hardcoded.lwjgl.async.LwjglAsyncThread;
 import com.hardcoded.lwjgl.input.Input;
 import com.hardcoded.lwjgl.util.LoadingException;
 import com.hardcoded.render.LwjglRender;
-import com.hardcoded.render.gui.GuiRender;
 
 /**
  * This is the main thread of the lwjgl application.
@@ -31,7 +30,6 @@ public class LwjglWindow implements Runnable {
 	
 	protected final ConcurrentLinkedDeque<Runnable> tasks;
 	private LwjglRender render;
-	private GuiRender gui;
 	
 	private boolean running;
 	private long window_hwnd;
@@ -93,8 +91,7 @@ public class LwjglWindow implements Runnable {
 		GLFWVidMode vidmode = glfwGetVideoMode(glfwGetPrimaryMonitor());
 		glfwSetWindowPos(window, (vidmode.width() - width) / 2, (vidmode.height() - height) / 2);
 		
-		gui = new GuiRender();
-		input = new Input(gui);
+		input = new Input();
 		glfwSetKeyCallback(window, input.getKeyboard());
 		glfwSetCursorPosCallback(window, input.getMouse());
 		glfwSetMouseButtonCallback(window, input.getMouseButton());
@@ -142,7 +139,7 @@ public class LwjglWindow implements Runnable {
 		
 		WGL.wglMakeCurrent(dc, context_1);
 		
-		render = new LwjglRender(window, gui, width, height);
+		render = new LwjglRender(window, width, height);
 		glfwShowWindow(window);
 		
 		return true;

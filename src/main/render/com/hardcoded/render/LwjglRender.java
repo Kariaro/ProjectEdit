@@ -51,11 +51,11 @@ public class LwjglRender {
 	public Camera camera;
 	
 	private WorldRender world_render;
-	public LwjglRender(long window, GuiRender render, int width, int height) {
+	public LwjglRender(long window, int width, int height) {
 		this.window = window;
 		
 		camera = ProjectEdit.getInstance().getCamera();
-		this.gui = render;
+		gui = new GuiRender();
 		world_render = new WorldRender(this);
 		menuBar = new MenuBar();
 		
@@ -242,6 +242,22 @@ public class LwjglRender {
 				reloadTextures();
 				GL11.glViewport(0, 0, LwjglWindow.getWidth(), LwjglWindow.getHeight());
 			}
+			
+			if(Input.isKeyDown(GLFW.GLFW_KEY_1)) {
+				camera.x = 135;
+				camera.y = 331;
+				camera.z = 67;
+				camera.ry = 90;
+				camera.rx = 180;
+			}
+			
+			if(Input.isKeyDown(GLFW.GLFW_KEY_2)) {
+				camera.x = 1648;
+				camera.y = 68.26f;
+				camera.z = -2434;
+				camera.rx = 180;
+				camera.ry = 10;
+			}
 		}
 		
 		if(world != null) {
@@ -321,22 +337,6 @@ public class LwjglRender {
 			GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0);
 			GL13.glActiveTexture(GL13.GL_TEXTURE0);
 			GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0);
-			
-			if(Input.isKeyDown(GLFW.GLFW_KEY_O)) {
-				camera.x = 135;
-				camera.y = 331;
-				camera.z = 67;
-				camera.ry = 90;
-				camera.rx = 180;
-			}
-			
-			if(Input.isKeyDown(GLFW.GLFW_KEY_P)) {
-				camera.x = 1648;
-				camera.y = 68.26f;
-				camera.z = -2434;
-				camera.rx = 180;
-				camera.ry = 10;
-			}
 			
 			GL11.glPushMatrix();
 			GL11.glLoadMatrixf(projectionView.get(new float[16]));
