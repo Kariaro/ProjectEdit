@@ -1,5 +1,7 @@
 package com.hardcoded.render.gui;
 
+import org.lwjgl.glfw.GLFW;
+
 import com.hardcoded.lwjgl.input.Input;
 import com.hardcoded.render.gui.GuiListener.GuiEvent.GuiKeyEvent;
 import com.hardcoded.render.gui.GuiListener.GuiEvent.GuiMouseEvent;
@@ -20,15 +22,17 @@ public interface GuiListener {
 			private final float scrollAmount;
 			private final float x;
 			private final float y;
+			private final Object customData;
 			private boolean consumed;
 			
-			public GuiMouseEvent(float x, float y, float scrollAmount, int button, int action, int modifiers) {
+			public GuiMouseEvent(float x, float y, float scrollAmount, int button, int action, int modifiers, Object customData) {
 				this.x = x;
 				this.y = y;
 				this.button = button;
 				this.scrollAmount = scrollAmount;
 				this.action = action;
 				this.modifiers = modifiers;
+				this.customData = customData;
 			}
 			
 			public float getX() {
@@ -69,17 +73,9 @@ public interface GuiListener {
 				return consumed;
 			}
 			
-			private boolean get_focus;
-			public void requestFocus() {
-				get_focus = true;
-			}
-			
-			public boolean getFocus() {
-				return get_focus;
-			}
-			
-			void unsetFocus() {
-				get_focus = false;
+			@Override
+			public Object getCustomData() {
+				return customData;
 			}
 			
 			public boolean isInside(GuiComponent comp) {
@@ -97,20 +93,26 @@ public interface GuiListener {
 		}
 		
 		class GuiMouseScroll extends GuiMouseEvent {
-			public GuiMouseScroll(float x, float y, float scrollAmount, int modifiers) {
-				super(x, y, scrollAmount, 0, 0, modifiers);
+			public GuiMouseScroll(float x, float y, float scrollAmount, int modifiers, Object customData) {
+				super(x, y, scrollAmount, 0, 0, modifiers, customData);
 			}
 		}
 		
 		class GuiMouseMove extends GuiMouseEvent {
-			public GuiMouseMove(float x, float y, int modifiers) {
-				super(x, y, 0, 0, 0, modifiers);
+			public GuiMouseMove(float x, float y, int modifiers, Object customData) {
+				super(x, y, 0, 0, 0, modifiers, customData);
+			}
+		}
+		
+		class GuiMouseDrag extends GuiMouseEvent {
+			public GuiMouseDrag(float x, float y, int buttons, int modifiers, Object customData) {
+				super(x, y, 0, buttons, GLFW.GLFW_REPEAT, modifiers, customData);
 			}
 		}
 		
 		class GuiMousePress extends GuiMouseEvent {
-			public GuiMousePress(float x, float y, int button, int action, int modifiers) {
-				super(x, y, 0, button, action, modifiers);
+			public GuiMousePress(float x, float y, int button, int action, int modifiers, Object customData) {
+				super(x, y, 0, button, action, modifiers, customData);
 			}
 		}
 		
@@ -134,8 +136,14 @@ public interface GuiListener {
 				return action;
 			}
 			
+			@Override
 			public int getModifiers() {
 				return modifiers;
+			}
+			
+			@Override
+			public Object getCustomData() {
+				return null;
 			}
 			
 			@Override
@@ -163,8 +171,14 @@ public interface GuiListener {
 		boolean isConsumed();
 		
 		/**
-		 * Returns the current key modifiers
+		 * Returns the current key modifiers.
+		 * @see GLFW#GLFW_MOD_SHIFT
 		 */
 		int getModifiers();
+		
+		/**
+		 * Custom data
+		 */
+		Object getCustomData();
 	}
 }

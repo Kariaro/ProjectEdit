@@ -2,9 +2,9 @@ package com.hardcoded.lwjgl.input;
 
 import org.lwjgl.glfw.*;
 
+import com.hardcoded.lwjgl.input.InputMask.Mask;
 import com.hardcoded.render.gui.GuiListener;
 import com.hardcoded.render.gui.GuiListener.GuiEvent.*;
-import com.hardcoded.render.gui.GuiRender;
 
 /**
  * @author HardCoded
@@ -12,13 +12,13 @@ import com.hardcoded.render.gui.GuiRender;
 public class Input {
 	private static final boolean[] keys = new boolean[65536];
 	private static final boolean[] keys_poll = new boolean[65536];
-	private static final boolean[] mouse_buttons = new boolean[64];
+	private static final boolean[] mouse_buttons = new boolean[16];
 	
 	private static boolean has_focus;
 	
 	// Gui
-	private static GuiListener focused_element;
-	private static boolean sendGuiEvents = true;
+	private static GuiListener mouse_holder;
+	private static boolean has_mouse_holder;
 	
 	// Contains the last key modifiers
 	private static int LAST_MODIFIERS = 0;
@@ -34,7 +34,7 @@ public class Input {
 	private GLFWScrollCallback mouse_wheel;
 	private GLFWWindowFocusCallback window_focus;
 	
-	public Input(final GuiRender gui) {
+	public Input() {
 		keyboard = new GLFWKeyCallback() {
 			@Override
 			public void invoke(long window, int key, int scancode, int action, int mods) {
@@ -50,18 +50,14 @@ public class Input {
 					Input.keys_poll[key] = true;
 				}
 				
-				if(sendGuiEvents && has_focus) {
-					GuiKeyEvent event = new GuiKeyEvent(key, action, mods);
-					if(focused_element != null) {
-						focused_element.onKeyEvent(event);
-					} else {
-						gui.processKeyEvent(event);
-					}
-					
-					if(event.isConsumed()) {
-						Input.keys_poll[key] = false;
-						Input.keys[key] = false;
-					}
+				GuiKeyEvent event = new GuiKeyEvent(key, action, mods);
+				
+				if(InputMask.focusedListener != null) {
+					InputMask.focusedListener.onKeyEvent(event);
+				}
+				
+				for(GuiListener listener : InputMask.listeners) {
+					listener.onKeyEvent(event);
 				}
 			}
 		};
@@ -72,14 +68,38 @@ public class Input {
 				LAST_MODIFIERS = mods;
 				
 				if(button < 0 || button >= mouse_buttons.length) return;
-				mouse_buttons[button] = (action != GLFW.GLFW_RELEASE);
 				
-				if(sendGuiEvents && has_focus) {
-					GuiMouseEvent event = new GuiMousePress((float)mouse_x, (float)mouse_y, button, action, mods);
-					focused_element = gui.processMouseEvent(event);
-					if(action == GLFW.GLFW_RELEASE) {
-						focused_element = null;
+				Mask mask = InputMask.getFirstIntersection((float)mouse_x, (float)mouse_y);
+				
+				if(action == GLFW.GLFW_PRESS) {
+					mouse_holder = null;
+					
+					// Make sure we only count the first mouse_press
+					if(!isAnyMouseButtonDown()) {
+						if(mask != null) {
+							mouse_holder = mask.getListener();
+						}
+						
+						has_mouse_holder = true;
 					}
+				} else if(action == GLFW.GLFW_RELEASE) {
+					mouse_buttons[button] = false;
+					
+					// If this is true we should not remove the holder
+					if(!isAnyMouseButtonDown()) {
+						mouse_holder = null;
+						has_mouse_holder = false;
+					}
+				}
+				
+				mouse_buttons[button] = (action != GLFW.GLFW_RELEASE);
+				if(mask != null) {
+					mask.getListener().onMouseEvent(new GuiMousePress((float)mouse_x, (float)mouse_y, button, action, mods, mask.getData()));
+				}
+				
+				GuiMouseEvent event = new GuiMousePress((float)mouse_x, (float)mouse_y, button, action, mods, null);
+				for(GuiListener listener : InputMask.listeners) {
+					listener.onMouseEvent(event);
 				}
 			}
 		};
@@ -90,14 +110,26 @@ public class Input {
 				Input.mouse_x = xpos;
 				Input.mouse_y = ypos;
 				
-				if(sendGuiEvents && has_focus) {
-					GuiMouseEvent event = new GuiMouseMove((float)xpos, (float)ypos, LAST_MODIFIERS);
-					
-					if(focused_element != null) {
-						focused_element.onMouseEvent(event);
-					} else {
-						gui.processMouseEvent(event);
+				if(has_mouse_holder) {
+					if(mouse_holder != null) {
+						mouse_holder.onMouseEvent(new GuiMouseDrag((float)mouse_x, (float)mouse_y, 0, LAST_MODIFIERS, null));
 					}
+				} else {
+					Mask mask = InputMask.getFirstIntersection((float)xpos, (float)ypos);
+					if(mask != null) {
+						mask.getListener().onMouseEvent(new GuiMouseMove((float)xpos, (float)ypos, LAST_MODIFIERS, mask.getData()));
+					}
+				}
+				
+				GuiMouseEvent event;
+				if(has_mouse_holder) {
+					event = new GuiMouseDrag((float)mouse_x, (float)mouse_y, 0, LAST_MODIFIERS, null);
+				} else {
+					event = new GuiMouseMove((float)mouse_x, (float)mouse_y, LAST_MODIFIERS, null);
+				}
+				
+				for(GuiListener listener : InputMask.listeners) {
+					listener.onMouseEvent(event);
 				}
 			}
 		};
@@ -105,21 +137,30 @@ public class Input {
 		mouse_wheel = new GLFWScrollCallback() {
 			@Override
 			public void invoke(long window, double xoffset, double yoffset) {
-				if(sendGuiEvents) {
-					GuiMouseEvent event = new GuiMouseScroll((float)mouse_x, (float)mouse_y, (float)yoffset, LAST_MODIFIERS);
-					if(focused_element != null) {
-						focused_element.onMouseEvent(event);
-					} else {
-						gui.processMouseEvent(event);
-					}
-					
-					if(!event.isConsumed()) {
-						scroll_delta_x = xoffset;
-						scroll_delta_y = yoffset;
+				Input.scroll_delta_x = xoffset;
+				Input.scroll_delta_y = yoffset;
+				
+				GuiMouseScroll event = null;
+				
+				if(has_mouse_holder) {
+					if(mouse_holder != null) {
+						mouse_holder.onMouseEvent(event = new GuiMouseScroll((float)mouse_x, (float)mouse_y, (float)yoffset, LAST_MODIFIERS, null));
 					}
 				} else {
-					scroll_delta_x = xoffset;
-					scroll_delta_y = yoffset;
+					Mask mask = InputMask.getFirstIntersection((float)mouse_x, (float)mouse_y);
+					if(mask != null) {
+						mask.getListener().onMouseEvent(event = new GuiMouseScroll((float)mouse_x, (float)mouse_y, (float)yoffset, LAST_MODIFIERS, mask.getData()));
+					}
+				}
+				
+				if(event != null && event.isConsumed()) {
+					Input.scroll_delta_x = 0;
+					Input.scroll_delta_y = 0;
+				}
+				
+				event = new GuiMouseScroll((float)mouse_x, (float)mouse_y, (float)yoffset, LAST_MODIFIERS, null);
+				for(GuiListener listener : InputMask.listeners) {
+					listener.onMouseEvent(event);
 				}
 			}
 		};
@@ -128,9 +169,17 @@ public class Input {
 			@Override
 			public void invoke(long window, boolean focused) {
 				Input.has_focus = focused;
-				Input.focused_element = null;
+				Input.mouse_holder = null;
+				Input.has_mouse_holder = false;
 			}
 		};
+	}
+	
+	private boolean isAnyMouseButtonDown() {
+		for(int i = 0, len = mouse_buttons.length; i < len; i++) {
+			if(mouse_buttons[i]) return true;
+		}
+		return false;
 	}
 	
 	public GLFWKeyCallback getKeyboard() {
@@ -185,6 +234,7 @@ public class Input {
 	public static void flush() {
 		scroll_delta_x = 0;
 		scroll_delta_y = 0;
+		InputMask.flush();
 	}
 	
 	public static boolean isControlDown() {
@@ -209,14 +259,5 @@ public class Input {
 	
 	public static boolean hasFocus() {
 		return has_focus;
-	}
-
-	public static boolean isFocused(Object obj) {
-		return obj == focused_element;
-	}
-	
-	@Deprecated
-	public static void sendGuiEvents(boolean enable) {
-		Input.sendGuiEvents = enable;
 	}
 }

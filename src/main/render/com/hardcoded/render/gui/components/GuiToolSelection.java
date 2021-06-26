@@ -6,8 +6,10 @@ import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL11;
 
 import com.hardcoded.lwjgl.Camera;
+import com.hardcoded.lwjgl.LwjglWindow;
 import com.hardcoded.lwjgl.icon.GuiIcons;
 import com.hardcoded.lwjgl.input.Input;
+import com.hardcoded.lwjgl.input.InputMask;
 import com.hardcoded.main.ProjectEdit;
 import com.hardcoded.mc.general.files.Blocks;
 import com.hardcoded.mc.general.files.Position;
@@ -27,10 +29,8 @@ public class GuiToolSelection extends GuiTool implements GuiListener {
 		this.icons = ProjectEdit.getInstance().getTextureManager().getGuiIcons();
 	}
 	
-
 	private Position pos1;
 	private Position pos2;
-	private boolean dragging;
 	
 	@Override
 	public void onMouseEvent(GuiMouseEvent event) {
@@ -40,21 +40,14 @@ public class GuiToolSelection extends GuiTool implements GuiListener {
 			if(pos != null) {
 				if(event.getButton() == GLFW.GLFW_MOUSE_BUTTON_1) {
 					if(event.getAction() == GLFW.GLFW_PRESS) {
-						if(!dragging) {
-							pos1 = pos;
-							pos2 = null;
-							dragging = true;
-						} else {
-							pos2 = pos;
-						}
-					} else {
-						dragging = false;
+						pos1 = pos;
+						pos2 = null;
 					}
 				}
 			}
 		}
-	
-		if(dragging && event instanceof GuiMouseMove) {
+		
+		if(event instanceof GuiMouseDrag) {
 			Position pos = raycastPosition();
 			
 			if(pos != null) {
@@ -133,6 +126,8 @@ public class GuiToolSelection extends GuiTool implements GuiListener {
 	@Override
 	protected void renderWorld() {
 		if(!selected) return;
+		InputMask.requestFocus(this);
+		InputMask.addEventMaskLast(0, 0, LwjglWindow.getWidth(), LwjglWindow.getHeight(), null, this);
 		
 		Camera camera = ProjectEdit.getInstance().getCamera();
 		Matrix4f proj = camera.getProjectionMatrix();

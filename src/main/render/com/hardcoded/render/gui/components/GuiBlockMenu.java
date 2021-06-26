@@ -6,6 +6,8 @@ import java.util.List;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL11;
 
+import com.hardcoded.lwjgl.LwjglWindow;
+import com.hardcoded.lwjgl.input.InputMask;
 import com.hardcoded.mc.general.world.BlockDataManager;
 import com.hardcoded.mc.general.world.IBlockData;
 import com.hardcoded.render.gui.GuiComponent;
@@ -65,16 +67,13 @@ public class GuiBlockMenu extends GuiComponent implements GuiListener {
 		int y = getY();
 		
 		if(event.isInside(this)) {
-			event.requestFocus();
 			event.consume();
 			
 			if(event instanceof GuiMouseScroll) {
 				scroll_amount -= event.getScrollAmount() * 4;
 			}
 		} else {
-			if(!isFocused()) {
-				return;
-			}
+			
 		}
 		
 		if(event.isInside(x + width - 32, y + 8 + scroll_amount, 24, 32)) {
@@ -211,6 +210,10 @@ public class GuiBlockMenu extends GuiComponent implements GuiListener {
 		int height = getHeight();
 		int x = getX();
 		int y = getY();
+		
+		if(!LwjglWindow.isMouseCaptured()) {
+			InputMask.addEventMask(x, y, width, height, this);
+		}
 		
 		int block_screen_width = getBlockScreenWidth();
 		int block_screen_height = getBlockScreenHeight();

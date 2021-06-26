@@ -6,6 +6,7 @@ import java.awt.image.BufferedImage;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL11;
 
 import com.hardcoded.lwjgl.data.TextureAtlas;
@@ -20,14 +21,16 @@ public class MenuGraphics {
 	private static final int NORMAL_FG     = 0x000000;
 	private static final int DISABLED_FG   = 0x6d6d6d;
 	
-	static final int POPUP_ITEM_HOVER    = 0x90c8f6;
+	static final int POPUP_ITEM_HOVER    = 0x91c9f7;
 	static final int POPUP_ITEM_NORMAL   = 0xf2f2f2;
 	static final int POPUP_ITEM_DISABLED = 0xe6e6e6;
 	static final int POPUP_MENU_FG       = 0x000000;
 	static final int POPUP_MENU_DISABLED = 0x6d6d6d;
 	static final int POPUP_MENU_OUTLINE  = 0xcccccc;
-	static final int POPUP_MENU_FILL_2   = 0xf0f0f0;
 	static final int POPUP_MENU_FILL     = 0xf2f2f2;
+	
+	static final int POPUP_NORMAL_EXTRA  = 0xf0f0f0;
+	static final int POPUP_HOVER_EXTRA   = 0x90c8f6;
 	
 	
 	private BufferedImage temp = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
@@ -64,17 +67,51 @@ public class MenuGraphics {
 		return tex;
 	}
 	
+	private String getKeybindString(int key, int mod) {
+		if(key == 0 && mod == 0) return "";
+		
+		String mods = "";
+		if((mod & GLFW.GLFW_MOD_CONTROL) != 0) mods += "Ctrl+";
+		if((mod & GLFW.GLFW_MOD_ALT) != 0) mods += "Alt+";
+		if((mod & GLFW.GLFW_MOD_SHIFT) != 0) mods += "Shift+";
+		
+		String keys = GLFW.glfwGetKeyName(key, GLFW.GLFW_KEY_UNKNOWN);
+		
+		
+		if(keys == null) {
+			switch(key) {
+				case GLFW.GLFW_KEY_DELETE:
+					keys = "Delete";
+					break;
+				default:
+					keys = String.format("Unknown 0x%x", key);
+					break;
+			}
+		}
+		
+		if(keys.length() == 1) {
+			keys = keys.toUpperCase();
+		}
+		
+		return mods + keys;
+	}
+	
 	public ButtonTexture getPopupButton(String text, int width) {
-		ButtonTexture tex = buttons.get("popup_" + text);
+		return getPopupButton(text, width, 0, 0);
+	}
+	
+	public ButtonTexture getPopupButton(String text, int width, int key, int modifiers) {
+		String keybind = getKeybindString(key, modifiers);
+		ButtonTexture tex = buttons.get("popup_" + text + keybind);
 		if(tex != null) return tex;
 		
-		BufferedImage hover = getPopupButtonImage(text, width - 6, new Color(POPUP_MENU_FG), new Color(POPUP_ITEM_HOVER));
-		BufferedImage normal = getPopupButtonImage(text, width - 6, new Color(POPUP_MENU_FG), new Color(POPUP_ITEM_NORMAL));
-		BufferedImage disabled = getPopupButtonImage(text, width - 6, new Color(POPUP_MENU_DISABLED), new Color(POPUP_ITEM_DISABLED));
+		BufferedImage hover = getPopupButtonImage(text, keybind, width - 6, new Color(POPUP_MENU_FG), new Color(POPUP_ITEM_HOVER), new Color(POPUP_HOVER_EXTRA));
+		BufferedImage normal = getPopupButtonImage(text, keybind, width - 6, new Color(POPUP_MENU_FG), new Color(POPUP_ITEM_NORMAL), new Color(POPUP_NORMAL_EXTRA));
+		BufferedImage disabled = getPopupButtonImage(text, keybind, width - 6, new Color(POPUP_MENU_DISABLED), new Color(POPUP_ITEM_DISABLED), new Color(POPUP_NORMAL_EXTRA));
 		
-		int uv_1 = gui_atlas.addTexture("popup_" + text + "_hover", hover);
-		int uv_2 = gui_atlas.addTexture("popup_" + text + "_normal", normal);
-		int uv_3 = gui_atlas.addTexture("popup_" + text + "_disabled", disabled);
+		int uv_1 = gui_atlas.addTexture("popup_" + text + keybind + "_hover", hover);
+		int uv_2 = gui_atlas.addTexture("popup_" + text + keybind + "_normal", normal);
+		int uv_3 = gui_atlas.addTexture("popup_" + text + keybind + "_disabled", disabled);
 		
 		buttons.put(text, tex = new ButtonTexture(
 			gui_atlas.getUv(uv_1),
@@ -110,7 +147,7 @@ public class MenuGraphics {
 		return (int)Math.ceil(rect.getWidth());
 	}
 	
-	private BufferedImage getPopupButtonImage(String text, int width, Color fg, Color bg) {
+	private BufferedImage getPopupButtonImage(String text, String keybind, int width, Color fg, Color bg, Color extra) {
 		Font font = this.font.deriveFont(12.0f);
 		
 		int font_width = getStringWidth(text, font);
@@ -122,6 +159,14 @@ public class MenuGraphics {
 		g.setColor(bg);
 		g.fillRect(0, 0, width, 22);
 		g.drawImage(textImage, 32, -1, null);
+		g.setColor(extra);
+		g.fillRect(0, 0, 28, 22);
+		if(!keybind.isEmpty()) {
+			int text_width = getStringWidth(keybind, font);
+			BufferedImage mnemonicImage = getText(font, keybind, fg, bg, text_width, 22);
+			g.drawImage(mnemonicImage, width - mnemonicImage.getWidth() - 18, -1, null);
+		}
+		
 		g.dispose();
 		
 		return img;
