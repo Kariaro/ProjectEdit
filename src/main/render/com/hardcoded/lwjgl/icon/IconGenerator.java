@@ -2,11 +2,15 @@ package com.hardcoded.lwjgl.icon;
 
 import java.awt.image.BufferedImage;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.BiConsumer;
 
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.*;
 
 import com.hardcoded.api.IResource;
+import com.hardcoded.lwjgl.LwjglWindow;
 import com.hardcoded.lwjgl.data.TextureAtlas;
 import com.hardcoded.mc.general.world.BlockDataManager;
 import com.hardcoded.mc.general.world.IBlockData;
@@ -133,6 +137,7 @@ public class IconGenerator extends IResource {
 		GL11.glDisable(GL11.GL_BLEND);
 		GL11.glDisable(GL11.GL_CULL_FACE);
 		GL11.glDisable(GL11.GL_DEPTH_TEST);
+		GL11.glViewport(0, 0, LwjglWindow.getWidth(), LwjglWindow.getHeight());
 		
 		return pixels;
 	}
@@ -146,6 +151,31 @@ public class IconGenerator extends IResource {
 		}
 		
 		atlas.reload();
+	}
+	
+	private List<IBlockData> loadingBlocks;
+	private int loadingIndex;
+	public boolean loadIconsPartwise(int max_loading, BiConsumer<Integer, Integer> callback) {
+		if(loadingBlocks == null) {
+			atlas.unload();
+			loadingBlocks = new ArrayList<>(BlockDataManager.getStates());
+		}
+		
+		for(int i = 0; i < max_loading; i++) {
+			if(loadingIndex < loadingBlocks.size()) {
+				IBlockData data = loadingBlocks.get(loadingIndex++);
+				generateIcon(data);
+			} else {
+				callback.accept(loadingIndex, loadingBlocks.size());
+				atlas.reload();
+				loadingBlocks = null;
+				loadingIndex = 0;
+				return true;
+			}
+		}
+		
+		callback.accept(loadingIndex, loadingBlocks.size());
+		return false;
 	}
 	
 	public void drawBlock(IBlockData data) {

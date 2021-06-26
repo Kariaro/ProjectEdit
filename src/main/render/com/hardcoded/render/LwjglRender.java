@@ -1,12 +1,9 @@
 package com.hardcoded.render;
 
 import java.io.File;
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
-
-import javax.imageio.ImageIO;
 
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -28,7 +25,6 @@ import com.hardcoded.lwjgl.shader.MeshShader;
 import com.hardcoded.lwjgl.shader.ShadowShader;
 import com.hardcoded.lwjgl.shadow.ShadowFrameBuffer;
 import com.hardcoded.main.ProjectEdit;
-import com.hardcoded.mc.general.Minecraft;
 import com.hardcoded.mc.general.files.Blocks;
 import com.hardcoded.mc.general.files.IChunk;
 import com.hardcoded.mc.general.files.IRegion;
@@ -36,21 +32,28 @@ import com.hardcoded.mc.general.world.World;
 import com.hardcoded.render.gui.GuiRender;
 import com.hardcoded.render.menubar.MenuBar;
 import com.hardcoded.render.utils.RenderUtil;
-import com.hardcoded.utils.*;
+import com.hardcoded.utils.MathUtils;
 
 public class LwjglRender {
 	private static final Logger LOGGER = LogManager.getLogger(LwjglRender.class);
 	
 	private final long window;
 	private MenuBar menuBar;
-	private GuiRender gui;
+	
+	private LwjglResourceLoader resourceLoader;
+	protected TextureManager textureManager;
+	protected TextureAtlas atlas;
+	protected WorldRender world_render;
+	protected GuiRender gui;
+	
+	public ShadowShader shadowShader;
+	public MeshShader meshShader;
 	
 	// Initialized from ProjectEdit.getInstance().getWorld()
 	public World world;
 	// Initialized from ProjectEdit.getInstance().getCamera()
 	public Camera camera;
 	
-	private WorldRender world_render;
 	public LwjglRender(long window, int width, int height) {
 		this.window = window;
 		
@@ -58,6 +61,8 @@ public class LwjglRender {
 		gui = new GuiRender();
 		world_render = new WorldRender(this);
 		menuBar = new MenuBar();
+		
+		resourceLoader = new LwjglResourceLoader(this);
 		
 		setViewport(width, height);
 		
@@ -77,13 +82,6 @@ public class LwjglRender {
 		GL11.glMatrixMode(GL11.GL_MODELVIEW_MATRIX);
 	}
 	
-	private File version_jar;
-	private VersionResourceReader reader;
-	private TextureManager textureManager;
-	private TextureAtlas atlas;
-	
-	public ShadowShader shadowShader;
-	public MeshShader meshShader;
 	private void init() {
 		Blocks.init();
 		
@@ -140,41 +138,6 @@ public class LwjglRender {
 		}
 	}
 	
-	public void reloadTextures() {
-		TimerUtils.begin();
-		
-		// Unload rendered chunks
-		world_render.unloadCache();
-		// Unload model cache
-		FastModelJsonLoader.unloadCache();
-		// Unload all textures
-		atlas.unload();
-		
-		// Reload models
-		reader.loadBlocks();
-		
-		// Add debug texture
-		try {
-			debug_id = atlas.addTexture("projectedit:debug_faces", ImageIO.read(LwjglRender.class.getResourceAsStream("/images/debug_faces.png")));
-		} catch(Exception e) {
-			e.printStackTrace();
-		}
-		
-		// Recompile textures
-		atlas.reload();
-		
-		// Icon generation
-		textureManager.getIconGenerator().loadIcons();
-		
-		long nanos = TimerUtils.end();
-		
-		gui.init();
-		
-		LOGGER.info("Took: {} ms to reload textures", nanos / 1000000.0);
-		
-		GL11.glViewport(0, 0, LwjglWindow.getWidth(), LwjglWindow.getHeight());
-	}
-	
 	public void update() {
 		GLFW.glfwSwapBuffers(window);
 		GLFW.glfwPollEvents();
@@ -193,163 +156,158 @@ public class LwjglRender {
 	
 	protected Vector3f camera_pos;
 	protected Matrix4f camera_view;
-	private int debug_id;
 	
 	private World last_world;
 	public void render() {
 		GL11.glClearColor(0.3f, 0.3f, 0.3f, 1);
 		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
 		
-		Matrix4f projectionView = camera.getProjectionMatrix();
+		resourceLoader.render();
 		
 		// Get the current loaded world
 		World world = ProjectEdit.getInstance().getWorld();
 		
-		if(last_world != world) {
-			last_world = world;
-			world_render.unloadCache();
+		if(!resourceLoader.isLoading()) {
+			if(last_world != world) {
+				last_world = world;
+				world_render.unloadCache();
+				
+				if(world != null) {
+					if(has_regions) {
+						GL11.glDeleteLists(displayList, 1);
+						has_regions = false;
+					}
+					
+					resourceLoader.loadWorld(world);
+				}
+			}
+		}
+		
+		if(resourceLoader.shouldRender()) {
+			if(Input.isKeyDown(GLFW.GLFW_KEY_U) || camera_pos == null) {
+				camera_pos = camera.getPosition();
+				camera_view = camera.getProjectionMatrix();
+			}
+			
+			if(Input.isControlDown()) {
+				if(Input.pollKey(GLFW.GLFW_KEY_F5)) {
+					gui.init();
+				}
+				
+				if(Input.pollKey(GLFW.GLFW_KEY_T)) {
+					resourceLoader.reload();
+				}
+				
+				if(Input.isKeyDown(GLFW.GLFW_KEY_1)) {
+					camera.x = 135;
+					camera.y = 331;
+					camera.z = 67;
+					camera.ry = 90;
+					camera.rx = 180;
+				}
+				
+				if(Input.isKeyDown(GLFW.GLFW_KEY_2)) {
+					camera.x = 1648;
+					camera.y = 68.26f;
+					camera.z = -2434;
+					camera.rx = 180;
+					camera.ry = 10;
+				}
+			}
 			
 			if(world != null) {
-				version_jar = new File(Minecraft.getVersionFolder(world.getVersion()), world.getVersion() + ".jar");
-				LOGGER.info("Version file: '{}'", version_jar);
+				Matrix4f projectionView = camera.getProjectionMatrix();
 				
-				try {
-					reader = new VersionResourceReader(version_jar);
-				} catch(IOException e) {
-					e.printStackTrace();
-				}
-				
-				reloadTextures();
-				
-				if(has_regions) {
-					GL11.glDeleteLists(displayList, 1);
-					has_regions = false;
-				}
-			}
-		}
-		
-		if(Input.isKeyDown(GLFW.GLFW_KEY_U) || camera_pos == null) {
-			camera_pos = camera.getPosition();
-			camera_view = camera.getProjectionMatrix();
-		}
-		
-		if(Input.isControlDown()) {
-			if(Input.pollKey(GLFW.GLFW_KEY_F5)) {
-				gui.init();
-			}
-			
-			if(Input.pollKey(GLFW.GLFW_KEY_T)) {
-				reloadTextures();
-				GL11.glViewport(0, 0, LwjglWindow.getWidth(), LwjglWindow.getHeight());
-			}
-			
-			if(Input.isKeyDown(GLFW.GLFW_KEY_1)) {
-				camera.x = 135;
-				camera.y = 331;
-				camera.z = 67;
-				camera.ry = 90;
-				camera.rx = 180;
-			}
-			
-			if(Input.isKeyDown(GLFW.GLFW_KEY_2)) {
-				camera.x = 1648;
-				camera.y = 68.26f;
-				camera.z = -2434;
-				camera.rx = 180;
-				camera.ry = 10;
-			}
-		}
-		
-		if(world != null) {
-			GL11.glEnable(GL11.GL_DEPTH_TEST);
-			GL11.glEnable(GL11.GL_CULL_FACE);
-			GL11.glEnable(GL11.GL_TEXTURE_2D);
-			GL11.glEnable(GL11.GL_ALPHA_TEST);
-			GL11.glAlphaFunc(GL11.GL_GREATER, 0);
-			
-			int mvp_scale = (int)(Math.sqrt(Math.max(camera.y / 16 - 8, 0)));
-			if(mvp_scale < 1) mvp_scale = 1;
-			boolean updateShadowMap = false;
-			int cmx = Math.floorDiv((int)camera.x, 16) * 16;
-			int cmy = Math.floorDiv((int)camera.y, 16) * 16;
-			int cmz = Math.floorDiv((int)camera.z, 16) * 16;
-			if(last_mvp_x != cmx || last_mvp_z != cmz || last_mvp_y != cmy || last_mvp_scale != mvp_scale) {
-				last_mvp_scale = mvp_scale;
-				last_mvp_x = cmx;
-				last_mvp_y = cmy;
-				last_mvp_z = cmz;
-				updateShadowMap = true;
-			}
-			
-			Matrix4f mvpMatrix = MathUtils.getOrthoProjectionMatrix(512 * mvp_scale, 512 * mvp_scale, 400);
-			
-			{
-				float step = (System.currentTimeMillis() % 72000L) / 4000.0f;
-				step = 45;
-				step = (int)(step);
-				
-				int x = last_mvp_x;
-				int y = last_mvp_y;
-				int z = last_mvp_z;
-				
-				float angle = (float)Math.toRadians(step);
-				mvpMatrix.rotateLocalX(-(float)Math.PI / 2.0f);
-				mvpMatrix.rotateZ(0.8f);
-				mvpMatrix.rotateY(angle);
-				mvpMatrix.translate(-x, -y, -z);
-			}
-			
-			int radius = 8;
-			
-			if(updateShadowMap) {
-				shadowShader.bind();
-				shadowShader.setMvpMatrix(mvpMatrix);
-				frameBuffer.bindFrameBuffer();
-				GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
-				GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT);
 				GL11.glEnable(GL11.GL_DEPTH_TEST);
-//				world_render.renderWorld(world, camera, projectionView, radius);
-				shadowShader.unbind();
-				frameBuffer.unbindFrameBuffer();
+				GL11.glEnable(GL11.GL_CULL_FACE);
+				GL11.glEnable(GL11.GL_TEXTURE_2D);
+				GL11.glEnable(GL11.GL_ALPHA_TEST);
+				GL11.glAlphaFunc(GL11.GL_GREATER, 0);
+				
+				int mvp_scale = (int)(Math.sqrt(Math.max(camera.y / 16 - 8, 0)));
+				if(mvp_scale < 1) mvp_scale = 1;
+				boolean updateShadowMap = false;
+				int cmx = Math.floorDiv((int)camera.x, 16) * 16;
+				int cmy = Math.floorDiv((int)camera.y, 16) * 16;
+				int cmz = Math.floorDiv((int)camera.z, 16) * 16;
+				if(last_mvp_x != cmx || last_mvp_z != cmz || last_mvp_y != cmy || last_mvp_scale != mvp_scale) {
+					last_mvp_scale = mvp_scale;
+					last_mvp_x = cmx;
+					last_mvp_y = cmy;
+					last_mvp_z = cmz;
+					updateShadowMap = true;
+				}
+				
+				Matrix4f mvpMatrix = MathUtils.getOrthoProjectionMatrix(512 * mvp_scale, 512 * mvp_scale, 400);
+				
+				{
+					float step = (System.currentTimeMillis() % 72000L) / 4000.0f;
+					step = 45;
+					step = (int)(step);
+					
+					int x = last_mvp_x;
+					int y = last_mvp_y;
+					int z = last_mvp_z;
+					
+					float angle = (float)Math.toRadians(step);
+					mvpMatrix.rotateLocalX(-(float)Math.PI / 2.0f);
+					mvpMatrix.rotateZ(0.8f);
+					mvpMatrix.rotateY(angle);
+					mvpMatrix.translate(-x, -y, -z);
+				}
+				
+				int radius = 8;
+				
+				if(updateShadowMap) {
+					shadowShader.bind();
+					shadowShader.setMvpMatrix(mvpMatrix);
+					frameBuffer.bindFrameBuffer();
+					GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
+					GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT);
+					GL11.glEnable(GL11.GL_DEPTH_TEST);
+//					world_render.renderWorld(world, camera, projectionView, radius);
+					shadowShader.unbind();
+					frameBuffer.unbindFrameBuffer();
+				}
+				
+				GL13.glActiveTexture(GL13.GL_TEXTURE1);
+				GL11.glBindTexture(GL11.GL_TEXTURE_2D, frameBuffer.getShadowMap());
+				GL13.glActiveTexture(GL13.GL_TEXTURE0);
+				GL11.glBindTexture(GL11.GL_TEXTURE_2D, atlas.getTextureId());
+				
+				if(LwjglSettings.useTransparentTextures() || true) {
+					GL11.glEnable(GL11.GL_BLEND);
+					GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+				}
+				
+				{
+					meshShader.bind();
+					meshShader.setShadowMapSpace(MathUtils.getShadowSpaceMatrix(mvpMatrix));
+					meshShader.setProjectionView(projectionView);
+					world_render.renderWorld(world, camera, projectionView, radius);
+					meshShader.unbind();
+				}
+				
+				GL11.glDisable(GL11.GL_BLEND);
+	
+				GL13.glActiveTexture(GL13.GL_TEXTURE1);
+				GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0);
+				GL13.glActiveTexture(GL13.GL_TEXTURE0);
+				GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0);
+				
+				GL11.glPushMatrix();
+				GL11.glLoadMatrixf(projectionView.get(new float[16]));
+				drawLoadedChunks(world);
+//				drawFrustumChunks(world, camera_view, camera_pos, radius);
+				GL11.glPopMatrix();
+				
+				GL11.glDisable(GL11.GL_DEPTH_TEST);
+				GL11.glDisable(GL11.GL_CULL_FACE);
+				
+				GL11.glPushMatrix();
+				gui.render();
+				GL11.glPopMatrix();
 			}
-			
-			GL13.glActiveTexture(GL13.GL_TEXTURE1);
-			GL11.glBindTexture(GL11.GL_TEXTURE_2D, frameBuffer.getShadowMap());
-			GL13.glActiveTexture(GL13.GL_TEXTURE0);
-			GL11.glBindTexture(GL11.GL_TEXTURE_2D, atlas.getTextureId());
-			
-			if(LwjglSettings.useTransparentTextures() || true) {
-				GL11.glEnable(GL11.GL_BLEND);
-				GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
-			}
-			
-			{
-				meshShader.bind();
-				meshShader.setShadowMapSpace(MathUtils.getShadowSpaceMatrix(mvpMatrix));
-				meshShader.setProjectionView(projectionView);
-				world_render.renderWorld(world, camera, projectionView, radius);
-				meshShader.unbind();
-			}
-			
-			GL11.glDisable(GL11.GL_BLEND);
-
-			GL13.glActiveTexture(GL13.GL_TEXTURE1);
-			GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0);
-			GL13.glActiveTexture(GL13.GL_TEXTURE0);
-			GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0);
-			
-			GL11.glPushMatrix();
-			GL11.glLoadMatrixf(projectionView.get(new float[16]));
-			drawLoadedChunks(world);
-//			drawFrustumChunks(world, camera_view, camera_pos, radius);
-			GL11.glPopMatrix();
-			
-			GL11.glDisable(GL11.GL_DEPTH_TEST);
-			GL11.glDisable(GL11.GL_CULL_FACE);
-			
-			GL11.glPushMatrix();
-			gui.render();
-			GL11.glPopMatrix();
 		}
 		
 		GL11.glPushMatrix();

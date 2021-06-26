@@ -10,10 +10,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.lwjgl.glfw.*;
 import org.lwjgl.opengl.GL;
-import org.lwjgl.opengl.WGL;
-import org.lwjgl.system.windows.User32;
 
-import com.hardcoded.lwjgl.async.LwjglAsyncThread;
 import com.hardcoded.lwjgl.input.Input;
 import com.hardcoded.lwjgl.util.LoadingException;
 import com.hardcoded.render.LwjglRender;
@@ -41,7 +38,6 @@ public class LwjglWindow implements Runnable {
 	private int height;
 	
 	private Thread runningThread;
-	private Thread asyncThread;
 	public LwjglWindow() {
 		instance = this;
 		tasks = new ConcurrentLinkedDeque<>();
@@ -117,27 +113,9 @@ public class LwjglWindow implements Runnable {
 //		}
 		
 		GL.createCapabilities();
-		GL.createCapabilitiesWGL();
 		
 		long hwnd = GLFWNativeWin32.glfwGetWin32Window(window);
 		window_hwnd = hwnd;
-		long dc = User32.GetDC(hwnd);
-		
-		long context_1 = WGL.wglCreateContext(dc);
-		long context_2 = WGL.wglCreateContext(dc);
-		
-		boolean success = true;
-		if(!WGL.wglShareLists(context_1, context_2)) {
-			LOGGER.error("Failed to create shared list!");
-			WGL.wglDeleteContext(context_2);
-			success = false;
-		}
-		
-		asyncThread = new Thread(new LwjglAsyncThread(dc, context_2, success), "Async Thread");
-		asyncThread.setDaemon(true);
-		asyncThread.start();
-		
-		WGL.wglMakeCurrent(dc, context_1);
 		
 		render = new LwjglRender(window, width, height);
 		glfwShowWindow(window);
