@@ -3,6 +3,7 @@ package com.hardcoded.utils;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.util.*;
+import java.util.function.BiConsumer;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -308,36 +309,28 @@ public class VersionResourceReader {
 	 * Took: 5786,3481 ms, per item (7,5837)
 	 * </pre>
 	 */
-	public void loadBlocks() {
+	public void loadBlocks(BiConsumer<Integer, Integer> callback) {
 		Set<IBlockData> states = BlockDataManager.getStates();
 		final int size = states.size();
 		
 		int count = 0;
-		TimerUtils.begin();
-
-		TimerUtils.beginAverage();
 		try {
 			for(IBlockData data : states) {
 				BlockData dta = (BlockData)data;
 				dta.model_objects.clear();
 				resolveState(data);
 				
-				System.out.printf("\rLoading: (%d) / (%d)", count++, size);
 				for(IBlockData child : dta.getChildren()) {
 					BlockData dta2 = (BlockData)child;
 					dta2.model_objects.clear();
 					resolveState(child);
 				}
+				
+				callback.accept(++count, size);
 			}
 		} catch(Exception e) {
-			LOGGER.error("Failed to load all states: {}", e);
+			LOGGER.fatal("Failed to load all states: {}", e);
 			e.printStackTrace();
 		}
-		
-		double average = TimerUtils.endAverage() / 1000000.0;
-		double time = TimerUtils.end() / 1000000.0;
-		
-		System.out.printf("\nTook: %.4f ms, per item (%.4f)\n", time, time / (size + 0.0));
-		System.out.printf("\nAverage: %.4f ms per item. Items %d\n", average, TimerUtils.getTimes());
 	}
 }
