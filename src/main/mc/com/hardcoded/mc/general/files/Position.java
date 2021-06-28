@@ -15,6 +15,23 @@ public class Position {
 		this.z = z;
 	}
 	
+	public Position(long x, long y, long z, double xf, double yf, double zf) {
+		this.x = x + getWhole(xf);
+		this.y = y + getWhole(yf);
+		this.z = z + getWhole(zf);
+		this.x_sub = (float)getFraction(xf);
+		this.y_sub = (float)getFraction(yf);
+		this.z_sub = (float)getFraction(zf);
+	}
+	
+	private static double getFraction(double value) {
+		return value - (long)value;
+	}
+	
+	private static long getWhole(double value) {
+		return (long)value;
+	}
+	
 	public Position(double x, double y, double z) {
 		this.x = (long)x;
 		this.y = (long)y;

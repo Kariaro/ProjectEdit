@@ -40,7 +40,7 @@ public class GuiRender extends IResource implements GuiListener {
 		panel = new GuiPanel();
 		
 		GuiBlockMenu blockMenu = new GuiBlockMenu(this);
-		blockMenu.setBounds(72, 18, 500, 500);
+		blockMenu.setBounds(72, 18, 112, 120);
 		panel.add(blockMenu);
 		
 		GuiToolList tools = new GuiToolList(this, 0, 18);

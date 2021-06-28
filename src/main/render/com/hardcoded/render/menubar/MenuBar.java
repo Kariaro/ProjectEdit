@@ -1,17 +1,15 @@
 package com.hardcoded.render.menubar;
 
-import static com.hardcoded.render.menubar.NativeDialog.*;
-
 import java.io.File;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.system.MemoryStack;
-import org.lwjgl.system.MemoryUtil;
+import org.lwjgl.util.tinyfd.TinyFileDialogs;
 
 import com.hardcoded.api.IResource;
 import com.hardcoded.lwjgl.LwjglWindow;
@@ -19,12 +17,11 @@ import com.hardcoded.lwjgl.data.TextureAtlas.AtlasUv;
 import com.hardcoded.lwjgl.input.Input;
 import com.hardcoded.lwjgl.input.InputMask;
 import com.hardcoded.main.ProjectEdit;
+import com.hardcoded.mc.general.world.World;
 import com.hardcoded.render.gui.GuiListener;
 import com.hardcoded.render.gui.GuiListener.GuiEvent.*;
 import com.hardcoded.render.menubar.MenuGraphics.ButtonTexture;
-import com.hardcoded.render.menubar.NativeDialog.OPENFILENAMEW;
 
-@SuppressWarnings("deprecation")
 public class MenuBar extends IResource implements GuiListener {
 	private final List<IMenuItem> items;
 	private MenuGraphics testMenu;
@@ -36,31 +33,14 @@ public class MenuBar extends IResource implements GuiListener {
 		addItem("File", i -> i
 			.add("Open", () -> {
 				try(MemoryStack stack = MemoryStack.stackPush()) {
-					OPENFILENAMEW ofn = new OPENFILENAMEW();
+					PointerBuffer filters = stack.mallocPointer(1);
+					filters.put(stack.UTF8("*.dat"));
+					filters.flip();
 					
-					ByteBuffer lpstrFileTitle;
-					ByteBuffer lpstrFile;
+					String result = TinyFileDialogs.tinyfd_openFileDialog("Open world", "", filters, "Minecraft World", false);
 					
-					ofn.hwndOwner = LwjglWindow.getWindowHwnd();
-					ofn.Flags = OFN_DONTADDTORECENT | OFN_FILEMUSTEXIST;
-					ofn.lpstrFilter = MemoryUtil.memAddress(stack.UTF16Safe("All Files\0*.*\0Minecraft World\0level.dat\0\0", true));
-					ofn.nFilterIndex = 2;
-					ofn.lpstrInitialDir = NULL;
-					ofn.lpstrFileTitle = MemoryUtil.memAddress(lpstrFileTitle = stack.UTF16Safe("\0".repeat(MAX_PATH), true));
-					ofn.nMaxFileTitle = MAX_PATH;
-					ofn.lpstrFile = MemoryUtil.memAddress(lpstrFile = stack.UTF16Safe("\0".repeat(MAX_PATH), true));
-					ofn.nMaxFile = MAX_PATH;
-					
-					if(!NativeDialog.GetOpenFileNameW(ofn)) {
-						int error = NativeDialog.CommDlgExtendedError();
-						System.out.println("CommDlgExtendedError: " + error);
-					} else {
-						String fileTitle = MemoryUtil.memUTF16(lpstrFileTitle);
-						String file = MemoryUtil.memUTF16(lpstrFile);
-						System.out.printf("lpstrFileTitle: [%s]\n", fileTitle);
-						System.out.printf("lpstrFile: [%s]\n", file);
-						
-						File worldFolder = new File(file).getParentFile();
+					if(result != null) {
+						File worldFolder = new File(result).getParentFile();
 						ProjectEdit.getInstance().loadWorld(worldFolder);
 					}
 				}
@@ -68,6 +48,12 @@ public class MenuBar extends IResource implements GuiListener {
 			.add("Save", () -> {
 				
 			}, GLFW.GLFW_KEY_S, GLFW.GLFW_MOD_CONTROL)
+			.add("Reload World", () -> {
+				World world = ProjectEdit.getInstance().getWorld();
+				if(world != null) {
+					ProjectEdit.getInstance().loadWorld(world.getFolder());
+				}
+			}, GLFW.GLFW_KEY_R, GLFW.GLFW_MOD_CONTROL | GLFW.GLFW_MOD_ALT)
 			.add("Exit", () -> {
 				
 			})

@@ -4,6 +4,11 @@
 .idea
 *.iml
 
+# Eclipse ignores
+.classpath
+.project
+.settings/
+
 # Building
 node_modules/**
 package.json

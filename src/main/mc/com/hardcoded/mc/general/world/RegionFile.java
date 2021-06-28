@@ -10,7 +10,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.hardcoded.mc.general.ByteBuf;
-import com.hardcoded.utils.StreamUtils;
+import com.hardcoded.util.StreamUtils;
 
 /**
  * This class handles region files and can both read and write to them.

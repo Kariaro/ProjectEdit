@@ -99,7 +99,7 @@ public class Mesh {
 		GL30.glBindVertexArray(0);
 	}
 	
-	public void cleanUp() {
+	public void cleanup() {
 		GL20.glDisableVertexAttribArray(0);
 		
 		// Delete the VBOs

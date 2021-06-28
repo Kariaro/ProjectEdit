@@ -1,14 +1,13 @@
 package com.hardcoded.mc.general.world;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.*;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.hardcoded.mc.general.files.IChunk;
-import com.hardcoded.mc.general.files.IRegion;
-import com.hardcoded.mc.general.files.Region;
+import com.hardcoded.mc.general.files.*;
 
 /**
  * Loads chunks
@@ -49,6 +48,20 @@ public class ChunkProvider {
 				regions.put(index, region);
 				return region;
 			}
+		} else if(region.getStatus() != Status.LOADED) {
+			synchronized(region) {
+				if(region.getStatus() == Status.LOADED
+				|| region.getStatus() == Status.FAILED) return region;
+				if(region instanceof Region) {
+					try {
+						((Region)region).loadRegion();
+					} catch(IOException e) {
+						LOGGER.error(e);
+						e.printStackTrace();
+					}
+				}
+				return region;
+			}
 		}
 		
 		return region;
@@ -62,19 +75,20 @@ public class ChunkProvider {
 	private synchronized IRegion loadRegion(int x, int z) {
 		File file = new File(world.getFolder(), "region/r." + x + "." + z + ".mca");
 		
+		Region region = new Region(file, x, z);
 		if(!file.exists()) {
-			return IRegion.UNLOADED;
+			return region;
 		}
 		
 		try {
-			Region region = new Region(file, x, z);
 			LOGGER.info("Loading region: { x: {}, z: {} }", x, z);
+			region.loadRegion();
 			return region;
 		} catch(Exception e) {
-			e.printStackTrace();
 			LOGGER.info("Failed to load region: { x: {}, z: {} }", x, z);
-			
-			return IRegion.FAILED;
+			LOGGER.error(e);
+			e.printStackTrace();
+			return region;
 		}
 	}
 	
@@ -92,12 +106,8 @@ public class ChunkProvider {
 			
 			IRegion region = regions.get(index);
 			if(region instanceof Region) {
-				Region reg = (Region)region;
-				
 				// Unload chunks
-				for(int i = 0; i < reg.chunks.length; i++) {
-					reg.chunks[i] = null;
-				}
+				((Region)region).unloadRegion();
 			} else {
 				iter.remove();
 			}

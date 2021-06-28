@@ -5,7 +5,7 @@ import java.io.File;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.hardcoded.utils.Nonnull;
+import com.hardcoded.api.Nonnull;
 
 /**
  * This class provies information about where the game is located and more.

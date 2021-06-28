@@ -4,7 +4,6 @@ import java.util.*;
 
 import com.hardcoded.mc.general.files.Blocks;
 import com.hardcoded.mc.general.world.IBlockState.IBlockStateList;
-import com.hardcoded.utils.FastModelJsonLoader.FastModel;
 
 public class BlockData implements IBlockData {
 	protected final List<BlockData> children;
@@ -20,8 +19,6 @@ public class BlockData implements IBlockData {
 	protected final int internal_id;
 	protected boolean occluding;
 	protected int rgb;
-	
-	public List<FastModel.ModelObject> model_objects = new ArrayList<>();
 	
 	public BlockData(String name, List<IBlockState> states) {
 		this.defaultState = this;

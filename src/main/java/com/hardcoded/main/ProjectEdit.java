@@ -10,7 +10,6 @@ import com.hardcoded.lwjgl.Camera;
 import com.hardcoded.lwjgl.LwjglWindow;
 import com.hardcoded.lwjgl.icon.TextureManager;
 import com.hardcoded.mc.general.world.World;
-import com.hardcoded.render.LwjglRender;
 
 /**
  * This is the initial starting point for the editor application.
@@ -29,21 +28,16 @@ public class ProjectEdit implements IProjectEdit {
 	private World world;
 	private Camera camera;
 	
-	public static void main(String[] args) {
-		LOGGER.info("Starting application");
-		
-		new ProjectEdit()
-			.start();
-	}
-	
-	public ProjectEdit() {
+	protected ProjectEdit() {
 		instance = this;
 		camera = new Camera();
 		window = new LwjglWindow();
 		textureManager = new TextureManager();
 	}
 	
-	public void start() {
+	// Only callable from package
+	protected void start() {
+		LOGGER.info("Starting application");
 		window.start();
 	}
 	
@@ -57,11 +51,13 @@ public class ProjectEdit implements IProjectEdit {
 		instance.world = world;
 		return world;
 	}
-	
+
+	@Override
 	public World getWorld() {
 		return world;
 	}
 	
+	@Override
 	public Camera getCamera() {
 		return camera;
 	}
@@ -70,16 +66,15 @@ public class ProjectEdit implements IProjectEdit {
 		return window;
 	}
 	
-	@Deprecated
-	public LwjglRender getRender() {
-		throw new UnsupportedOperationException();
-	}
-	
+	@Override
 	public TextureManager getTextureManager() {
 		return textureManager;
 	}
 	
-	public static ProjectEdit getInstance() {
+	/**
+	 * Returns the current instance of {@code ProjectEdit}
+	 */
+	public static IProjectEdit getInstance() {
 		return instance;
 	}
 	
@@ -94,12 +89,9 @@ public class ProjectEdit implements IProjectEdit {
 		return VERSION;
 	}
 	
+	
 	public static final class Unsafe {
 		private Unsafe() {}
 		
-		@Deprecated
-		public void setRender(LwjglRender render) {
-			throw new UnsupportedOperationException();
-		}
 	}
 }

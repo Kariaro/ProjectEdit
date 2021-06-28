@@ -18,8 +18,8 @@ import com.hardcoded.mc.general.world.World;
 import com.hardcoded.mc.general.world.WorldUtils;
 import com.hardcoded.render.gui.GuiListener;
 import com.hardcoded.render.gui.GuiListener.GuiEvent.*;
+import com.hardcoded.render.util.RenderUtil;
 import com.hardcoded.render.gui.GuiRender;
-import com.hardcoded.render.utils.RenderUtil;
 
 public class GuiToolSelection extends GuiTool implements GuiListener {
 	private final GuiIcons icons;

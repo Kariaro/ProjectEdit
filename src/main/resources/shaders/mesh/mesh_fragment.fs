@@ -10,6 +10,10 @@ out vec4 out_Color;
 uniform sampler2D dif_tex;
 uniform sampler2D shadow_tex;
 
+uniform mat4 toShadowMapSpace;
+uniform bool hasShadows;
+uniform bool useOnlyColors;
+
 float calcLightFactor() {
 	const float bias = 0.001;
 	const float shadow = 0.2;
@@ -26,16 +30,21 @@ float calcLightFactor() {
 }
 
 void main() {
-	vec4 dif = texture2D(dif_tex, pass_Uv);
-	float lightFactor = calcLightFactor();
-	dif = vec4(dif.rgb * lightFactor, dif.a);
+	vec4 dif;
+	if(useOnlyColors) {
+		dif = vec4(1, 1, 1, 1);
+	} else {
+		dif = texture2D(dif_tex, pass_Uv);
+	}
 	
-	/*
-	vec3 pos_rgb = vec3(
-		fract(pass_Position.x * 16),
-		fract(pass_Position.y * 16),
-		fract(pass_Position.z * 16)
-	);
-	*/
-	out_Color = vec4(dif.rgb * pass_Color.rgb /* * 0.9 + pos_rgb.rgb * 0.1 */, dif.a);
+	if(hasShadows) {
+		float lightFactor = calcLightFactor();
+		dif = vec4(dif.rgb * lightFactor, dif.a);
+	}
+	
+	if(dif.a > 0) {
+		out_Color = vec4(dif.rgb * pass_Color.rgb, dif.a);
+	} else {
+		discard;
+	}
 }

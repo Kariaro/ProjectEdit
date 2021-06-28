@@ -3,22 +3,24 @@ package com.hardcoded.mc.general.world;
 import java.io.File;
 import java.util.Set;
 
+import com.hardcoded.api.Nonnull;
 import com.hardcoded.mc.general.files.IChunk;
 import com.hardcoded.mc.general.nbt.NBTTagCompound;
 import com.hardcoded.mc.general.nbt.NBTTagString;
-import com.hardcoded.utils.Nonnull;
 
 public class World {
 	private final File folder;
 	private final NBTTagCompound level_dat;
 	private final NBTTagCompound version;
 	private final ChunkProvider chunkProvider;
+	private final String versionString;
 	
 	public World(File file) {
 		this.folder = file;
 		this.level_dat = WorldLoader.loadLevelDat(this);
 		this.version = (NBTTagCompound)((NBTTagCompound)level_dat.get("Data")).get("Version");
 		this.chunkProvider = new ChunkProvider(this);
+		this.versionString = ((NBTTagString)version.get("Name")).getValue();
 	}
 	
 	public void unloadRegionsNotFound(Set<Long> set) {
@@ -47,6 +49,6 @@ public class World {
 	}
 	
 	public String getVersion() {
-		return ((NBTTagString)version.get("Name")).getValue();
+		return versionString;
 	}
 }

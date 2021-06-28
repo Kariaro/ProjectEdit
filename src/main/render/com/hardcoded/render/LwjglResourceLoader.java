@@ -13,9 +13,10 @@ import org.lwjgl.opengl.GL11;
 import com.hardcoded.lwjgl.LwjglWindow;
 import com.hardcoded.mc.general.Minecraft;
 import com.hardcoded.mc.general.world.World;
-import com.hardcoded.utils.FastModelJsonLoader;
-import com.hardcoded.utils.TimerUtils;
-import com.hardcoded.utils.VersionResourceReader;
+import com.hardcoded.render.generator.FastModelJsonLoader;
+import com.hardcoded.render.generator.FastModelRenderer;
+import com.hardcoded.render.generator.VersionResourceReader;
+import com.hardcoded.util.TimerUtils;
 
 public class LwjglResourceLoader {
 	private static final Logger LOGGER = LogManager.getLogger(LwjglResourceLoader.class);
@@ -84,7 +85,29 @@ public class LwjglResourceLoader {
 		LOGGER.info("Version file: '{}'", version_jar);
 		
 		try {
-			reader = new VersionResourceReader(version_jar);
+			if(reader != null) {
+				reader.cleanup();
+				reader = null;
+			}
+		} catch(Exception e) {
+			e.printStackTrace();
+		}
+		
+		String[] packs = {
+//			"CubedPack.5.0.2.2.Dev.Old.Font.zip",
+//			"VanillaBDcraft 128x MC116.zip",
+//			"PureBDcraft 16x MC116.zip"
+		};
+		
+		try {
+			File resourcepackFolder = new File(Minecraft.getMinecraftPath(), "resourcepacks");
+			
+			File[] resourcePacks = new File[packs.length];
+			for(int i = 0; i < packs.length; i++) {
+				resourcePacks[i] = new File(resourcepackFolder, packs[i]);
+			}
+			
+			reader = new VersionResourceReader(version_jar, resourcePacks);
 		} catch(IOException e) {
 			e.printStackTrace();
 		}
@@ -109,6 +132,10 @@ public class LwjglResourceLoader {
 				render.world_render.unloadCache();
 				// Unload model cache
 				FastModelJsonLoader.unloadCache();
+				// Unload render cache
+				FastModelRenderer.unloadModelCache();
+				// Unload texture cache
+//				Texture.unloadTextureCache();
 				// Unload all textures
 				render.atlas.unload();
 				
@@ -117,6 +144,7 @@ public class LwjglResourceLoader {
 				// Add debug texture
 				try {
 					render.atlas.addTexture("projectedit:debug_faces", ImageIO.read(LwjglRender.class.getResourceAsStream("/images/debug_faces.png")));
+					render.atlas.addTexture("projectedit:missing", ImageIO.read(LwjglRender.class.getResourceAsStream("/images/missing.png")));
 				} catch(Exception e) {
 					e.printStackTrace();
 				}
@@ -147,6 +175,7 @@ public class LwjglResourceLoader {
 				if(render.textureManager.getIconGenerator().loadIconsPartwise(100, loadingCallback)) {
 					// We need to init the gui because otherwise it wont reload icons
 					render.gui.init();
+					render.biome_blend.load(reader);
 					
 					long with_gl_nanos = TimerUtils.end();
 					LOGGER.info("Took: {} ms to compute gl objects", with_gl_nanos / 1000000.0);
@@ -159,7 +188,7 @@ public class LwjglResourceLoader {
 			}
 		}
 	}
-
+	
 	public boolean isLoading() {
 		return loadingState == LoadingState.STATE_WAIT
 			|| loadingState == LoadingState.STATE_START

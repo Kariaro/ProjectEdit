@@ -2,22 +2,28 @@ package com.hardcoded.mc.constants;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
-import com.hardcoded.utils.FastModelJsonLoader.Axis;
-
 public enum Direction {
-	EAST(Direction.FACE_RIGHT, Axis.x, new Vector3f(1, 0, 0)),
-	WEST(Direction.FACE_LEFT, Axis.x, new Vector3f(-1, 0, 0)),
-	UP(Direction.FACE_UP, Axis.y, new Vector3f(0, 1, 0)),
-	DOWN(Direction.FACE_DOWN, Axis.y, new Vector3f(0, -1, 0)),
-	SOUTH(Direction.FACE_BACK, Axis.z, new Vector3f(0, 0, 1)),
-	NORTH(Direction.FACE_FRONT, Axis.z, new Vector3f(0, 0, -1)),
-	;
+	/** right */
+	EAST(0, Direction.FACE_RIGHT, Axis.x, 1, new Vector3f(1, 0, 0)),
+	/** left */
+	WEST(1, Direction.FACE_LEFT, Axis.x, -1, new Vector3f(-1, 0, 0)),
+	/** top */
+	UP(2, Direction.FACE_UP, Axis.y, 1, new Vector3f(0, 1, 0)),
+	/** bottom */
+	DOWN(3, Direction.FACE_DOWN, Axis.y, -1, new Vector3f(0, -1, 0)),
+	/** back */
+	SOUTH(4, Direction.FACE_BACK, Axis.z, 1, new Vector3f(0, 0, 1)),
+	/** front */
+	NORTH(5, Direction.FACE_FRONT, Axis.z, -1, new Vector3f(0, 0, -1));
 	
 	private static final Map<String, Direction> FACE_TO_DIRECTION = new HashMap<>();
+	private static final Map<Direction, Direction> OPPOSITE_DIRECTION = new HashMap<>();
+	private static final Set<Direction> FACES;
 	static {
 		FACE_TO_DIRECTION.put("front", NORTH);
 		FACE_TO_DIRECTION.put("north", NORTH);
@@ -36,6 +42,15 @@ public enum Direction {
 		
 		FACE_TO_DIRECTION.put("top", UP);
 		FACE_TO_DIRECTION.put("up", UP);
+		
+		OPPOSITE_DIRECTION.put(NORTH, SOUTH);
+		OPPOSITE_DIRECTION.put(SOUTH, NORTH);
+		OPPOSITE_DIRECTION.put(EAST, WEST);
+		OPPOSITE_DIRECTION.put(WEST, EAST);
+		OPPOSITE_DIRECTION.put(UP, DOWN);
+		OPPOSITE_DIRECTION.put(DOWN, UP);
+		
+		FACES = Set.of(NORTH, SOUTH, EAST, WEST, UP, DOWN);
 	}
 	
 	public static final int FACE_UP = 1;
@@ -46,16 +61,44 @@ public enum Direction {
 	public static final int FACE_BACK = 32;
 	
 	private final int flags;
+	private final int index;
 	private final Vector3f normal;
+	private final int axisDirection;
 	private final Axis axis;
-	private Direction(int flags, Axis axis, Vector3f normal) {
+	private Direction(int index, int flags, Axis axis, int axisDirection, Vector3f normal) {
+		this.index = index;
 		this.flags = flags;
 		this.normal = normal;
+		this.axisDirection = axisDirection;
 		this.axis = axis;
 	}
 	
 	public Vector3f getNormal() {
-		return normal;
+		// Return a unique value every time
+		return normal.get(new Vector3f());
+	}
+	
+	/**
+	 * Returns the index of this direction.
+	 * Will always return:
+	 * <pre>
+	 *   EAST:  0
+	 *   WEST:  1
+	 *   UP:    2
+	 *   DOWN:  3
+	 *   SOUTH: 4
+	 *   NORTH: 5
+	 * </pre>
+	 */
+	public int getIndex() {
+		return index;
+	}
+	
+	/**
+	 * Returns {@code -1} or {@code 1}
+	 */
+	public int getAxisDirection() {
+		return axisDirection;
 	}
 	
 	public Axis getAxis() {
@@ -77,6 +120,10 @@ public enum Direction {
 		}
 		
 		throw new UnsupportedOperationException("Invalid direction");
+	}
+	
+	public Direction getOpposite() {
+		return OPPOSITE_DIRECTION.get(this);
 	}
 	
 	public static Direction getFromNormal(Vector3f normal) {
@@ -104,5 +151,9 @@ public enum Direction {
 	
 	public static Direction get(String name) {
 		return FACE_TO_DIRECTION.get(name.toLowerCase());
+	}
+	
+	public static Set<Direction> getFaces() {
+		return FACES;
 	}
 }
