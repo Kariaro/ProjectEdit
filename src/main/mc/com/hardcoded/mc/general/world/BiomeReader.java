@@ -9,11 +9,6 @@ public class BiomeReader {
 	public static final int HORIZONTAL_MASK = (1 << WIDTH_BITS) - 1;
 	public static final int VERTICAL_MASK = (1 << HEIGHT_BITS) - 1;
 	
-	public static void main(String[] args) {
-		System.out.println(WIDTH_BITS);
-		System.out.println(HEIGHT_BITS);
-		
-	}
 	public Biome[] biomes;
 	protected BiomeReader(int[] array) {
 		this.biomes = new Biome[BIOMES_SIZE];
