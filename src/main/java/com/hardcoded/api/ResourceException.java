@@ -22,4 +22,8 @@ public class ResourceException extends RuntimeException {
 	public ResourceException(String format, Object... args) {
 		super(String.format(format, args));
 	}
+	
+	public ResourceException(Throwable t) {
+		super(t);
+	}
 }

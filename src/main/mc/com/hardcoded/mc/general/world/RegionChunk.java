@@ -1,7 +1,6 @@
 package com.hardcoded.mc.general.world;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 import com.hardcoded.mc.general.ByteBuf;
 import com.hardcoded.mc.general.files.Blocks;
@@ -9,12 +8,18 @@ import com.hardcoded.mc.general.nbt.*;
 
 public class RegionChunk {
 	private NBTTagCompound nbt;
-	public SubChunk[] sections = new SubChunk[16];
+	private final Map<Integer, SubChunk> sections = new HashMap<>();
+	public BiomeReader biomeReader;
 	private int dataVersion;
 	
 	public RegionChunk(ByteBuf buf) {
-		this.nbt = NBTBase.readNBTTagCompound(buf);
-		read();
+		try {
+			this.nbt = NBTBase.readNBTTagCompound(buf);
+			read();
+		} catch(Exception e) {
+			e.printStackTrace();
+			throw e;
+		}
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -22,29 +27,36 @@ public class RegionChunk {
 		NBTTagCompound level = (NBTTagCompound)nbt.get("Level");
 		NBTTagList<NBTTagCompound> sections = (NBTTagList<NBTTagCompound>)level.get("Sections");
 		if(sections == null) {
-			
-			// Ooof
 			return;
+		}
+		
+		this.biomeReader = new BiomeReader(new int[1024]);
+		if(!level.keySet().contains("Biomes")) {
+			
+		} else {
+			try {
+				NBTTagIntArray biomes = (NBTTagIntArray)level.get("Biomes");
+				this.biomeReader = new BiomeReader(biomes.getArray());
+			} catch(Exception e) {
+				e.printStackTrace();
+			}
 		}
 		
 		dataVersion = ((NBTTagInt)nbt.get("DataVersion")).getValue();
 		
-		NBTTagCompound[] nbt_sections = new NBTTagCompound[16];
 		for(NBTTagCompound entry : sections) {
 			int y = ((NBTTagByte)entry.get("Y")).getValue();
 			
-			if(y < 0 || y > 15) continue;
-			nbt_sections[y] = entry;
-			this.sections[y] = new SubChunk(entry, y);
+			if(y < 0) continue;
+			this.sections.put(y, new SubChunk(entry, y));
 		}
 		
-		// Clear nbt
 		// Release memory
 		nbt = null;
 	}
 	
-	public SubChunk getSubChunk(int y) {
-		return sections[y];
+	public Set<SubChunk> getSubChunks() {
+		return new HashSet<>(sections.values());
 	}
 	
 	private static int ceillog2(int i) {

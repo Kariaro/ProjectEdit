@@ -1,130 +1,164 @@
 package com.hardcoded.render;
 
-import java.lang.Math;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 
-import org.joml.*;
+import org.joml.FrustumIntersection;
+import org.joml.Matrix4f;
+import org.joml.Vector3f;
 import org.lwjgl.opengl.GL11;
 
 import com.hardcoded.lwjgl.Camera;
+import com.hardcoded.lwjgl.data.TextureAtlas;
+import com.hardcoded.lwjgl.data.TextureAtlas.AtlasUv;
 import com.hardcoded.lwjgl.mesh.Mesh;
+import com.hardcoded.main.ProjectEdit;
 import com.hardcoded.mc.constants.Direction;
 import com.hardcoded.mc.general.files.*;
-import com.hardcoded.mc.general.world.BlockData;
-import com.hardcoded.mc.general.world.IBlockData;
-import com.hardcoded.mc.general.world.World;
-import com.hardcoded.render.utils.MeshBuilder;
-import com.hardcoded.utils.FastModelRenderer;
+import com.hardcoded.mc.general.world.*;
+import com.hardcoded.render.generator.FastModelRenderer;
+import com.hardcoded.render.generator.MeshBuilder;
+import com.hardcoded.render.util.MeshBuffer;
+import com.hardcoded.util.math.box.BlockShape;
 
 public class WorldRender {
-	private static void render_cube(IBlockData state, float x, float y, float z, MeshBuilder builder, int faces) {
-		BlockData bs = (BlockData)state;
-		if(bs.model_objects.isEmpty()) return;
-		FastModelRenderer.renderModelFast(bs, x, y, z, builder, faces);
+	private static void renderBlockWithBiome(World world, IBlockData block, Biome biome, float x, float y, float z, MeshBuilder builder, int faces) {
+		if(block.getBlockId() == Blocks.WATER.getBlockId()) {
+			renderLiquid(world, block, biome, x, y, z, builder, faces);
+			return;
+		}
+		
+		if(!FastModelRenderer.hasLoadedModel(block)) {
+//			FastModelRenderer.renderModelObject(FastModelJsonLoader.getMissingBlockModel(), x, y, z, opaque, faces);
+		} else {
+			MeshBuffer buffer;
+			if(FastModelRenderer.hasTranslucency(block)) {
+				buffer = builder.translucent;
+			} else {
+				buffer = builder.opaque;
+			}
+			
+			FastModelRenderer.renderModelFastBiome(block, biome, x, y, z, buffer, faces);
+		}
 	}
 	
-	public static void renderBlock(float x, float y, float z, Vector4f col) {
-		renderBlock(x, y, z, col.x, col.y, col.z, col.w, 1, 1, 1, -1);
+	private static void renderLiquid(World world, IBlockData block, Biome biome, float x, float y, float z, MeshBuilder builder, int faces) {
+		float y0 = 15 - getWaterHeight(world, (int)x - 1, (int)y, (int)z);
+		float y1 = 15 - getWaterHeight(world, (int)x, (int)y, (int)z);
+		float y2 = 15 - getWaterHeight(world, (int)x, (int)y, (int)z - 1);
+		float y3 = 15 - getWaterHeight(world, (int)x - 1, (int)y, (int)z - 1);
+		float[] top = {
+			 0, y0, 16, // 0
+			16, y1, 16, // 1
+			16, y2,  0, // 2
+			
+			 0, y0, 16, // 0
+			16, y2,  0, // 2
+			 0, y3,  0, // 3
+		};
+		
+		IBlockData above = world.getBlock((int)x, (int)y + 1, (int)z);
+		if(above.getBlockId() != Blocks.WATER.getBlockId()) {
+			TextureAtlas atlas = ProjectEdit.getInstance().getTextureManager().getBlockAtlas();
+			int uv_id = atlas.getImageId("block/water_still");
+			AtlasUv uv = atlas.getUv(uv_id);
+			
+			float uv_x = uv.x1;
+			float uv_y = uv.y1;
+			float uv_w = uv.x1 + 16 / (float)atlas.getWidth();
+			float uv_h = uv.y1 + 16 / (float)atlas.getHeight();
+			
+			float[] array = new float[] {
+				uv_x, uv_h, uv_w, uv_h, uv_w, uv_y,
+				uv_x, uv_h, uv_w, uv_y, uv_x, uv_y
+			};
+			builder.translucent.uv(array);
+			
+			int rgb = BiomeBlend.get(biome.getTemperature(), biome.getDownfall());
+			float col_r = ((rgb >> 16) & 0xff) / 255.0f;
+			float col_g = ((rgb >>  8) & 0xff) / 255.0f;
+			float col_b = ((rgb      ) & 0xff) / 255.0f;
+			
+			for(int vi = 0, len = top.length; vi < len; vi += 3) {
+				float ax = (top[vi] / 16.0f) + x;
+				float ay = (top[vi + 1] / 16.0f) + y;
+				float az = (top[vi + 2] / 16.0f) + z;
+				
+				builder.translucent.pos(ax, ay, az);
+				builder.translucent.color(col_r * 0.6f, col_g * 0.6f, col_b * 2);
+			}
+		}
 	}
 	
-	public static void renderBlock(float x, float y, float z, float rc, float gc, float bc, float ac, int faces) {
-		renderBlock(x, y, z, rc, gc, bc, ac, 1, 1, 1, faces);
+	private static int getWaterHeight(World world, int x, int y, int z) {
+		IBlockData b00 = world.getBlock(x    , y, z    );
+		IBlockData b10 = world.getBlock(x + 1, y, z    );
+		IBlockData b01 = world.getBlock(x    , y, z + 1);
+		IBlockData b11 = world.getBlock(x + 1, y, z + 1);
+		
+		Object s00 = b00.getStateList().getState(IBlockState.States.av);
+		Object s10 = b10.getStateList().getState(IBlockState.States.av);
+		Object s01 = b01.getStateList().getState(IBlockState.States.av);
+		Object s11 = b11.getStateList().getState(IBlockState.States.av);
+
+		int count = (s00 != null ? 1:0)
+				  + (s10 != null ? 1:0)
+				  + (s01 != null ? 1:0)
+				  + (s11 != null ? 1:0);
+		
+		if(count == 0) return 0;
+		
+		return ((s00 != null ? Integer.parseInt(s00.toString()):0)
+			 + (s10 != null ? Integer.parseInt(s10.toString()):0)
+			 + (s01 != null ? Integer.parseInt(s01.toString()):0)
+			 + (s11 != null ? Integer.parseInt(s11.toString()):0)) / count;
 	}
 	
-	public static void renderBlock(float x, float y, float z, float rc, float gc, float bc, float ac, float xs, float ys, float zs, int faces) {
-		float d = -0.1f;
-		
-		if((faces & Direction.FACE_BACK) != 0) {
-			GL11.glBegin(GL11.GL_TRIANGLE_FAN);
-				GL11.glColor4f(rc + d, gc, bc, ac);
-				GL11.glVertex3f(x     , y + ys, z);
-				GL11.glColor4f(rc, gc + d, bc + d, ac);
-				GL11.glVertex3f(x + xs, y + ys, z);
-				GL11.glVertex3f(x + xs, y     , z);
-				GL11.glVertex3f(x     , y     , z);
-			GL11.glEnd();
-		}
-		
-		if((faces & Direction.FACE_FRONT) != 0) {
-			GL11.glBegin(GL11.GL_TRIANGLE_FAN);
-				GL11.glColor4f(rc, gc, bc + d, ac);
-				GL11.glVertex3f(x     , y     , z + zs);
-				GL11.glColor4f(rc + d, gc + d, bc, ac);
-				GL11.glVertex3f(x + xs, y     , z + zs);
-				GL11.glVertex3f(x + xs, y + ys, z + zs);
-				GL11.glVertex3f(x     , y + ys, z + zs);
-			GL11.glEnd();
-		}
-		
-		if((faces & Direction.FACE_RIGHT) != 0) {
-			GL11.glBegin(GL11.GL_TRIANGLE_FAN);
-				GL11.glColor4f(rc, gc + d, bc, ac);
-				GL11.glVertex3f(x + xs, y + ys, z     );
-				GL11.glColor4f(rc + d, gc, bc + d, ac);
-				GL11.glVertex3f(x + xs, y + ys, z + zs);
-				GL11.glVertex3f(x + xs, y     , z + zs);
-				GL11.glVertex3f(x + xs, y     , z     );
-			GL11.glEnd();
-		}
-		
-		if((faces & Direction.FACE_LEFT) != 0) {
-			GL11.glBegin(GL11.GL_TRIANGLE_FAN);
-				GL11.glColor4f(rc + d, gc + d, bc, ac);
-				GL11.glVertex3f(x, y + ys, z + zs);
-				GL11.glColor4f(rc, gc, bc + d, ac);
-				GL11.glVertex3f(x, y + ys, z     );
-				GL11.glVertex3f(x, y     , z     );
-				GL11.glVertex3f(x, y     , z + zs);
-			GL11.glEnd();
-		}
-		
-		if((faces & Direction.FACE_UP) != 0) {
-			GL11.glBegin(GL11.GL_TRIANGLE_FAN);
-				GL11.glColor4f(rc + d, gc, bc + d, ac);
-				GL11.glVertex3f(x     , y + ys, z     );
-				GL11.glColor4f(rc, gc + d, bc, ac);
-				GL11.glVertex3f(x     , y + ys, z + zs);
-				GL11.glVertex3f(x + xs, y + ys, z + zs);
-				GL11.glVertex3f(x + xs, y + ys, z     );
-			GL11.glEnd();
-		}
-		
-		if((faces & Direction.FACE_DOWN) != 0) {
-			GL11.glBegin(GL11.GL_TRIANGLE_FAN);
-				GL11.glColor4f(rc, gc + d, bc + d, ac);
-				GL11.glVertex3f(x     , y, z + zs);
-				GL11.glColor4f(rc + d, gc, bc, ac);
-				GL11.glVertex3f(x     , y, z     );
-				GL11.glVertex3f(x + xs, y, z     );
-				GL11.glVertex3f(x + xs, y, z + zs);
-			GL11.glEnd();
-		}
+	@Deprecated(forRemoval = true)
+	static int getShownFacesOld(World world, int x, int y, int z) {
+		IBlockData origin = world.getBlock(x, y, z);
+		return (isOccludingOld(origin, world.getBlock(x + 1, y    , z    )) ? Direction.FACE_RIGHT:0)
+			 | (isOccludingOld(origin, world.getBlock(x - 1, y    , z    )) ? Direction.FACE_LEFT:0)
+			 | (isOccludingOld(origin, world.getBlock(x    , y + 1, z    )) ? Direction.FACE_UP:0)
+			 | (isOccludingOld(origin, world.getBlock(x    , y - 1, z    )) ? Direction.FACE_DOWN:0)
+			 | (isOccludingOld(origin, world.getBlock(x    , y    , z - 1)) ? Direction.FACE_FRONT:0)
+			 | (isOccludingOld(origin, world.getBlock(x    , y    , z + 1)) ? Direction.FACE_BACK:0);
+	}
+	
+	private static boolean isOccludingOld(IBlockData origin, IBlockData block) {
+		return !(!block.isOpaque() && !(FastModelRenderer.hasTranslucency(block) && !FastModelRenderer.hasTranslucency(origin)));
 	}
 	
 	private static int getShownFaces(World world, int x, int y, int z) {
-		return (world.getBlock(x + 1, y    , z    ).isOpaque() ? Direction.FACE_RIGHT:0)
-			 | (world.getBlock(x - 1, y    , z    ).isOpaque() ? Direction.FACE_LEFT:0)
-			 | (world.getBlock(x    , y + 1, z    ).isOpaque() ? Direction.FACE_UP:0)
-			 | (world.getBlock(x    , y - 1, z    ).isOpaque() ? Direction.FACE_DOWN:0)
-			 | (world.getBlock(x    , y    , z - 1).isOpaque() ? Direction.FACE_FRONT:0)
-			 | (world.getBlock(x    , y    , z + 1).isOpaque() ? Direction.FACE_BACK:0);
+		IBlockData origin = world.getBlock(x, y, z);
+		BlockShape originShape = FastModelRenderer.getBlockShape(origin);
+		
+		int flags = 0;
+		for(Direction direction : Direction.getFaces()) {
+			Vector3f normal = direction.getNormal();
+			
+			IBlockData adjacent = world.getBlock(x + (int)normal.x, y + (int)normal.y, z + (int)normal.z);
+			BlockShape adjacentShape = FastModelRenderer.getBlockShape(adjacent);
+			
+			boolean isSideBlocked = originShape.isSideBlockedBy(adjacentShape, direction)
+				&& !(!FastModelRenderer.hasTranslucency(origin) && FastModelRenderer.hasTranslucency(adjacent));
+			
+			if(!isSideBlocked) {
+				flags |= direction.getFlags();
+			}
+		}
+		
+		return flags;
 	}
-
+	
 	private ChunkList list;
-	public void renderWorld(World world, Camera camera, Matrix4f projectionView, int radius) {
+	public void renderWorld(World world, Camera camera, Matrix4f projectionView, int radius, int flags) {
 		if(list == null) {
 			list = new ChunkList();
 		}
 		
-		list.render(world, camera, projectionView, radius);
-	}
-	
-	@SuppressWarnings("unused")
-	private LwjglRender render;
-	public WorldRender(LwjglRender render) {
-		this.render = render;
+		list.render(world, camera, projectionView, radius, flags);
 	}
 	
 	private class ChunkBlob {
@@ -132,6 +166,7 @@ public class WorldRender {
 		private final World world;
 		private final Chunk chunk;
 		private final ChunkSectionBlob[] sections;
+		private final MeshBuilder builder = new MeshBuilder();
 		
 		private ChunkBlob(World world, Chunk chunk, int world_x, int world_z) {
 			this.world = world;
@@ -143,86 +178,84 @@ public class WorldRender {
 		private ChunkSectionBlob[] loadSections() {
 			ChunkSectionBlob[] sections = new ChunkSectionBlob[16];
 			for(int y = 0; y < 16; y++) {
-				sections[y] = new ChunkSectionBlob(world, pos.offset(0, y * 16, 0), chunk.getSection(y));
+				IChunkSection section = chunk.getSection(y);
+				if(section != null) {
+					sections[y] = new ChunkSectionBlob(world, chunk, pos.offset(0, y * 16, 0), section);
+				}
 			}
 			
 			return sections;
 		}
 		
+		private boolean isDirty = false;
+		private boolean unloaded = false;
+		
 		public void reload() {
 			if(unloaded) return;
 			
 			// No calls to GL in here
-			MeshBuilder buffer = new MeshBuilder(
-				MeshBuilder._VERTS |
-				MeshBuilder._UV |
-				MeshBuilder._COLOR
-			);
+			builder.reset();
 			
 			for(int y = 0; y < 16; y++) {
 				if(unloaded) return;
 				ChunkSectionBlob section = sections[y];
-				if(section.doesRender()) {
-					section.render(buffer);
+				if(section != null && section.doesRender()) {
+					section.render(builder);
 				}
 			}
 			
 			if(unloaded) return;
-			this.builder = buffer;
 			this.isDirty = true;
+			new_chunk_loaded = true;
 		}
 		
-		private boolean isDirty = false;
-		private boolean unloaded = false;
-		private MeshBuilder builder;
-		private Mesh mesh;
-		
-		public void render() {
+		public void prepare() {
 			if(unloaded) return;
 			if(chunk.isDirty()) {
 				chunk.isDirty = false;
 				// When the chunk is reloading we still render it
 				reload();
-//				exec.submit(this::reload);
 			}
 			
 			if(isDirty) {
 				isDirty = false;
-				
-				unloadMeshes();
-				if(builder != null) {
-					mesh = builder.build();
-					builder = null;
-				}
+				builder.build();
 			}
+		}
+		
+		public void renderOpaque() {
+			if(unloaded) return;
 			
+			Mesh mesh = builder.getMesh(MeshBuilder._OPAQUE);
 			if(mesh != null) {
 				mesh.render();
 			}
 		}
 		
-		public void unloadMeshes() {
+		public void renderTranslucent() {
+			if(unloaded) return;
+			
+			Mesh mesh = builder.getMesh(MeshBuilder._TRANSLUCENT);
 			if(mesh != null) {
-				mesh.cleanUp();
-				mesh = null;
+				mesh.render();
 			}
 		}
 		
 		public void unload() {
 			unloaded = true;
-			unloadMeshes();
-			builder = null;
+			builder.cleanup();
 		}
 	}
 	
-	// TODO: Sort transparent textures so they display correctly
 	private static class ChunkSectionBlob {
 		private final World world;
+		private final Chunk parent;
 		private final IChunkSection section;
 		private final Position pos;
 		
-		public ChunkSectionBlob(World world, Position pos, IChunkSection section) {
+		public ChunkSectionBlob(World world, Chunk parent, Position pos, IChunkSection section) {
 			this.world = world;
+			this.parent = parent;
 			this.section = section;
 			this.pos = pos.offset(0, 0, 0);
 		}
@@ -232,25 +265,7 @@ public class WorldRender {
 			final int by = pos.getBlockY();
 			final int bz = pos.getBlockZ();
 			
-			if(!(section instanceof ChunkSection)) {
-				for(int i = 0; i < 4096; i++) {
-					int x = (i & 15);
-					int y = ((i >> 4) & 15);
-					int z = (i >> 8);
-					
-					IBlockData state = section.getBlock(x, y, z);
-					if(state.isAir()) continue;
-					
-					final int wx = bx + x;
-					final int wy = by + y;
-					final int wz = bz + z;
-					int flags = getShownFaces(world, wx, wy, wz);
-					if(flags != 0) {
-						render_cube(state, x + bx, y + by, z + bz, builder, flags);
-					}
-				}
-				return;
-			}
+			if(!(section instanceof ChunkSection)) return;
 			
 			ChunkSection sec = (ChunkSection)section;
 			for(int i = 0; i < 4096; i++) {
@@ -262,7 +277,7 @@ public class WorldRender {
 				final int wz = bz + ((i >> 4) & 15);
 				int flags = getShownFaces(world, wx, wy, wz);
 				if(flags != 0) {
-					render_cube(state, wx, wy, wz, builder, flags);
+					renderBlockWithBiome(world, state, parent.getBiome(wx, wy, wz), wx, wy, wz, builder, flags);
 				}
 			}
 		}
@@ -276,6 +291,7 @@ public class WorldRender {
 	private static final long load_limit = 100;
 	private static ThreadPoolExecutor exec = (ThreadPoolExecutor)Executors.newFixedThreadPool(7);
 	
+	protected boolean new_chunk_loaded;
 	public void cleanup() {
 		exec.shutdown();
 	}
@@ -285,6 +301,9 @@ public class WorldRender {
 			list.unloadCache();
 		}
 	}
+	
+	public static final int FRUSTUM_CULLING = 1;
+	public static final int DRAW_TRANSLUCENT = 2;
 	
 	private class ChunkList {
 		private final Map<Long, ChunkBlob> chunk_map;
@@ -304,7 +323,7 @@ public class WorldRender {
 			chunk_map.clear();
 		}
 		
-		public void render(World world, Camera camera, Matrix4f projectionView, int radius) {
+		public void render(World world, Camera camera, Matrix4f projectionView, int radius, int flags) {
 			long now = System.currentTimeMillis();
 			
 			int x = Math.floorDiv((int)camera.x, 16);
@@ -325,12 +344,12 @@ public class WorldRender {
 				
 				while(iter.hasNext()) {
 					ChunkBlob blob = iter.next();
-					int bx = blob.chunk.chunk_x;
-					int bz = blob.chunk.chunk_z;
+					int bx = blob.chunk.getX();
+					int bz = blob.chunk.getZ();
 					
 					if(bx < uxs || bx > uxe || bz < uzs || bz > uze) {
 						if(now > time_map.get(blob)) {
-							long idx = ((long)(bx) & 0xffffffffL) | (((long)bz) << 32L);
+							long idx = blob.chunk.getPair();
 							iter.remove();
 							chunk_map.remove(idx);
 							blob.unload();
@@ -355,17 +374,15 @@ public class WorldRender {
 				world.unloadRegionsNotFound(loaded_regions);
 			}
 			
+			boolean frustumCulling = (flags & FRUSTUM_CULLING) != 0;
 			long loaded = load_limit;
-			
-			@SuppressWarnings("unused")
-			int count = 0;
 			
 			FrustumIntersection intersect = new FrustumIntersection(projectionView);
 			for(int i = xs + 1; i < xe; i++) {
 				for(int j = zs + 1; j < ze; j++) {
 					long idx = ((long)(i) & 0xffffffffL) | (((long)j) << 32L);
 					
-					if(!intersect.testAab(new Vector3f(i * 16, 0, j * 16), new Vector3f(i * 16 + 16, 256, j * 16 + 16))) {
+					if(frustumCulling && !intersect.testAab(new Vector3f(i * 16, 0, j * 16), new Vector3f(i * 16 + 16, 256, j * 16 + 16))) {
 						continue;
 					}
 					
@@ -376,7 +393,7 @@ public class WorldRender {
 						}
 						
 						IChunk chunk = world.getChunk(i, j);
-						if(!chunk.isLoaded()) continue;
+						if(chunk == null || !chunk.isLoaded()) continue;
 						
 						if(loaded-- > 0) {
 							blob = new ChunkBlob(world, (Chunk)chunk, i * 16, j * 16);
@@ -390,10 +407,46 @@ public class WorldRender {
 					}
 					
 					if(blob != null) {
-						blob.render();
-						count++;
+						blob.prepare();
 					}
 				}
+			}
+			
+			for(int i = xs + 1; i < xe; i++) {
+				for(int j = zs + 1; j < ze; j++) {
+					long idx = ((long)(i) & 0xffffffffL) | (((long)j) << 32L);
+					
+					if(frustumCulling && !intersect.testAab(new Vector3f(i * 16, 0, j * 16), new Vector3f(i * 16 + 16, 256, j * 16 + 16))) {
+						continue;
+					}
+					
+					ChunkBlob blob = chunk_map.get(idx);
+					if(blob != null) {
+						blob.renderOpaque();
+					}
+				}
+			}
+			
+			if((flags & DRAW_TRANSLUCENT) != 0) {
+				GL11.glEnable(GL11.GL_BLEND);
+				for(int i = xs + 1; i < xe; i++) {
+					for(int j = zs + 1; j < ze; j++) {
+						long idx = ((long)(i) & 0xffffffffL) | (((long)j) << 32L);
+						
+						if(frustumCulling && !intersect.testAab(new Vector3f(i * 16, 0, j * 16), new Vector3f(i * 16 + 16, 256, j * 16 + 16))) {
+							continue;
+						}
+						
+						ChunkBlob blob = chunk_map.get(idx);
+						if(blob != null) {
+							blob.renderTranslucent();
+						}
+					}
+				}
+				GL11.glDisable(GL11.GL_BLEND);
+				GL11.glDisable(GL11.GL_DEPTH_TEST);
+				GL11.glEnable(GL11.GL_DEPTH_TEST);
+				GL11.glDepthFunc(GL11.GL_LEQUAL);
 			}
 		}
 	}

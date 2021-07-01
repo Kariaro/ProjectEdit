@@ -7,7 +7,9 @@ import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL11;
 
 import com.hardcoded.lwjgl.LwjglWindow;
+import com.hardcoded.lwjgl.data.Texture;
 import com.hardcoded.lwjgl.input.InputMask;
+import com.hardcoded.main.ProjectEdit;
 import com.hardcoded.mc.general.world.BlockDataManager;
 import com.hardcoded.mc.general.world.IBlockData;
 import com.hardcoded.render.gui.GuiComponent;
@@ -33,7 +35,7 @@ public class GuiBlockMenu extends GuiComponent implements GuiListener {
 			menuItem.add(comp);
 		}
 		
-		setSize(256, 64 * 10);
+		setSize(112, 120);
 	}
 	
 	private float scroll_amount;
@@ -217,7 +219,6 @@ public class GuiBlockMenu extends GuiComponent implements GuiListener {
 		
 		int block_screen_width = getBlockScreenWidth();
 		int block_screen_height = getBlockScreenHeight();
-		int xt = Math.max(1, block_screen_width / 64);
 		
 		GL11.glColor4f(0.1f, 0.1f, 0.1f, 1);
 		renderBox(x, y, width, height);
@@ -253,20 +254,21 @@ public class GuiBlockMenu extends GuiComponent implements GuiListener {
 		GL11.glStencilFunc(GL11.GL_EQUAL, 1, 0xFF);
 		GL11.glStencilMask(0xFF);
 		
-		callOnScreenItems((comp, idx, c_xp, c_yp) -> {
-			{
-				if((xt & 1) == 0) {
-					idx += (idx / xt);
-				}
-				
-				if((idx & 1) == 0) {
-					GL11.glColor4f(0.9f, 0.9f, 0.9f, 1);
-				} else {
-					GL11.glColor4f(0.7f, 0.7f, 0.7f, 1);
-				}
-				renderBox((int)c_xp, (int)c_yp, 64, 64);
-			}
+		{
+			int rows = getBlockMenuHeight();
+			int pixel_height = rows * 64 - block_screen_height;
+			float scroll_px = (getScroll() * pixel_height) % 64;
 			
+			int wi = getBlockScreenWidth() / 64;
+			int he = (getBlockScreenHeight() / 64) + 2;
+			
+			Texture tex = ProjectEdit.getInstance().getTextureManager().getGuiIcons().blockmenu_box;
+			tex.bind();
+			renderBox((int)x + 8, (int)y + 48 - (int)scroll_px, 64 * wi, 64 * he, wi, he);
+			tex.unbind();
+		}
+		
+		callOnScreenItems((comp, idx, c_xp, c_yp) -> {
 			comp.setLocation((int)c_xp, (int)c_yp);
 			comp.renderComponent();
 		});
@@ -278,5 +280,14 @@ public class GuiBlockMenu extends GuiComponent implements GuiListener {
 	public GuiBlockMenu setSize(int width, int height) {
 		super.setSize(width, height);
 		return this;
+	}
+	
+	private void renderBox(int x, int y, int w, int h, int tx, int ty) {
+		GL11.glBegin(GL11.GL_TRIANGLE_FAN);
+			GL11.glTexCoord2i( 0,  0); GL11.glVertex2i(x  , y  );
+			GL11.glTexCoord2i(tx,  0); GL11.glVertex2i(x+w, y  );
+			GL11.glTexCoord2i(tx, ty); GL11.glVertex2i(x+w, y+h);
+			GL11.glTexCoord2i( 0, ty); GL11.glVertex2i(x  , y+h);
+		GL11.glEnd();
 	}
 }

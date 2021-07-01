@@ -60,7 +60,7 @@
           <archive>
             <manifest>
               <addClasspath>true</addClasspath>
-              <mainClass>com.hardcoded.main.ProjectEdit</mainClass>
+              <mainClass>com.hardcoded.main.Main</mainClass>
             </manifest>
           </archive>
         </configuration>
@@ -174,10 +174,15 @@
       <groupId>org.lwjgl</groupId>
       <artifactId>lwjgl-opengl</artifactId>
     </dependency>
+    <!-- https://mvnrepository.com/artifact/org.lwjgl/lwjgl-stb -->
     <dependency>
-      <!-- https://mvnrepository.com/artifact/org.lwjgl/lwjgl-stb -->
       <groupId>org.lwjgl</groupId>
       <artifactId>lwjgl-stb</artifactId>
+    </dependency>
+    <!-- https://mvnrepository.com/artifact/org.lwjgl/lwjgl-tinyfd -->
+    <dependency>
+      <groupId>org.lwjgl</groupId>
+      <artifactId>lwjgl-tinyfd</artifactId>
     </dependency>
     <dependency>
       <groupId>org.joml</groupId>
@@ -198,6 +203,11 @@
     <dependency>
       <groupId>org.lwjgl</groupId>
       <artifactId>lwjgl-glfw</artifactId>
+      <classifier>${lwjgl.natives}</classifier>
+    </dependency>
+    <dependency>
+      <groupId>org.lwjgl</groupId>
+      <artifactId>lwjgl-tinyfd</artifactId>
       <classifier>${lwjgl.natives}</classifier>
     </dependency>
     <dependency>

@@ -14,9 +14,9 @@ import com.hardcoded.lwjgl.LwjglWindow;
 import com.hardcoded.lwjgl.data.TextureAtlas;
 import com.hardcoded.mc.general.world.BlockDataManager;
 import com.hardcoded.mc.general.world.IBlockData;
-import com.hardcoded.render.utils.MeshBuilder;
-import com.hardcoded.utils.FastModelRenderer;
-import com.hardcoded.utils.MathUtils;
+import com.hardcoded.render.generator.FastModelRenderer;
+import com.hardcoded.render.util.MeshBuffer;
+import com.hardcoded.util.MathUtils;
 
 public class IconGenerator extends IResource {
 	public static final int ICON_WIDTH = 64;
@@ -196,7 +196,7 @@ public class IconGenerator extends IResource {
 		GL11.glPushMatrix();
 		GL11.glLoadMatrixf(projView.get(new float[16]));
 		
-		MeshBuilder buffer = new MeshBuilder();
+		MeshBuffer buffer = new MeshBuffer();
 		FastModelRenderer.renderModel(data, 0, 0, 0, buffer, -1);
 		
 		float[] color = buffer.colors.toArray();

@@ -3,9 +3,8 @@ package com.hardcoded.api;
 import java.io.File;
 
 import com.hardcoded.lwjgl.Camera;
+import com.hardcoded.lwjgl.icon.TextureManager;
 import com.hardcoded.mc.general.world.World;
-import com.hardcoded.utils.Nonnull;
-import com.hardcoded.utils.Nullable;
 
 /**
  * Interface describing the ProjectEdit api
@@ -21,11 +20,18 @@ public interface IProjectEdit {
 	Camera getCamera();
 	
 	/**
+	 * Returns the editors texture manager
+	 */
+	@Nonnull
+	TextureManager getTextureManager();
+	
+	/**
 	 * Returns the current world loaded by the editor.
 	 * If no world is loaded {@code null} will be returned
 	 */
 	@Nullable
 	World getWorld();
+	
 	
 	/**
 	 * Load a world from a world folder
