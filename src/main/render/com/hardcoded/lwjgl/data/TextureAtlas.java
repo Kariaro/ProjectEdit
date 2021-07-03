@@ -3,6 +3,7 @@ package com.hardcoded.lwjgl.data;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferInt;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -45,6 +46,7 @@ public class TextureAtlas extends IResource {
 	protected final AtlasUv[] atlas_map;
 	protected final Map<String, Integer> atlas_path_to_id;
 	protected final BufferedImage image;
+	protected final int[] image_alpha_buffer;
 	protected Texture atlas;
 	
 	public TextureAtlas() {
@@ -57,6 +59,8 @@ public class TextureAtlas extends IResource {
 	
 	public TextureAtlas(int padding, int align, int width, int height, boolean fillPadding, int interpolation) {
 		this.image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+		this.image_alpha_buffer = ((DataBufferInt)image.getAlphaRaster().getDataBuffer()).getData();
+		
 		this.atlas_path_to_id = new HashMap<>();
 		this.PADDING_PIXELS = padding;
 		this.WIDTH = width;
@@ -306,12 +310,23 @@ public class TextureAtlas extends IResource {
 		public float x1, y1;
 		public float x2, y2;
 		
+		private final float wi;
+		private final float he;
+		private final float size;
 		public AtlasUv(int id, float x1, float y1, float x2, float y2) {
 			this.id = id;
 			this.x1 = x1;
 			this.y1 = y1;
 			this.x2 = x2;
 			this.y2 = y2;
+
+			// Calculate the pixel difference.
+			// 1: 16px
+			// 2: 32px
+			// 3: ...
+			this.wi = (x2 - x1) * WIDTH / 16.0f;
+			this.he = (y2 - y1) * HEIGHT / 16.0f;
+			this.size = Math.min(wi, he);
 		}
 
 		public void modify(float[] uvs) {
@@ -322,15 +337,15 @@ public class TextureAtlas extends IResource {
 				float x = uvs[i];
 				float y = uvs[i + 1];
 				
-				x = x / (WIDTH + 0.0f) + x1;
-				y = y / (HEIGHT + 0.0f) + y1;
+				x = (x * size) / (WIDTH + 0.0f) + x1;
+				y = (y * size) / (HEIGHT + 0.0f) + y1;
 				
 				uvs[i] = x;
 				uvs[i + 1] = y;
 			}
 		}
 	}
-
+	
 	public boolean isTranclucent(float[] uv) {
 		float x0 = 1;
 		float x1 = 0;
@@ -351,13 +366,15 @@ public class TextureAtlas extends IResource {
 		int py0 = (int)(y0 * HEIGHT);
 		int py1 = (int)(y1 * HEIGHT);
 		
-//		int[] alpha_pixels = ((DataBufferInt)image.getAlphaRaster().getDataBuffer()).getData();
+		if(px0 < 0) px0 = 0;
+		if(px1 >= WIDTH) px1 = WIDTH - 1;
+		if(py0 < 0) py0 = 0;
+		if(py1 >= HEIGHT) py1 = HEIGHT - 1;
 		
 		for(int y = py0; y < py1; y++) {
 			for(int x = px0; x < px1; x++) {
-//				int idx = (x + y * WIDTH);
-//				int alpha = alpha_pixels[idx] >>> 24;
-				int alpha = image.getRGB(x, y) >>> 24;
+				int idx = (x + y * WIDTH);
+				int alpha = image_alpha_buffer[idx] >>> 24;
 				if(alpha != 0x00 && alpha != 0xff) return true;
 			}
 		}

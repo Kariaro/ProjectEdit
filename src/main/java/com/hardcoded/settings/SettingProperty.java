@@ -1,12 +1,16 @@
 package com.hardcoded.settings;
 
+import com.hardcoded.settings.NumberRange.NumberRangeException;
+
 public class SettingProperty {
 	private final SettingKey key;
+	private final NumberRange<?> range;
 	private Object value;
 	
 	protected SettingProperty(SettingKey key) {
 		this.key = key;
 		this.value = key.getDefaultValue();
+		this.range = key.getNumberRange();
 	}
 	
 	/**
@@ -26,7 +30,7 @@ public class SettingProperty {
 	/**
 	 * Returns the string value of this property
 	 */
-	public String getStringValue() {
+	public String getStringDataValue() {
 		return value.toString();
 	}
 	
@@ -46,17 +50,32 @@ public class SettingProperty {
 		
 		try {
 			if(fieldType == int.class) {
-				this.value = Integer.parseInt(value);
+				int parsed = Integer.parseInt(value);
+				if(range != null && !range.contains(parsed)) {
+					throw new NumberRangeException();
+				}
+				
+				this.value = parsed;
 			} else if(fieldType == float.class) {
-				this.value = Float.parseFloat(value);
+				float parsed = Float.parseFloat(value);
+				if(range != null && !range.contains(parsed)) {
+					throw new NumberRangeException();
+				}
+				
+				this.value = parsed;
 			} else if(fieldType == boolean.class) {
 				this.value = Boolean.parseBoolean(value);
+			} else if(fieldType == String.class) {
+				this.value = value;
 			} else {
 				throw new UnsupportedOperationException("Invalid setting fieldType '" + fieldType + "'");
 			}
 		} catch(NumberFormatException | NullPointerException e) {
 			ProjectSettings.LOGGER.warn("Property value could not be parsed. '" + value + "' was not an '" + fieldType + "'");
 			this.value = key.getDefaultValue();
+		} catch(NumberRangeException e) {
+			ProjectSettings.LOGGER.warn("Property value was outside range. '" + value + "' was outside the bounds '" + range + "'");
+			
 		}
 	}
 	
@@ -82,5 +101,20 @@ public class SettingProperty {
 	 */
 	public boolean getBooleanValue() {
 		return (Boolean)this.value;
+	}
+	
+	/**
+	 * Returns the string value of this property.
+	 * @throws ClassCastException if this property was not a string property
+	 */
+	public String getStringValue() {
+		return (String)this.value;
+	}
+	
+	/**
+	 * Returns the object value of this property
+	 */
+	public Object getObjectValue() {
+		return this.value;
 	}
 }

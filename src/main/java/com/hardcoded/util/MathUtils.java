@@ -5,15 +5,23 @@ import java.lang.Math;
 import org.joml.*;
 
 public class MathUtils {
-	public static final float deg2Rad = (float)(Math.PI / 180.0);
-	public static final float rad2Deg = (float)(180.0 / Math.PI);
+	public static final double deg2Rad = Math.PI / 180.0;
+	public static final double rad2Deg = 180.0 / Math.PI;
 	
-	public static float cosDeg(float a) {
+	public static float cosDegf(float a) {
 		return (float)Math.cos(a * deg2Rad);
 	}
 	
-	public static float sinDeg(float a) {
+	public static float sinDegf(float a) {
 		return (float)Math.sin(a * deg2Rad);
+	}
+	
+	public static double cosDeg(double a) {
+		return Math.cos(a * deg2Rad);
+	}
+	
+	public static double sinDeg(double a) {
+		return Math.sin(a * deg2Rad);
 	}
 	
 	public static float toRadians(double deg) {

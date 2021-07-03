@@ -96,7 +96,9 @@ public class Region implements IRegion {
 	}
 	
 	private IChunk readChunk(int cx, int cz) {
-		if(region.hasChunk(cx, cz)) {
+		final RegionFile region = this.region;
+		
+		if(region != null && region.hasChunk(cx, cz)) {
 			ByteBuf buf = region.getChunkBuffer(cx, cz);
 
 			if(buf != null) {

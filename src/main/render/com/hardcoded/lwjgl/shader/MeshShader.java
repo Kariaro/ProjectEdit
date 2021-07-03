@@ -1,5 +1,6 @@
 package com.hardcoded.lwjgl.shader;
 
+import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL20;
 
 /**
@@ -8,6 +9,8 @@ import org.lwjgl.opengl.GL20;
  * @author HardCoded
  */
 public class MeshShader extends ShaderObjectImpl {
+	protected int load_toShadowMapSpace;
+	protected int load_projectionView;
 	protected int load_hasShadows;
 	protected int load_useOnlyColors;
 	
@@ -29,9 +32,22 @@ public class MeshShader extends ShaderObjectImpl {
 	protected void loadUniforms() {
 		super.loadUniforms();
 		
+		load_toShadowMapSpace = getUniformLocation("toShadowMapSpace");
+		load_projectionView = getUniformLocation("projectionView");
 		load_hasShadows = getUniformLocation("hasShadows");
 		load_useOnlyColors = getUniformLocation("useOnlyColors");
+		
+		setUniform("dif_tex", 0);
+		setUniform("shadow_tex", 1);
 		setUseShadows(true);
+	}
+	
+	public void setProjectionView(Matrix4f projectionView) {
+		setMatrix4f(load_projectionView, projectionView);
+	}
+	
+	public void setShadowMapSpace(Matrix4f matrix) {
+		setMatrix4f(load_toShadowMapSpace, matrix);
 	}
 	
 	public void setUseShadows(boolean enable) {

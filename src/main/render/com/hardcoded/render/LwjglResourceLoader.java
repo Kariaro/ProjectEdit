@@ -137,14 +137,13 @@ public class LwjglResourceLoader {
 				// Unload texture cache
 //				Texture.unloadTextureCache();
 				// Unload all textures
-				render.atlas.unload();
+				render.textureManager.getBlockAtlas().unload();
 				
 				TimerUtils.begin();
 				
 				// Add debug texture
 				try {
-					render.atlas.addTexture("projectedit:debug_faces", ImageIO.read(LwjglRender.class.getResourceAsStream("/images/debug_faces.png")));
-					render.atlas.addTexture("projectedit:missing", ImageIO.read(LwjglRender.class.getResourceAsStream("/images/missing.png")));
+					render.textureManager.getBlockAtlas().addTexture("projectedit:missing", ImageIO.read(LwjglRender.class.getResourceAsStream("/images/missing.png")));
 				} catch(Exception e) {
 					e.printStackTrace();
 				}
@@ -167,7 +166,7 @@ public class LwjglResourceLoader {
 				TimerUtils.begin();
 				
 				// Recompile textures
-				render.atlas.reload();
+				render.textureManager.getBlockAtlas().reload();
 				
 				loadingState = LoadingState.STATE_GL_LOAD_ICONS;
 			}

@@ -154,7 +154,7 @@ public interface IBlockState {
 					if(!val.equalsIgnoreCase(value)) return false;
 				} else {
 					boolean match = false;
-					String[] array = val.split("|");
+					String[] array = val.split("\\|");
 					for(String str : array) {
 						if(str.equalsIgnoreCase(value)) {
 							match = true;
@@ -164,7 +164,6 @@ public interface IBlockState {
 					
 					if(!match) return false;
 				}
-				
 			}
 			
 			return true;

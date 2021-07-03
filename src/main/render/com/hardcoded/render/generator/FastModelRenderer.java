@@ -5,8 +5,10 @@ import java.util.*;
 import com.hardcoded.lwjgl.data.TextureAtlas;
 import com.hardcoded.main.ProjectEdit;
 import com.hardcoded.mc.constants.Direction;
+import com.hardcoded.mc.general.files.Blocks;
 import com.hardcoded.mc.general.world.Biome;
 import com.hardcoded.mc.general.world.IBlockData;
+import com.hardcoded.mc.general.world.IBlockState;
 import com.hardcoded.render.BiomeBlend;
 import com.hardcoded.render.generator.FastModelJsonLoader.FastModel;
 import com.hardcoded.render.generator.FastModelJsonLoader.FastModel.ModelElement;
@@ -81,7 +83,7 @@ public class FastModelRenderer {
 			has_elements.add(block);
 		}
 		
-		TextureAtlas atlas = ProjectEdit.getInstance().getTextureManager().getBlockAtlas();
+		TextureAtlas atlas = ProjectEdit.getInstance().getTextureManager().getBlockAtlas().getMain();
 		
 		for(ModelObject object : models) {
 			for(ModelElement element : object.getElements()) {
@@ -161,6 +163,19 @@ public class FastModelRenderer {
 	public static void renderModelFastBiome(IBlockData bs, Biome biome, float x, float y, float z, MeshBuffer builder, int faces) {
 		List<ModelObject> model_objects = getModelsForBlock(bs);
 		
+		boolean isRedstone = bs.getBlockId() == Blocks.REDSTONE_WIRE.getBlockId();
+		int level = 0;
+		if(isRedstone) {
+			Object power = bs.getStateList().getState(IBlockState.States.az);
+			if(power != null) {
+				try {
+					level = Integer.parseInt(power.toString());
+				} catch(Exception e) {
+					e.printStackTrace();
+				}
+			}
+		}
+		
 		for(int i = 0, il = model_objects.size(); i < il; i++) {
 			ModelObject model = model_objects.get(i);
 			
@@ -182,10 +197,19 @@ public class FastModelRenderer {
 						if(face.tintIndex >= 0) {
 							int rgb = BiomeBlend.get(biome.getTemperature(), biome.getDownfall());
 							color = color.clone();
-							for(int vi = 0, len = color.length; vi < len; vi += 3) {
-								color[vi    ] = ((rgb >> 16) & 0xff) / 255.0f;
-								color[vi + 1] = ((rgb >>  8) & 0xff) / 255.0f;
-								color[vi + 2] = ((rgb      ) & 0xff) / 255.0f;
+							
+							if(isRedstone) {
+								for(int vi = 0, len = color.length; vi < len; vi += 3) {
+									color[vi    ] = 0.3f + (level / 15.0f) * 0.7f;
+									color[vi + 1] = 0.0f;
+									color[vi + 2] = 0.0f;
+								}
+							} else {
+								for(int vi = 0, len = color.length; vi < len; vi += 3) {
+									color[vi    ] = ((rgb >> 16) & 0xff) / 255.0f;
+									color[vi + 1] = ((rgb >>  8) & 0xff) / 255.0f;
+									color[vi + 2] = ((rgb      ) & 0xff) / 255.0f;
+								}
 							}
 						}
 						

@@ -11,11 +11,13 @@ out vec4 pass_ShadowCoords;
 
 uniform mat4 toShadowMapSpace;
 uniform mat4 projectionView;
+uniform mat4 translationMatrix;
 
 void main() {
-	gl_Position = projectionView * in_Position;
-	pass_ShadowCoords = toShadowMapSpace * in_Position;
-	pass_Position = in_Position;
+	vec4 position = translationMatrix * in_Position;
+	gl_Position = projectionView * position;
+	pass_ShadowCoords = toShadowMapSpace * position;
+	pass_Position = position;
 	pass_Uv = in_Uv;
 	pass_Color = in_Color;
 }

@@ -82,14 +82,17 @@ public class MeshBuffer {
 			return mesh;
 		} finally {
 			if(verts != null) {
+				verts.reset();
 				verts = null;
 			}
 			
 			if(uvs != null) {
+				uvs.reset();
 				uvs = null;
 			}
 			
 			if(colors != null) {
+				colors.reset();
 				colors = null;
 			}
 		}

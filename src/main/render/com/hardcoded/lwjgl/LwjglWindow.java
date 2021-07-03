@@ -12,8 +12,12 @@ import org.lwjgl.glfw.*;
 import org.lwjgl.opengl.GL;
 
 import com.hardcoded.api.LoadingException;
+import com.hardcoded.lwjgl.data.Texture;
+import com.hardcoded.lwjgl.icon.WindowIcons;
 import com.hardcoded.lwjgl.input.Input;
+import com.hardcoded.main.ProjectEdit;
 import com.hardcoded.render.LwjglRender;
+import com.hardcoded.settings.ProjectSettings;
 
 /**
  * This is the main thread of the lwjgl application.
@@ -21,9 +25,6 @@ import com.hardcoded.render.LwjglRender;
 public class LwjglWindow implements Runnable {
 	private static final Logger LOGGER = LogManager.getLogger(LwjglWindow.class);
 	private static LwjglWindow instance;
-			
-	public static final BufferedImage ICON = null;
-	public static final int TARGET_FPS = 120;
 	
 	protected final ConcurrentLinkedDeque<Runnable> tasks;
 	private LwjglRender render;
@@ -75,7 +76,6 @@ public class LwjglWindow implements Runnable {
 		this.width = width;
 		this.height = height;
 		
-		glfwWindowHint(GLFW_SAMPLES, 4);
 		glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
 		glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 		window = glfwCreateWindow(width, height, "ProjectEdit - viewer", NULL, NULL);
@@ -104,13 +104,23 @@ public class LwjglWindow implements Runnable {
 		
 		glfwMakeContextCurrent(window);
 		
-//		if(ICON != null) {
-//			GLFWImage image = GLFWImage.malloc();
-//			GLFWImage.Buffer buffer = GLFWImage.malloc(1);
-//			image.set(ICON.getWidth(), ICON.getHeight(), Texture.loadBuffer(ICON));
-//			buffer.put(0, image);
-//			glfwSetWindowIcon(window, buffer);
-//		}
+		try {
+			WindowIcons icons = ProjectEdit.getInstance().getTextureManager().getWindowIcons();
+			
+			GLFWImage.Buffer buffer = GLFWImage.malloc(icons.getSize());
+			for(int i = 0; i < icons.getSize(); i++) {
+				GLFWImage image = GLFWImage.malloc();
+				
+				BufferedImage bi = icons.getIcon(i);
+				image.set(bi.getWidth(), bi.getHeight(), Texture.loadBuffer(bi));
+				buffer.put(i, image);
+			}
+			
+			glfwSetWindowIcon(window, buffer);
+		} catch(Exception e) {
+			LOGGER.error(e);
+			e.printStackTrace();
+		}
 		
 		GL.createCapabilities();
 		
@@ -129,6 +139,7 @@ public class LwjglWindow implements Runnable {
 			throw new RuntimeException("Failed to initialize the LWJGL window");
 		}
 		
+		int TARGET_FPS = ProjectSettings.getMaxFps();
 		double SLEEP_TIME = 1000.0 / (double)TARGET_FPS;
 		
 		int frames = 0;
@@ -142,8 +153,12 @@ public class LwjglWindow implements Runnable {
 					tasks.poll().run();
 				}
 				
+				if(ProjectSettings.getMaxFps() != TARGET_FPS) {
+					TARGET_FPS = ProjectSettings.getMaxFps();
+					SLEEP_TIME = 1000.0 / (double)TARGET_FPS;
+				}
+				
 				if(Input.pollKey(GLFW.GLFW_KEY_LEFT_ALT) && !Input.isControlDown()) {
-					// Capture the mouse or not
 					capture_mouse = !capture_mouse;
 					
 					if(capture_mouse) {
@@ -163,6 +178,10 @@ public class LwjglWindow implements Runnable {
 					if(now > next + SLEEP_TIME) {
 						next += (long)((now - next) / SLEEP_TIME) * SLEEP_TIME;
 					}
+					
+					if(!Input.hasFocus()) {
+						Thread.sleep(50);
+					}
 				}
 				
 				{
@@ -171,7 +190,6 @@ public class LwjglWindow implements Runnable {
 					last_delta = now;
 				}
 				
-				
 				try {
 					render.render();
 					render.update();
@@ -179,7 +197,7 @@ public class LwjglWindow implements Runnable {
 					Input.flush();
 					frames++;
 				} catch(Exception e) {
-					e.printStackTrace();
+					LOGGER.error(e);
 				}
 				
 				long now = System.currentTimeMillis();
@@ -205,6 +223,8 @@ public class LwjglWindow implements Runnable {
 		render.cleanup();
 		glfwDestroyWindow(window);
 		glfwTerminate();
+		
+		ProjectEdit.shutdown();
 	}
 	
 	private static boolean capture_mouse = false;
@@ -225,7 +245,7 @@ public class LwjglWindow implements Runnable {
 	}
 	
 	/**
-	 * Run a task on the main thread.
+	 * Run a task on the main thread
 	 * @param runnable a task
 	 */
 	public static void runLater(Runnable runnable) {
@@ -242,5 +262,9 @@ public class LwjglWindow implements Runnable {
 	
 	public static long getWindowHwnd() {
 		return instance.window_hwnd;
+	}
+	
+	public static long getWindowPointer() {
+		return instance.window;
 	}
 }

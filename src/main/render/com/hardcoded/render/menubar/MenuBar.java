@@ -3,7 +3,6 @@ package com.hardcoded.render.menubar;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
 
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.GLFW;
@@ -20,71 +19,16 @@ import com.hardcoded.main.ProjectEdit;
 import com.hardcoded.mc.general.world.World;
 import com.hardcoded.render.gui.GuiListener;
 import com.hardcoded.render.gui.GuiListener.GuiEvent.*;
+import com.hardcoded.render.menubar.IMenuGroup.IMenuEntry;
 import com.hardcoded.render.menubar.MenuGraphics.ButtonTexture;
 
 public class MenuBar extends IResource implements GuiListener {
-	private final List<IMenuItem> items;
-	private MenuGraphics testMenu;
+	private final List<IMenuGroup> groups;
+	protected MenuGraphics menuGraphics;
 	
 	public MenuBar() {
-		items = new ArrayList<>();
-		testMenu = new MenuGraphics();
-		
-		addItem("File", i -> i
-			.add("Open", () -> {
-				try(MemoryStack stack = MemoryStack.stackPush()) {
-					PointerBuffer filters = stack.mallocPointer(1);
-					filters.put(stack.UTF8("*.dat"));
-					filters.flip();
-					
-					String result = TinyFileDialogs.tinyfd_openFileDialog("Open world", "", filters, "Minecraft World", false);
-					
-					if(result != null) {
-						File worldFolder = new File(result).getParentFile();
-						ProjectEdit.getInstance().loadWorld(worldFolder);
-					}
-				}
-			}, GLFW.GLFW_KEY_O, GLFW.GLFW_MOD_CONTROL)
-			.add("Save", () -> {
-				
-			}, GLFW.GLFW_KEY_S, GLFW.GLFW_MOD_CONTROL)
-			.add("Reload World", () -> {
-				World world = ProjectEdit.getInstance().getWorld();
-				if(world != null) {
-					ProjectEdit.getInstance().loadWorld(world.getFolder());
-				}
-			}, GLFW.GLFW_KEY_R, GLFW.GLFW_MOD_CONTROL | GLFW.GLFW_MOD_ALT)
-			.add("Exit", () -> {
-				
-			})
-		);
-		
-		addItem("Edit", i -> i
-			.add("Cut", () -> {
-				
-			}, GLFW.GLFW_KEY_X, GLFW.GLFW_MOD_CONTROL)
-			.add("Copy", () -> {
-				
-			}, GLFW.GLFW_KEY_C, GLFW.GLFW_MOD_CONTROL)
-			.add("Paste", () -> {
-				
-			}, GLFW.GLFW_KEY_V, GLFW.GLFW_MOD_CONTROL)
-			.add("Delete", () -> {
-				
-			}, GLFW.GLFW_KEY_DELETE, 0)
-			.add("Undo", () -> {
-				
-			}, GLFW.GLFW_KEY_Z, GLFW.GLFW_MOD_CONTROL)
-			.add("Redo", () -> {
-				
-			}, GLFW.GLFW_KEY_Z, GLFW.GLFW_MOD_CONTROL | GLFW.GLFW_MOD_ALT)
-		);
-		
-		addItem("Help", i -> i
-			.add("About", () -> {
-				
-			})
-		);
+		groups = new ArrayList<>();
+		menuGraphics = new MenuGraphics();
 		
 		InputMask.registerListener(new GuiListener() {
 			@Override
@@ -99,11 +43,11 @@ public class MenuBar extends IResource implements GuiListener {
 				int key = event.getKeyCode();
 				int mod = event.getModifiers();
 				
-				for(IMenuItem item : items) {
-					for(IPopupItem popupItem : item.list) {
-						if(popupItem.key == key && popupItem.mod == mod) {
-							if(popupItem.action != null) {
-								popupItem.action.run();
+				for(IMenuGroup group : groups) {
+					for(IMenuItem item : group.list) {
+						if(item.key == key && item.modifier == mod) {
+							if(item.action != null) {
+								item.action.run();
 							}
 							
 							return;
@@ -112,24 +56,92 @@ public class MenuBar extends IResource implements GuiListener {
 				}
 			}
 		});
+		
+		initUI();
 	}
 	
-	private void addItem(String name, Consumer<IMenuItem> callback) {
-		IMenuItem item = new IMenuItem(name);
-		callback.accept(item);
-		items.add(item);
+	private void initUI() {
+		IMenuGroup fileMenu = IMenuGroup.of("File",
+			IMenuItem.of("Open", () -> {
+				try(MemoryStack stack = MemoryStack.stackPush()) {
+					PointerBuffer filters = stack.mallocPointer(1);
+					filters.put(stack.UTF8("*.dat"));
+					filters.flip();
+					
+					String result = TinyFileDialogs.tinyfd_openFileDialog("Open world", "", filters, "Minecraft World", false);
+					
+					if(result != null) {
+						File worldFolder = new File(result).getParentFile();
+						ProjectEdit.getInstance().loadWorld(worldFolder);
+					}
+				}
+			}, GLFW.GLFW_KEY_O, GLFW.GLFW_MOD_CONTROL),
+			IMenuItem.of("Settings", () -> {
+				((ProjectEdit)ProjectEdit.getInstance()).getSettingsWindow().show();
+			}, GLFW.GLFW_KEY_ENTER, GLFW.GLFW_MOD_CONTROL),
+			IMenuItem.of("Save", () -> {
+				
+			}, GLFW.GLFW_KEY_S, GLFW.GLFW_MOD_CONTROL),
+			IMenuItem.of("Reload World", () -> {
+				World world = ProjectEdit.getInstance().getWorld();
+				if(world != null) {
+					ProjectEdit.getInstance().loadWorld(world.getFolder());
+				}
+			}, GLFW.GLFW_KEY_R, GLFW.GLFW_MOD_CONTROL | GLFW.GLFW_MOD_ALT),
+			IMenuItem.of("Exit", () -> {
+				
+			})
+		);
+		
+		IMenuGroup editMenu = IMenuGroup.of("Edit",
+			IMenuItem.of("Cut", () -> {
+				
+			}, GLFW.GLFW_KEY_X, GLFW.GLFW_MOD_CONTROL),
+			IMenuItem.of("Copy", () -> {
+				
+			}, GLFW.GLFW_KEY_C, GLFW.GLFW_MOD_CONTROL),
+			IMenuItem.of("Paste", () -> {
+				
+			}, GLFW.GLFW_KEY_V, GLFW.GLFW_MOD_CONTROL),
+			IMenuItem.of("Delete", () -> {
+				
+			}, GLFW.GLFW_KEY_DELETE),
+			IMenuItem.of("Undo", () -> {
+				
+			}, GLFW.GLFW_KEY_Z, GLFW.GLFW_MOD_CONTROL),
+			IMenuItem.of("Redo", () -> {
+				
+			}, GLFW.GLFW_KEY_Z, GLFW.GLFW_MOD_CONTROL | GLFW.GLFW_MOD_ALT)
+		);
+		
+		IMenuGroup helpMenu = IMenuGroup.of("Help",
+			IMenuItem.of("About", () -> {
+				
+			})
+		);
+		
+		addGroup(fileMenu);
+		addGroup(editMenu);
+		addGroup(helpMenu);
+	}
+	
+	private void addGroup(IMenuGroup entry) {
+		if(entry instanceof IMenuEntry) {
+			entry = ((IMenuEntry)entry).build(this, 245);
+		}
+		groups.add(entry);
 	}
 	
 	@Override
 	public void reload() {
-		testMenu.gui_atlas.reload();
+		menuGraphics.gui_atlas.reload();
 	}
 	
 	private int selectedMenuIndex = -1;
 	private int getItemOffsetX(int index) {
 		int result = 0;
-		for(int i = 0, len = Math.min(items.size(), index); i < len; i++) {
-			result += items.get(i).tex.width;
+		for(int i = 0, len = Math.min(groups.size(), index); i < len; i++) {
+			result += groups.get(i).tex.width;
 		}
 		
 		return result;
@@ -144,12 +156,12 @@ public class MenuBar extends IResource implements GuiListener {
 	public void onMouseEvent(GuiMouseEvent event) {
 		if(event instanceof GuiMousePress) {
 			if(event.getAction() == GLFW.GLFW_PRESS) {
-				if(event.getCustomData() instanceof IMenuItem) {
+				if(event.getCustomData() instanceof IMenuGroup) {
 					return;
 				}
 				
-				if(event.getCustomData() instanceof IPopupItem) {
-					IPopupItem item = (IPopupItem)event.getCustomData();
+				if(event.getCustomData() instanceof IMenuItem) {
+					IMenuItem item = (IMenuItem)event.getCustomData();
 					
 					if(item.action != null) {
 						item.action.run();
@@ -169,10 +181,10 @@ public class MenuBar extends IResource implements GuiListener {
 			boolean mouse_down = !(event instanceof GuiMouseMove);
 			
 			int xp = 0;
-			for(int i = 0, len = items.size(); i < len; i++) {
-				IMenuItem item = items.get(i);
+			for(int i = 0, len = groups.size(); i < len; i++) {
+				IMenuGroup group = groups.get(i);
 				
-				ButtonTexture tex = item.tex;
+				ButtonTexture tex = group.tex;
 				boolean hover = isInside(xp, 0, tex.width, 18);
 				boolean press = hover && mouse_down;
 				
@@ -220,8 +232,8 @@ public class MenuBar extends IResource implements GuiListener {
 		
 		int sel = selectedMenuIndex;
 		if(isEnbled()) {
-			if(sel >= 0 && sel < items.size()) {
-				IMenuItem selected = items.get(sel);
+			if(sel >= 0 && sel < groups.size()) {
+				IMenuGroup selected = groups.get(sel);
 				
 				int x = getItemOffsetX(sel);
 				drawPopupMenu(selected, x, 18);
@@ -229,7 +241,7 @@ public class MenuBar extends IResource implements GuiListener {
 		}
 	}
 	
-	public void drawPopupMenu(IMenuItem menu, int x, int y) {
+	public void drawPopupMenu(IMenuGroup menu, int x, int y) {
 		if(menu.list.isEmpty()) return;
 		
 		int pw = menu.getPopupWidth();
@@ -248,8 +260,8 @@ public class MenuBar extends IResource implements GuiListener {
 		// (35, 3)
 		float xp = x + 3;
 		float yp = y + 3;
-		testMenu.bind();
-		for(IPopupItem item : menu.list) {
+		menuGraphics.bind();
+		for(IMenuItem item : menu.list) {
 			ButtonTexture tex = item.tex;
 			
 			boolean hover = isInside(xp, yp, tex.width, 22);
@@ -280,7 +292,7 @@ public class MenuBar extends IResource implements GuiListener {
 			
 			yp += 22;
 		}
-		testMenu.unbind();
+		menuGraphics.unbind();
 	}
 	
 	private void drawMenuBar() {
@@ -298,11 +310,11 @@ public class MenuBar extends IResource implements GuiListener {
 		float xp = 0;
 		float yp = 0;
 		
-		testMenu.bind();
-		for(int i = 0, len = items.size(); i < len; i++) {
-			IMenuItem item = items.get(i);
+		menuGraphics.bind();
+		for(int i = 0, len = groups.size(); i < len; i++) {
+			IMenuGroup group = groups.get(i);
 			
-			ButtonTexture tex = item.tex;
+			ButtonTexture tex = group.tex;
 			
 			boolean hover = isInside(xp, 0, tex.width, 18);
 			
@@ -332,7 +344,7 @@ public class MenuBar extends IResource implements GuiListener {
 			
 			xp += tex.width;
 		}
-		testMenu.unbind();
+		menuGraphics.unbind();
 	}
 	
 	private void setColor(int rgb) {
@@ -356,53 +368,5 @@ public class MenuBar extends IResource implements GuiListener {
 			GL11.glVertex2i(x+w, y+h);
 			GL11.glVertex2i(x  , y+h);
 		GL11.glEnd();
-	}
-	
-	private class IMenuItem {
-		private final List<IPopupItem> list;
-		private final ButtonTexture tex;
-		
-		public IMenuItem(String name) {
-			this.tex = testMenu.getMenuButton(name);
-			this.list = new ArrayList<>();
-		}
-		
-		public int getPopupWidth() {
-			return 245;
-		}
-		
-		public int getPopupHeight() {
-			return 6 + list.size() * 22;
-		}
-		
-		public IMenuItem add(String name, Runnable action) {
-			list.add(new IPopupItem(name, getPopupWidth(), action));
-			return this;
-		}
-		
-		public IMenuItem add(String name, Runnable action, int key, int modifier) {
-			list.add(new IPopupItem(name, getPopupWidth(), action, key, modifier));
-			return this;
-		}
-	}
-	
-	private class IPopupItem {
-		private final ButtonTexture tex;
-		private final Runnable action;
-		private final int key, mod;
-		
-		public IPopupItem(String name, int width, Runnable action) {
-			this.tex = testMenu.getPopupButton(name, width);
-			this.action = action;
-			this.key = 0;
-			this.mod = 0;
-		}
-		
-		public IPopupItem(String name, int width, Runnable action, int key, int modifier) {
-			this.tex = testMenu.getPopupButton(name, width, key, modifier);
-			this.action = action;
-			this.key = key;
-			this.mod = modifier;
-		}
 	}
 }

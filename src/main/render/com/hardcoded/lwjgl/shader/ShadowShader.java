@@ -7,7 +7,7 @@ import org.joml.Matrix4f;
  * 
  * @author HardCoded
  */
-public class ShadowShader extends Shader {
+public class ShadowShader extends ShaderObjectImpl {
 	protected int load_mvpMatrix;
 	
 	public ShadowShader() {
@@ -24,6 +24,8 @@ public class ShadowShader extends Shader {
 	
 	@Override
 	protected void loadUniforms() {
+		super.loadUniforms();
+		
 		load_mvpMatrix = getUniformLocation("mvpMatrix");
 	}
 	

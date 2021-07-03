@@ -35,6 +35,13 @@ public class Texture {
 		textureId = -1;
 	}
 	
+	protected Texture(int textureId, int activeId) {
+		this.activeId = GL20.GL_TEXTURE0 + activeId;
+		this.textureId = textureId;
+		this.name = null;
+		this.path = null;
+	}
+	
 	private Texture(File file, String path, int id, int interpolation) throws IOException {
 		this.activeId = GL20.GL_TEXTURE0 + id;
 		this.textureId = GL11.glGenTextures();
@@ -191,7 +198,7 @@ public class Texture {
 		return loadBuffer(bi, false);
 	}
 	
-	private static ByteBuffer loadBuffer(BufferedImage bi, boolean flip_vertical) {
+	protected static ByteBuffer loadBuffer(BufferedImage bi, boolean flip_vertical) {
 		if(bi == null) return null;
 		
 		int height = bi.getHeight();

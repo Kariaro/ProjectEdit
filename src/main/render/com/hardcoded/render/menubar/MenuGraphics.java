@@ -77,11 +77,13 @@ public class MenuGraphics {
 		
 		String keys = GLFW.glfwGetKeyName(key, GLFW.GLFW_KEY_UNKNOWN);
 		
-		
 		if(keys == null) {
 			switch(key) {
 				case GLFW.GLFW_KEY_DELETE:
 					keys = "Delete";
+					break;
+				case GLFW.GLFW_KEY_ENTER:
+					keys = "Enter";
 					break;
 				default:
 					keys = String.format("Unknown 0x%x", key);
@@ -94,10 +96,6 @@ public class MenuGraphics {
 		}
 		
 		return mods + keys;
-	}
-	
-	public ButtonTexture getPopupButton(String text, int width) {
-		return getPopupButton(text, width, 0, 0);
 	}
 	
 	public ButtonTexture getPopupButton(String text, int width, int key, int modifiers) {

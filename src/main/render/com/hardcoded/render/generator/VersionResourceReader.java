@@ -20,9 +20,7 @@ import org.lwjgl.opengl.GL11;
 import com.hardcoded.api.IResource;
 import com.hardcoded.api.ResourceException;
 import com.hardcoded.lwjgl.data.Texture;
-import com.hardcoded.mc.general.world.BlockData;
-import com.hardcoded.mc.general.world.BlockDataManager;
-import com.hardcoded.mc.general.world.IBlockData;
+import com.hardcoded.mc.general.world.*;
 import com.hardcoded.mc.general.world.IBlockState.IBlockStateList;
 import com.hardcoded.render.generator.FastModelJsonLoader.FastModel.ModelObject;
 import com.hardcoded.util.ResourceLocation;
@@ -98,12 +96,9 @@ public class VersionResourceReader extends IResource {
 			return;
 		}
 		
-		boolean pickRandom = false;
 		List<JSONObject> model_data_list = null;
 		if(json.has("variants")) {
-			boolean[] test = new boolean[1];
-			model_data_list = resolve_variants(state, json.getJSONObject("variants"), test);
-			pickRandom = test[0];
+			model_data_list = resolve_variants(state, json.getJSONObject("variants"));
 		} else if(json.has("multipart")) {
 			model_data_list = resolve_multipart(state, json.getJSONArray("multipart"));
 		} else {
@@ -113,14 +108,6 @@ public class VersionResourceReader extends IResource {
 		
 		if(model_data_list == null || model_data_list.isEmpty()) {
 			return;
-		}
-		
-		boolean isWeighted = false;
-		for(JSONObject model_data : model_data_list) {
-			if(model_data.has("weight")) {
-				isWeighted = true;
-				break;
-			}
 		}
 		
 		for(JSONObject model_data : model_data_list) {
@@ -146,15 +133,6 @@ public class VersionResourceReader extends IResource {
 				ModelObject model = FastModelJsonLoader.loadModelDelegate(path, x, y, uvlock);
 				FastModelRenderer.addModel(state, model);
 			}
-			
-			if(isWeighted) {
-				// TODO: Figure out how to render weighted block picking
-				break;
-			}
-			
-			if(pickRandom) {
-				break;
-			}
 		}
 	}
 	
@@ -172,9 +150,9 @@ public class VersionResourceReader extends IResource {
 					models.add((JSONObject)model_obj);
 				} else {
 					JSONArray model_array = (JSONArray)model_obj;
-					for(int j = 0; j < model_array.length(); j++) {
-						models.add(model_array.getJSONObject(j));
-					}
+					models.add(model_array.getJSONObject(0));
+//					for(int j = 0; j < model_array.length(); j++) {
+//					}
 				}
 			}
 			
@@ -185,7 +163,9 @@ public class VersionResourceReader extends IResource {
 					JSONArray or_list = when.getJSONArray("OR");
 					
 					for(int j = 0; j < or_list.length(); j++) {
-						if(stateList.matchesAllowOr(convertMultipartWhenToString(or_list.getJSONObject(j)))) {
+						Map<String,String> map = convertMultipartWhenToString(or_list.getJSONObject(j));
+						
+						if(stateList.matchesAllowOr(map)) {
 							model_data.addAll(models);
 							break;
 						}
@@ -227,7 +207,7 @@ public class VersionResourceReader extends IResource {
 		return map;
 	}
 	
-	private List<JSONObject> resolve_variants(IBlockData state, JSONObject variants, boolean[] is_random_pick) {
+	private List<JSONObject> resolve_variants(IBlockData state, JSONObject variants) {
 		IBlockStateList stateList = state.getStateList();
 		
 		String key = null;
@@ -246,14 +226,16 @@ public class VersionResourceReader extends IResource {
 		
 		List<JSONObject> model_data = null;
 		if(obj instanceof JSONArray) {
-			is_random_pick[0] = true;
 			JSONArray array = (JSONArray)obj;
 			
 			if(array.length() > 0) {
 				model_data = new ArrayList<>();
-				for(int i = 0; i < array.length(); i++) {
-					model_data.add(array.getJSONObject(i));
-				}
+				model_data.add(array.getJSONObject(0));
+				
+				// TODO: Implemented weighted random picking
+//				for(int i = 0; i < array.length(); i++) {
+//					model_data.add(array.getJSONObject(i));
+//				}
 			}
 		} else if(obj instanceof JSONObject) {
 			model_data = new ArrayList<>();

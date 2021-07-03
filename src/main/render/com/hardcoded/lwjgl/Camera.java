@@ -16,18 +16,22 @@ import com.hardcoded.util.MathUtils;
  * @author HardCoded
  */
 public class Camera {
-	public float x;
-	public float y;
-	public float z;
+	public double x;
+	public double y;
+	public double z;
 	
-	public float rx;
-	public float ry;
-	public float rz;
+	public double rx;
+	public double ry;
+	public double rz;
 	
 	private Vector2f mouse = new Vector2f(0, 0);
 	private Vector2f delta = new Vector2f(0, 0);
+	private float speed = 1;
+	
+	public float near = 0.1f;
+	public float far = 100000; // 10000
+	
 	private void updateMouse() {
-		// Problem with this is that it snaps
 		float cx = Input.getMouseX();
 		float cy = Input.getMouseY();
 		delta.x = mouse.x - cx;
@@ -35,18 +39,17 @@ public class Camera {
 		mouse.x = cx;
 		mouse.y = cy;
 		
-		speed += Input.getScrollDeltaY() / 10.0f;
+		speed += Input.getScrollDeltaY() / 10.0;
 		if(speed < 0) speed = 0;
-		if(speed > 3) speed = 3;
+		if(speed > 5) speed = 5;
 	}
 	
-	private float speed = 1;
 	public void update() {
 		updateMouse();
 		
 		if(LwjglWindow.isMouseCaptured()) {
-			rx -= delta.x / 4.0f;
-			ry -= delta.y / 4.0f;
+			rx -= delta.x / 4.0;
+			ry -= delta.y / 4.0;
 		}
 		
 		if(ry < -90) ry = -90;
@@ -72,12 +75,12 @@ public class Camera {
 		if(up) yd ++;
 		if(down) yd --;
 		
-		float xx = xd * MathUtils.cosDeg(rx) + zd * MathUtils.sinDeg(rx);
-		float zz = xd * MathUtils.sinDeg(rx) - zd * MathUtils.cosDeg(rx);
-		float yy = yd;
+		double xx = xd * MathUtils.cosDeg(rx) + zd * MathUtils.sinDeg(rx);
+		double zz = xd * MathUtils.sinDeg(rx) - zd * MathUtils.cosDeg(rx);
+		double yy = yd;
 		
-		float time_delta = LwjglWindow.getDeltaTime();
-		float speed = this.speed * 10 * (float)Math.pow(5, this.speed - 1);
+		double time_delta = LwjglWindow.getDeltaTime();
+		double speed = this.speed * 10 * Math.pow(5, this.speed - 1);
 		speed *= time_delta;
 		
 		x += xx * speed;
@@ -86,7 +89,7 @@ public class Camera {
 	}
 	
 	public Vector3f getPosition() {
-		return new Vector3f(x, y, z);
+		return new Vector3f((float)x, (float)y, (float)z);
 	}
 	
 	public Matrix4f getViewMatrix() {
@@ -94,11 +97,9 @@ public class Camera {
 			.rotate(MathUtils.toRadians(rx), 1, 0, 0)
 			.rotate(MathUtils.toRadians(ry), 0, 1, 0)
 			.rotate(MathUtils.toRadians(rz), 0, 0, 1)
-			.translate(-x, -y, -z);
+			.translate((float)-x, (float)-y, (float)-z);
 	}
 	
-	public float near = 0.1f;
-	public float far = 100000; // 10000
 	public Matrix4f getProjectionMatrix() {
 		float width = LwjglWindow.getWidth();
 		float height = LwjglWindow.getHeight();
@@ -109,7 +110,47 @@ public class Camera {
 			.rotate(MathUtils.toRadians(ry), 1, 0, 0)
 			.rotate(MathUtils.toRadians(rx), 0, 1, 0)
 			.rotate(MathUtils.toRadians(rz), 0, 0, 1)
-			.translate(-x, -y, -z);
+			.translate((float)-x, (float)-y, (float)-z);
+	}
+	
+	public Matrix4f getProjectionMatrixTest() {
+		float width = LwjglWindow.getWidth();
+		float height = LwjglWindow.getHeight();
+		
+		Matrix4f projectionMatrix = new Matrix4f();
+		projectionMatrix.setPerspective(MathUtils.toRadians(ProjectSettings.getFov()), width / height, near, far);
+		return projectionMatrix
+			.rotate(MathUtils.toRadians(ry), 1, 0, 0)
+			.rotate(MathUtils.toRadians(rx), 0, 1, 0)
+			.rotate(MathUtils.toRadians(rz), 0, 0, 1)
+			.translate(test(-x), (float)-y, test(-z));
+	}
+	
+	private float test(double value) {
+		if(value > -1 && value < 1) {
+			return (float)value;
+		}
+		
+		if(value < 0) {
+			int coord = (int)(value / 16) * 16;
+			return (float)(value - coord);
+		}
+		
+		int coord = (int)((value - 1) / 16) * 16;
+		return (float)(value - coord - 16);
+	}
+	
+	public Matrix4f getChunkMatrix(int x, int z) {
+		float width = LwjglWindow.getWidth();
+		float height = LwjglWindow.getHeight();
+		
+		Matrix4f projectionMatrix = new Matrix4f();
+		projectionMatrix.setPerspective(MathUtils.toRadians(ProjectSettings.getFov()), width / height, near, far);
+		return projectionMatrix
+			.rotate(MathUtils.toRadians(ry), 1, 0, 0)
+			.rotate(MathUtils.toRadians(rx), 0, 1, 0)
+			.rotate(MathUtils.toRadians(rz), 0, 0, 1)
+			.translate((float)(-this.x + x), (float)-y, (float)(-this.z + z));
 	}
 	
 	/**

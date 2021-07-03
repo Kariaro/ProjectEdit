@@ -10,6 +10,7 @@ import com.hardcoded.lwjgl.Camera;
 import com.hardcoded.lwjgl.LwjglWindow;
 import com.hardcoded.lwjgl.icon.TextureManager;
 import com.hardcoded.mc.general.world.World;
+import com.hardcoded.window.settings.LwjglSettingsWindow;
 
 /**
  * This is the initial starting point for the editor application.
@@ -24,6 +25,8 @@ public class ProjectEdit implements IProjectEdit {
 	public static final String VERSION = "0.0.2";
 	
 	private LwjglWindow window;
+	private LwjglSettingsWindow settings_window;
+	
 	private TextureManager textureManager;
 	private World world;
 	private Camera camera;
@@ -32,6 +35,7 @@ public class ProjectEdit implements IProjectEdit {
 		instance = this;
 		camera = new Camera();
 		window = new LwjglWindow();
+		settings_window = new LwjglSettingsWindow();
 		textureManager = new TextureManager();
 	}
 	
@@ -62,13 +66,23 @@ public class ProjectEdit implements IProjectEdit {
 		return camera;
 	}
 	
+	@Override
+	public TextureManager getTextureManager() {
+		return textureManager;
+	}
+	
+	/**
+	 * Internal getter for the main window
+	 */
 	public LwjglWindow getWindow() {
 		return window;
 	}
 	
-	@Override
-	public TextureManager getTextureManager() {
-		return textureManager;
+	/**
+	 * Internal getter for the settings window
+	 */
+	public LwjglSettingsWindow getSettingsWindow() {
+		return settings_window;
 	}
 	
 	/**
@@ -76,6 +90,13 @@ public class ProjectEdit implements IProjectEdit {
 	 */
 	public static IProjectEdit getInstance() {
 		return instance;
+	}
+	
+	/**
+	 * Close all resources used by ProjectEdit
+	 */
+	public static void shutdown() {
+		instance.settings_window.cleanup();
 	}
 	
 	public static Unsafe getUnsafe() {
@@ -88,7 +109,6 @@ public class ProjectEdit implements IProjectEdit {
 	public static String getVersionString() {
 		return VERSION;
 	}
-	
 	
 	public static final class Unsafe {
 		private Unsafe() {}

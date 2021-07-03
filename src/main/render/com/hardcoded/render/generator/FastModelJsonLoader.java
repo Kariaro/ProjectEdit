@@ -4,7 +4,6 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.lang.Math;
-import java.text.NumberFormat;
 import java.util.*;
 
 import org.joml.*;
@@ -13,6 +12,8 @@ import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hardcoded.lwjgl.data.TextureAtlas;
+import com.hardcoded.lwjgl.data.TextureAtlas.AtlasUv;
+import com.hardcoded.lwjgl.data.TextureAtlasMipmap;
 import com.hardcoded.main.ProjectEdit;
 import com.hardcoded.mc.constants.Axis;
 import com.hardcoded.mc.constants.Direction;
@@ -30,7 +31,11 @@ public class FastModelJsonLoader {
 		private boolean was_uv_defined;
 		
 		public float[] built_uv;
-		public Vector4f uv = new Vector4f(0, 0, 16, 16);
+		
+		/**
+		 * Uv coordinates in block space
+		 */
+		public Vector4f block_uv = new Vector4f(0, 0, 16, 16);
 		public String texture;
 		public Direction cullface;
 		public int tintindex = Integer.MIN_VALUE;
@@ -38,7 +43,7 @@ public class FastModelJsonLoader {
 		
 		@JsonSetter(value = "uv")
 		public void setUv(List<Number> list) {
-			uv = new Vector4f(
+			block_uv = new Vector4f(
 				list.get(0).floatValue(),
 				list.get(1).floatValue(),
 				list.get(2).floatValue(),
@@ -79,13 +84,23 @@ public class FastModelJsonLoader {
 			}
 			
 			if(!was_uv_defined) {
-				uv = Maths.generateUv(face, element.from, element.to);
+				block_uv = Maths.generateUv(face, element.from, element.to);
+				
+				if(face.getAxis() != Axis.y) {
+					block_uv.w = 16 - block_uv.w;
+					block_uv.y = 16 - block_uv.y;
+					next.built_uv = rotateUvTest(block_uv, (rotation + 180) % 360);
+				} else {
+//					next.built_uv = rotateUvTest(block_uv, rotation);
+					next.built_uv = rotateUvTest(block_uv, rotation);
+				}
+				
+			} else {
+				next.built_uv = rotateUvTest(block_uv, rotation);
 			}
 			
-			Vector4f next_uv = new Vector4f();
 			next.was_uv_defined = was_uv_defined;
-			next.uv = uv.get(next_uv);
-			next.built_uv = rotateUvTest(uv, rotation);
+			next.block_uv = block_uv.get(new Vector4f());
 			
 			return next;
 		}
@@ -205,14 +220,10 @@ public class FastModelJsonLoader {
 		// This is true by default
 		public boolean shade = true;
 		
-//		@JsonProperty(required = false)
-//		private String __comment;
-		
 		@JsonProperty(required = false)
 		public JsonRotation rotation;
 		
 		public Map<Direction, JsonModelFace> faces = Map.of();
-		
 		
 		@JsonSetter(value = "from")
 		public void setFrom(List<Number> list) {
@@ -242,15 +253,6 @@ public class FastModelJsonLoader {
 			);
 		}
 		
-		@Override
-		public String toString() {
-			return String.format("element{ from=%s, to=%s, faces=%s }",
-				from.toString(NumberFormat.getNumberInstance(Locale.US)),
-				to.toString(NumberFormat.getNumberInstance(Locale.US)),
-				faces
-			);
-		}
-
 		public JsonModelElement build(JsonModelObject model) {
 			JsonModelElement next = new JsonModelElement();
 			next.from = this.from.get(new Vector3f());
@@ -303,16 +305,6 @@ public class FastModelJsonLoader {
 				list.get(2).floatValue()
 			);
 		}
-		
-		@Override
-		public String toString() {
-			return String.format("element{ rotation=%s, translation=%s, scale=%s }",
-				rotation.toString(),
-				translation.toString(),
-				scale.toString()
-			);
-		}
-		
 	}
 	
 	@JsonIgnoreProperties(ignoreUnknown = true)
@@ -369,7 +361,10 @@ public class FastModelJsonLoader {
 				Map<String, String> parent_textures = parent.textures;
 				
 				for(String key : parent_textures.keySet()) {
-					String value = parent_textures.get(key);
+					String value = textures.get(key);
+					if(value == null) {
+						value = parent_textures.get(key);
+					}
 					
 					if(value.startsWith("#")) {
 						value = map.get(value.substring(1));
@@ -379,6 +374,15 @@ public class FastModelJsonLoader {
 				}
 				
 				parent = parent.parent;
+			}
+			
+			for(String key : textures.keySet()) {
+				String value = textures.get(key);
+				
+				if(!value.startsWith("#")) {
+					// Override parent value
+					map.put(key, value);
+				}
 			}
 			
 			return map;
@@ -429,15 +433,13 @@ public class FastModelJsonLoader {
 		Vector3f p2 = new Vector3f(va[6], va[7], va[8]).mul(16);
 		Vector3f p3 = new Vector3f(va[15], va[16], va[17]).mul(16);
 
-//		TextureAtlas atlas = ProjectEdit.getInstance().getTextureManager().getBlockAtlas();
-//		int atlas_width = atlas.getWidth();
-//		int atlas_height = atlas.getHeight();
-//		AtlasUv atlas_uv = atlas.getUv(face.textureId);
+		TextureAtlas atlas = ProjectEdit.getInstance().getTextureManager().getBlockAtlas().getMain();
+		int atlas_width = atlas.getWidth();
+		int atlas_height = atlas.getHeight();
+		AtlasUv atlas_uv = atlas.getUv(face.textureId);
 		
-		int wi = 16;
-		//(int)Math.ceil((atlas_uv.x2 - atlas_uv.x1) * atlas_width); // 16;
-		int he = 16;
-		// (int)Math.ceil((atlas_uv.y2 - atlas_uv.y1) * atlas_height); // 16;
+		int wi = (int)Math.ceil((atlas_uv.x2 - atlas_uv.x1) * atlas_width); // 16;
+		int he = (int)Math.ceil((atlas_uv.y2 - atlas_uv.y1) * atlas_height); // 16;
 		
 		float[] next_uv;
 		switch(face_type.getFlags()) {
@@ -715,7 +717,7 @@ public class FastModelJsonLoader {
 		private static ModelFace createModelFace(Direction type, JsonModelElement element, JsonModelFace json) {
 			ModelFace face = new ModelFace();
 			
-			TextureAtlas atlas = ProjectEdit.getInstance().getTextureManager().getBlockAtlas();
+			TextureAtlasMipmap atlas = ProjectEdit.getInstance().getTextureManager().getBlockAtlas();
 			
 			int id = atlas.getImageId(json.texture);
 			if(id < 0) {
@@ -764,31 +766,6 @@ public class FastModelJsonLoader {
 			face.textureId = id;
 			face.cullface = json.cullface;
 			face.vertex = Maths.getModelVertexes(type, element.from, element.to);
-			
-//			Vector4f json_uv = json.uv.get(new Vector4f());
-//			{
-//				int atlas_width = atlas.getWidth();
-//				int atlas_height = atlas.getHeight();
-//				AtlasUv atlas_uv = atlas.getUv(face.textureId);
-//				
-//				float wi = (atlas_uv.x2 - atlas_uv.x1) * atlas_width / 16.0f; // 16;
-//				float he = (atlas_uv.y2 - atlas_uv.y1) * atlas_height / 16.0f; // 16;
-//				
-//				if(!json.was_uv_defined) {
-//					// x0, y0, x1, y1
-//					json_uv = Maths.generateUv(type, element.from, element.to);
-//				}
-//				
-//				// Multiply uv so that it matches the provided texture size.
-//				json_uv.x *= wi;
-//				json_uv.z *= wi;
-//				json_uv.y *= he;
-//				json_uv.w *= he;
-//			}
-//			
-//			float[] built_uv = rotateUvTest(json_uv, json.rotation);
-//			face.uv = built_uv;
-//			atlas.transformModelUv(id, built_uv);
 			
 			face.uv = json.built_uv.clone();
 			atlas.transformModelUv(id, face.uv);

@@ -13,6 +13,8 @@ import com.hardcoded.lwjgl.Camera;
 import com.hardcoded.lwjgl.data.TextureAtlas;
 import com.hardcoded.lwjgl.data.TextureAtlas.AtlasUv;
 import com.hardcoded.lwjgl.mesh.Mesh;
+import com.hardcoded.lwjgl.shader.MeshShader;
+import com.hardcoded.lwjgl.shader.ShaderObjectImpl;
 import com.hardcoded.main.ProjectEdit;
 import com.hardcoded.mc.constants.Direction;
 import com.hardcoded.mc.general.files.*;
@@ -23,9 +25,9 @@ import com.hardcoded.render.util.MeshBuffer;
 import com.hardcoded.util.math.box.BlockShape;
 
 public class WorldRender {
-	private static void renderBlockWithBiome(World world, IBlockData block, Biome biome, float x, float y, float z, MeshBuilder builder, int faces) {
+	private static void renderBlockWithBiome(World world, IBlockData block, Biome biome, Position pos, float x, float y, float z, MeshBuilder builder, int faces) {
 		if(block.getBlockId() == Blocks.WATER.getBlockId()) {
-			renderLiquid(world, block, biome, x, y, z, builder, faces);
+			renderLiquid(world, block, biome, pos, x, y, z, builder, faces);
 			return;
 		}
 		
@@ -43,11 +45,15 @@ public class WorldRender {
 		}
 	}
 	
-	private static void renderLiquid(World world, IBlockData block, Biome biome, float x, float y, float z, MeshBuilder builder, int faces) {
-		float y0 = 15 - getWaterHeight(world, (int)x - 1, (int)y, (int)z);
-		float y1 = 15 - getWaterHeight(world, (int)x, (int)y, (int)z);
-		float y2 = 15 - getWaterHeight(world, (int)x, (int)y, (int)z - 1);
-		float y3 = 15 - getWaterHeight(world, (int)x - 1, (int)y, (int)z - 1);
+	private static void renderLiquid(World world, IBlockData block, Biome biome, Position pos, float xp, float yp, float zp, MeshBuilder builder, int faces) {
+		int x = (int)xp + pos.getBlockX();
+		int y = (int)yp;
+		int z = (int)zp + pos.getBlockZ();
+		
+		float y0 = (8 - getWaterHeight(world, (int)x - 1, (int)y, (int)z    )) * 2 - 1.5f;
+		float y1 = (8 - getWaterHeight(world, (int)x    , (int)y, (int)z    )) * 2 - 1.5f;
+		float y2 = (8 - getWaterHeight(world, (int)x    , (int)y, (int)z - 1)) * 2 - 1.5f;
+		float y3 = (8 - getWaterHeight(world, (int)x - 1, (int)y, (int)z - 1)) * 2 - 1.5f;
 		float[] top = {
 			 0, y0, 16, // 0
 			16, y1, 16, // 1
@@ -56,12 +62,22 @@ public class WorldRender {
 			 0, y0, 16, // 0
 			16, y2,  0, // 2
 			 0, y3,  0, // 3
+			 
+			16, y2,  0, // 0
+			16, y1, 16, // 1
+			 0, y0, 16, // 2
+			
+			16, y2,  0, // 0
+			 0, y0, 16, // 2
+			 0, y3,  0, // 3
 		};
 		
 		IBlockData above = world.getBlock((int)x, (int)y + 1, (int)z);
 		if(above.getBlockId() != Blocks.WATER.getBlockId()) {
-			TextureAtlas atlas = ProjectEdit.getInstance().getTextureManager().getBlockAtlas();
+			TextureAtlas atlas = ProjectEdit.getInstance().getTextureManager().getBlockAtlas().getMain();
 			int uv_id = atlas.getImageId("block/water_still");
+			if(uv_id < 0) uv_id = 0;
+			
 			AtlasUv uv = atlas.getUv(uv_id);
 			
 			float uv_x = uv.x1;
@@ -70,10 +86,22 @@ public class WorldRender {
 			float uv_h = uv.y1 + 16 / (float)atlas.getHeight();
 			
 			float[] array = new float[] {
-				uv_x, uv_h, uv_w, uv_h, uv_w, uv_y,
-				uv_x, uv_h, uv_w, uv_y, uv_x, uv_y
+				uv_x, uv_h, // 0
+				uv_w, uv_h, // 1
+				uv_w, uv_y, // 2
+				uv_x, uv_h, uv_w, uv_y,
+				uv_x, uv_y, // 3
 			};
 			builder.translucent.uv(array);
+			builder.translucent.uv(new float[] {
+				uv_w, uv_y, // 1
+				uv_w, uv_h, // 2
+				uv_x, uv_h, // 3
+				
+				uv_w, uv_y, // 1
+				uv_x, uv_h, // 3
+				uv_x, uv_y, // 0
+			});
 			
 			int rgb = BiomeBlend.get(biome.getTemperature(), biome.getDownfall());
 			float col_r = ((rgb >> 16) & 0xff) / 255.0f;
@@ -81,9 +109,9 @@ public class WorldRender {
 			float col_b = ((rgb      ) & 0xff) / 255.0f;
 			
 			for(int vi = 0, len = top.length; vi < len; vi += 3) {
-				float ax = (top[vi] / 16.0f) + x;
-				float ay = (top[vi + 1] / 16.0f) + y;
-				float az = (top[vi + 2] / 16.0f) + z;
+				float ax = (top[vi] / 16.0f) + xp;
+				float ay = (top[vi + 1] / 16.0f) + yp;
+				float az = (top[vi + 2] / 16.0f) + zp;
 				
 				builder.translucent.pos(ax, ay, az);
 				builder.translucent.color(col_r * 0.6f, col_g * 0.6f, col_b * 2);
@@ -115,21 +143,6 @@ public class WorldRender {
 			 + (s11 != null ? Integer.parseInt(s11.toString()):0)) / count;
 	}
 	
-	@Deprecated(forRemoval = true)
-	static int getShownFacesOld(World world, int x, int y, int z) {
-		IBlockData origin = world.getBlock(x, y, z);
-		return (isOccludingOld(origin, world.getBlock(x + 1, y    , z    )) ? Direction.FACE_RIGHT:0)
-			 | (isOccludingOld(origin, world.getBlock(x - 1, y    , z    )) ? Direction.FACE_LEFT:0)
-			 | (isOccludingOld(origin, world.getBlock(x    , y + 1, z    )) ? Direction.FACE_UP:0)
-			 | (isOccludingOld(origin, world.getBlock(x    , y - 1, z    )) ? Direction.FACE_DOWN:0)
-			 | (isOccludingOld(origin, world.getBlock(x    , y    , z - 1)) ? Direction.FACE_FRONT:0)
-			 | (isOccludingOld(origin, world.getBlock(x    , y    , z + 1)) ? Direction.FACE_BACK:0);
-	}
-	
-	private static boolean isOccludingOld(IBlockData origin, IBlockData block) {
-		return !(!block.isOpaque() && !(FastModelRenderer.hasTranslucency(block) && !FastModelRenderer.hasTranslucency(origin)));
-	}
-	
 	private static int getShownFaces(World world, int x, int y, int z) {
 		IBlockData origin = world.getBlock(x, y, z);
 		BlockShape originShape = FastModelRenderer.getBlockShape(origin);
@@ -153,12 +166,12 @@ public class WorldRender {
 	}
 	
 	private ChunkList list;
-	public void renderWorld(World world, Camera camera, Matrix4f projectionView, int radius, int flags) {
+	public void renderWorld(World world, ShaderObjectImpl shader, Camera camera, Matrix4f projectionView, int radius, int flags) {
 		if(list == null) {
 			list = new ChunkList();
 		}
 		
-		list.render(world, camera, projectionView, radius, flags);
+		list.render(world, shader, camera, projectionView, radius, flags);
 	}
 	
 	private class ChunkBlob {
@@ -191,22 +204,26 @@ public class WorldRender {
 		private boolean unloaded = false;
 		
 		public void reload() {
-			if(unloaded) return;
-			
-			// No calls to GL in here
-			builder.reset();
-			
-			for(int y = 0; y < 16; y++) {
+			try {
 				if(unloaded) return;
-				ChunkSectionBlob section = sections[y];
-				if(section != null && section.doesRender()) {
-					section.render(builder);
+				
+				// No calls to GL in here
+				builder.reset();
+				
+				for(int y = 0; y < 16; y++) {
+					if(unloaded) return;
+					ChunkSectionBlob section = sections[y];
+					if(section != null && section.doesRender()) {
+						section.render(builder);
+					}
 				}
+				
+				if(unloaded) return;
+				this.isDirty = true;
+				new_chunk_loaded = true;
+			} catch(Exception e) {
+				e.printStackTrace();
 			}
-			
-			if(unloaded) return;
-			this.isDirty = true;
-			new_chunk_loaded = true;
 		}
 		
 		public void prepare() {
@@ -246,6 +263,13 @@ public class WorldRender {
 			builder.cleanup();
 		}
 	}
+
+	// 4 bytes = 1 float
+	// 8 floats = 1 vert
+	// 6 vert = 1 face
+	// 6 face = 1 block
+	// 5 block = 1 fence
+	// 65536 fence = 1 chunk
 	
 	private static class ChunkSectionBlob {
 		private final World world;
@@ -261,11 +285,10 @@ public class WorldRender {
 		}
 		
 		public void render(MeshBuilder builder) {
+			if(!(section instanceof ChunkSection)) return;
 			final int bx = pos.getBlockX();
 			final int by = pos.getBlockY();
 			final int bz = pos.getBlockZ();
-			
-			if(!(section instanceof ChunkSection)) return;
 			
 			ChunkSection sec = (ChunkSection)section;
 			for(int i = 0; i < 4096; i++) {
@@ -276,9 +299,12 @@ public class WorldRender {
 				final int wy = by + (i >> 8);
 				final int wz = bz + ((i >> 4) & 15);
 				int flags = getShownFaces(world, wx, wy, wz);
-				if(flags != 0) {
-					renderBlockWithBiome(world, state, parent.getBiome(wx, wy, wz), wx, wy, wz, builder, flags);
-				}
+				
+				// Only perform this check if all blocks in a 5x5x5 area are blocking.
+				// TODO: Update geometry when this happenenes
+//				if(flags != 0) {
+					renderBlockWithBiome(world, state, parent.getBiome(wx, wy, wz), pos, wx & 15, wy, wz & 15, builder, flags);
+//				}
 			}
 		}
 		
@@ -323,7 +349,9 @@ public class WorldRender {
 			chunk_map.clear();
 		}
 		
-		public void render(World world, Camera camera, Matrix4f projectionView, int radius, int flags) {
+		// TODO: Chunks coordinates should be local to the camera. +- 512 blocks. Never larger or smaller than that.
+		// Otherwise we get weird floating point jumps
+		public void render(World world, ShaderObjectImpl shader, Camera camera, Matrix4f projectionView, int radius, int flags) {
 			long now = System.currentTimeMillis();
 			
 			int x = Math.floorDiv((int)camera.x, 16);
@@ -380,12 +408,11 @@ public class WorldRender {
 			FrustumIntersection intersect = new FrustumIntersection(projectionView);
 			for(int i = xs + 1; i < xe; i++) {
 				for(int j = zs + 1; j < ze; j++) {
-					long idx = ((long)(i) & 0xffffffffL) | (((long)j) << 32L);
-					
 					if(frustumCulling && !intersect.testAab(new Vector3f(i * 16, 0, j * 16), new Vector3f(i * 16 + 16, 256, j * 16 + 16))) {
 						continue;
 					}
 					
+					long idx = ((long)(i) & 0xffffffffL) | (((long)j) << 32L);
 					ChunkBlob blob = chunk_map.get(idx);
 					if(blob == null) {
 						if(exec.getQueue().size() > 300) {
@@ -412,16 +439,20 @@ public class WorldRender {
 				}
 			}
 			
+			if(shader instanceof MeshShader) {
+				((MeshShader)shader).setProjectionView(camera.getProjectionMatrixTest());
+			}
+			
 			for(int i = xs + 1; i < xe; i++) {
 				for(int j = zs + 1; j < ze; j++) {
-					long idx = ((long)(i) & 0xffffffffL) | (((long)j) << 32L);
-					
 					if(frustumCulling && !intersect.testAab(new Vector3f(i * 16, 0, j * 16), new Vector3f(i * 16 + 16, 256, j * 16 + 16))) {
 						continue;
 					}
 					
+					long idx = ((long)(i) & 0xffffffffL) | (((long)j) << 32L);
 					ChunkBlob blob = chunk_map.get(idx);
 					if(blob != null) {
+						shader.setTranslationMatrix(getChunkMatrix(i - x, j - z));
 						blob.renderOpaque();
 					}
 				}
@@ -429,25 +460,31 @@ public class WorldRender {
 			
 			if((flags & DRAW_TRANSLUCENT) != 0) {
 				GL11.glEnable(GL11.GL_BLEND);
+//				GL11.glDepthMask(false);
 				for(int i = xs + 1; i < xe; i++) {
 					for(int j = zs + 1; j < ze; j++) {
-						long idx = ((long)(i) & 0xffffffffL) | (((long)j) << 32L);
-						
 						if(frustumCulling && !intersect.testAab(new Vector3f(i * 16, 0, j * 16), new Vector3f(i * 16 + 16, 256, j * 16 + 16))) {
 							continue;
 						}
 						
+						long idx = ((long)(i) & 0xffffffffL) | (((long)j) << 32L);
 						ChunkBlob blob = chunk_map.get(idx);
 						if(blob != null) {
+							shader.setTranslationMatrix(getChunkMatrix(i - x, j - z));
 							blob.renderTranslucent();
 						}
 					}
 				}
+//				GL11.glDepthMask(true);
 				GL11.glDisable(GL11.GL_BLEND);
 				GL11.glDisable(GL11.GL_DEPTH_TEST);
 				GL11.glEnable(GL11.GL_DEPTH_TEST);
 				GL11.glDepthFunc(GL11.GL_LEQUAL);
 			}
 		}
+	}
+	
+	private static Matrix4f getChunkMatrix(int x, int z) {
+		return new Matrix4f().translate(x * 16, 0, z * 16);
 	}
 }

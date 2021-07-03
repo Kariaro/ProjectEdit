@@ -205,17 +205,19 @@ public class GuiBlockMenu extends GuiComponent implements GuiListener {
 			}
 		}
 	}
-	
+
 	@Override
 	public void renderComponent() {
 		int width = getWidth();
 		int height = getHeight();
 		int x = getX();
 		int y = getY();
-		
+
 		if(!LwjglWindow.isMouseCaptured()) {
 			InputMask.addEventMask(x, y, width, height, this);
 		}
+		
+//		testDraw();
 		
 		int block_screen_width = getBlockScreenWidth();
 		int block_screen_height = getBlockScreenHeight();
@@ -288,6 +290,86 @@ public class GuiBlockMenu extends GuiComponent implements GuiListener {
 			GL11.glTexCoord2i(tx,  0); GL11.glVertex2i(x+w, y  );
 			GL11.glTexCoord2i(tx, ty); GL11.glVertex2i(x+w, y+h);
 			GL11.glTexCoord2i( 0, ty); GL11.glVertex2i(x  , y+h);
+		GL11.glEnd();
+	}
+	
+	private Texture test;
+	void testDraw() {
+		if(test == null) {
+			test = Texture.loadResource("/gui/border_1.png", GL11.GL_NEAREST);
+		}
+		
+		if(test == null) return;
+		GL11.glColor4f(1, 1, 1, 1);
+		test.bind();
+		
+		int scale = 2;
+		int bx = 300;
+		int by = 300;
+		int bw = 10;
+		int bh = 10;
+		int bc = 3 * scale;
+		
+		bw *= scale;
+		bh *= scale;
+		
+		int x0 = bx;
+		int x1 = bx + bw + bc;
+		int y0 = by;
+		int y1 = by + bh + bc;
+		
+		// Corner
+		blit(x0, y0, bc, bc, 1, 1, 3, 3);
+		blit(x1, y0, bc, bc, 3, 1, 3, 3);
+		blit(x0, y1, bc, bc, 1, 3, 3, 3);
+		blit(x1, y1, bc, bc, 3, 3, 3, 3);
+		
+		// Edges
+		blit(x0 + bc, y0, bw, bc, 3, 1, 1, 3);
+		blit(x0 + bc, y1, bw, bc, 3, 3, 1, 3);
+		blit(x0, y0 + bc, bc, bh, 1, 3, 3, 1);
+		blit(x1, y0 + bc, bc, bh, 3, 3, 3, 1);
+		
+		// Middle
+		blit(x0 + bc, y0 + bc, bw, bh, 3, 3, 1, 1);
+		
+//		int br = 4 * scale;
+//		int x0 = bx;
+//		int x1 = bx + bw + br;
+//		int y0 = by;
+//		int y1 = by + bh + bc;
+//		// Corner
+//		blit(x0, y0, br, bc, 0, 0, 4, 3);
+//		blit(x1, y0, br, bc, 3, 0, 4, 3);
+//		blit(x0, y1, br, bc, 0, 4, 4, 3);
+//		blit(x1, y1, br, bc, 3, 4, 4, 3);
+//		
+//		// Edges
+//		blit(x0 + br, y0, bw, bc, 3, 0, 1, 3);
+//		blit(x0 + br, y1, bw, bc, 3, 4, 1, 3);
+//		blit(x0 + scale, y0 + bc, bc, bh, 0, 3, 3, 1);
+//		blit(x1, y0 + bc, bc, bh, 4, 3, 3, 1);
+//		
+//		// Middle
+//		blit(x0 + br, y0 + bc, bw, bh, 3, 3, 1, 1);
+		
+		
+		test.unbind();
+	}
+	
+	private void blit(int x, int y, int w, int h, int tx, int ty, int tw, int th) {
+		// Texture width is 7
+		
+		float tx0 = (tx     ) / 7.0f;
+		float tx1 = (tx + tw) / 7.0f;
+		float ty0 = (ty     ) / 7.0f;
+		float ty1 = (ty + th) / 7.0f;
+		
+		GL11.glBegin(GL11.GL_TRIANGLE_FAN);
+			GL11.glTexCoord2f(tx0, ty0); GL11.glVertex2i(x  , y  );
+			GL11.glTexCoord2f(tx1, ty0); GL11.glVertex2i(x+w, y  );
+			GL11.glTexCoord2f(tx1, ty1); GL11.glVertex2i(x+w, y+h);
+			GL11.glTexCoord2f(tx0, ty1); GL11.glVertex2i(x  , y+h);
 		GL11.glEnd();
 	}
 }

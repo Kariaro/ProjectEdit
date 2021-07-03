@@ -32,7 +32,7 @@ public class ProjectSettings {
 	
 	private void storeValues(Properties prop) {
 		for(SettingProperty value : properties.values()) {
-			prop.setProperty(value.getFieldName(), value.getStringValue());
+			prop.setProperty(value.getFieldName(), value.getStringDataValue());
 		}
 	}
 	
@@ -109,5 +109,13 @@ public class ProjectSettings {
 	
 	public static void setRenderShadows(boolean enable) {
 		getProperty(RenderShadows).setObjectValue(enable);
+	}
+	
+	public static void setKeyValue(SettingKey key, Object value) {
+		getProperty(key).setObjectValue(value);
+	}
+	
+	public static Object getKeyValue(SettingKey key) {
+		return getProperty(key).getObjectValue();
 	}
 }

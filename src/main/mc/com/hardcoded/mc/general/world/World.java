@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.Set;
 
 import com.hardcoded.api.Nonnull;
+import com.hardcoded.mc.general.files.Blocks;
 import com.hardcoded.mc.general.files.IChunk;
 import com.hardcoded.mc.general.nbt.NBTTagCompound;
 import com.hardcoded.mc.general.nbt.NBTTagString;
@@ -33,7 +34,9 @@ public class World {
 	
 	@Nonnull
 	public IBlockData getBlock(int x, int y, int z) {
-		return getChunk(Math.floorDiv(x, 16), Math.floorDiv(z, 16)).getBlock(x & 15, y, z & 15);
+		IChunk chunk = getChunk(Math.floorDiv(x, 16), Math.floorDiv(z, 16));
+		if(chunk == null) return Blocks.VOID_AIR;
+		return chunk.getBlock(x & 15, y, z & 15);
 	}
 	
 	public void setBlock(IBlockData state, int x, int y, int z) {
