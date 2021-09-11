@@ -18,13 +18,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Prepare repository
-        run: |
-          git fetch --unshallow --tags
-          yarn add -D auto
-          yarn add -D auto-plugin-auto-bumper
-          yarn add -D @auto-it/conventional-commits
-          yarn add -D @auto-it/maven
       - name: Use Node.js 12.x
         uses: actions/setup-node@v1
         with:
@@ -38,9 +31,3 @@ jobs:
 
       - name: Build with Maven
         run: mvn -B package --file pom.xml
-
-      - name: Create Release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          npx auto shipit

@@ -23,7 +23,7 @@ import com.hardcoded.lwjgl.data.Texture;
 import com.hardcoded.mc.general.world.*;
 import com.hardcoded.mc.general.world.IBlockState.IBlockStateList;
 import com.hardcoded.render.generator.FastModelJsonLoader.FastModel.ModelObject;
-import com.hardcoded.util.ResourceLocation;
+import com.hardcoded.util.Resource;
 
 /**
  * @author HardCoded
@@ -57,19 +57,19 @@ public class VersionResourceReader extends IResource {
 	}
 	
 	public JSONObject getBlockModel(String key) {
-		key = ResourceLocation.removeNamespace(key);
+		key = Resource.removeNamespace(key);
 		byte[] bytes = readEntry("assets/minecraft/models/" + key + ".json");
 		JSONObject json = new JSONObject(new String(bytes));
 		return json;
 	}
 	
 	public byte[] getBlockModelBytes(String key) {
-		key = ResourceLocation.removeNamespace(key);
+		key = Resource.removeNamespace(key);
 		return readEntry("assets/minecraft/models/" + key + ".json");
 	}
 	
 	public BufferedImage readBufferedImage(String key) {
-		key = ResourceLocation.removeNamespace(key);
+		key = Resource.removeNamespace(key);
 		
 		try {
 			InputStream stream = findFirstInputStream("assets/minecraft/textures/" + key + ".png");
@@ -89,11 +89,11 @@ public class VersionResourceReader extends IResource {
 		return Texture.loadBufferedImageTexture(bi, key, GL11.GL_NEAREST);
 	}
 	
-	public void resolveState(IBlockData state) {
+	public boolean resolveState(IBlockData state) {
 		JSONObject json = getBlockState(state.getName());
 		
 		if(json == null) {
-			return;
+			return false;
 		}
 		
 		List<JSONObject> model_data_list = null;
@@ -107,7 +107,7 @@ public class VersionResourceReader extends IResource {
 		}
 		
 		if(model_data_list == null || model_data_list.isEmpty()) {
-			return;
+			return false;
 		}
 		
 		for(JSONObject model_data : model_data_list) {
@@ -134,6 +134,8 @@ public class VersionResourceReader extends IResource {
 				FastModelRenderer.addModel(state, model);
 			}
 		}
+		
+		return true;
 	}
 	
 	private List<JSONObject> resolve_multipart(IBlockData state, JSONArray array) {
@@ -313,10 +315,14 @@ public class VersionResourceReader extends IResource {
 		try {
 			for(IBlockData data : states) {
 				BlockData dta = (BlockData)data;
-				resolveState(data);
+				if(!resolveState(data)) {
+					FastModelRenderer.addModel(data, FastModelJsonLoader.getMissingBlockModel());
+				}
 				
 				for(IBlockData child : dta.getChildren()) {
-					resolveState(child);
+					if(!resolveState(child)) {
+						FastModelRenderer.addModel(child, FastModelJsonLoader.getMissingBlockModel());
+					}
 				}
 				
 				callback.accept(++count, size);

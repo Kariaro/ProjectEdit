@@ -3,8 +3,14 @@ package com.hardcoded.render.util;
 import java.util.Arrays;
 
 public final class FloatArray {
+	private static final int DEFAULT_CAPACITY = 4096;
+	
 	private float[] array;
 	private int index;
+	
+	public FloatArray() {
+		this(DEFAULT_CAPACITY);
+	}
 	
 	public FloatArray(int capacity) {
 		this.array = new float[capacity];
@@ -44,7 +50,12 @@ public final class FloatArray {
 	
 	public void reset() {
 		index = 0;
-		array = new float[1024];
+		array = new float[DEFAULT_CAPACITY];
+	}
+	
+	public void reset(int capacity) {
+		index = 0;
+		array = new float[capacity];
 	}
 	
 	public int size() {

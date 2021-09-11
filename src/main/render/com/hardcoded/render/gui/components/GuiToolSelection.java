@@ -18,7 +18,7 @@ import com.hardcoded.mc.general.world.World;
 import com.hardcoded.mc.general.world.WorldUtils;
 import com.hardcoded.render.gui.GuiListener;
 import com.hardcoded.render.gui.GuiListener.GuiEvent.*;
-import com.hardcoded.render.util.RenderUtil;
+import com.hardcoded.render.util.RenderDrawingUtil;
 import com.hardcoded.render.gui.GuiRender;
 
 public class GuiToolSelection extends GuiTool implements GuiListener {
@@ -64,7 +64,7 @@ public class GuiToolSelection extends GuiTool implements GuiListener {
 		
 		IBlockData selected = gui.selectedBlock;
 		if(selected == null) {
-			selected = Blocks.STONE;
+			selected = Blocks.AIR;
 		}
 		
 		int x1 = pos1.getBlockX();
@@ -130,7 +130,7 @@ public class GuiToolSelection extends GuiTool implements GuiListener {
 		InputMask.addEventMaskLast(0, 0, LwjglWindow.getWidth(), LwjglWindow.getHeight(), null, this);
 		
 		Camera camera = ProjectEdit.getInstance().getCamera();
-		Matrix4f proj = camera.getProjectionMatrix();
+		Matrix4f proj = camera.getProjectionAndTranslationMatrix();
 		Vector3f cam = camera.getPosition();
 		Vector3f ray = camera.getScreenRaycast(Input.getMouseX(), Input.getMouseY());
 		
@@ -151,7 +151,7 @@ public class GuiToolSelection extends GuiTool implements GuiListener {
 			GL11.glColor3f(1, 1, 1);
 			
 			float e = 0.01f;
-			RenderUtil.drawWireBlock(
+			RenderDrawingUtil.drawWireBlock(
 				pos1.getBlockX() - e,
 				pos1.getBlockY() - e,
 				pos1.getBlockZ() - e,
@@ -187,7 +187,7 @@ public class GuiToolSelection extends GuiTool implements GuiListener {
 				z2 = tmp;
 			}
 			
-			RenderUtil.drawWireBlock(
+			RenderDrawingUtil.drawWireBlock(
 				x1,
 				y1,
 				z1,

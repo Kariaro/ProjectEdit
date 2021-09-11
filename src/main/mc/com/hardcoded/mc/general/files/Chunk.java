@@ -34,14 +34,14 @@ public class Chunk implements IChunk {
 	
 	@Override
 	public IBlockData getBlock(int x, int y, int z) {
-		IChunkSection section = sections.get(y / 16);
-		if(section == null || y < 0) return Blocks.VOID_AIR;
+		IChunkSection section = sections.get(Math.floorDiv(y, 16));
+		if(section == null) return Blocks.VOID_AIR;
 		
 		return section.getBlock(x & 15, y & 15, z & 15);
 	}
 	
 	public void setBlock(IBlockData state, int x, int y, int z) {
-		IChunkSection section = sections.get(y / 16);
+		IChunkSection section = sections.get(Math.floorDiv(y, 16));
 		if(section != null) {
 			section.setBlock(state, x & 15, y & 15, z & 15);
 			

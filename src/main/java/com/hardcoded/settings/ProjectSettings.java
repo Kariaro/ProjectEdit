@@ -2,9 +2,7 @@ package com.hardcoded.settings;
 
 import static com.hardcoded.settings.SettingKey.*;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.util.*;
 
 import org.apache.logging.log4j.LogManager;
@@ -13,14 +11,32 @@ import org.apache.logging.log4j.Logger;
 
 public class ProjectSettings {
 	protected static final Logger LOGGER = LogManager.getLogger(ProjectSettings.class);
+	private static final String PROPERTIES_PATH = System.getProperty("user.home") + File.separatorChar + ".ProjectEdit.properties";
 	private static final ProjectSettings instance = new ProjectSettings();
 	
 	private final Map<SettingKey, SettingProperty> properties;
+	
+	
 	
 	private ProjectSettings() {
 		properties = new LinkedHashMap<>();
 		for(SettingKey key : SettingKey.keys()) {
 			properties.put(key, new SettingProperty(key));
+		}
+		
+		try {
+			load(PROPERTIES_PATH);
+		} catch(Exception ignore) {
+			
+		}
+	}
+	
+
+	public static void save() {
+		try {
+			instance.save(PROPERTIES_PATH);
+		} catch(Exception ignore) {
+			
 		}
 	}
 	
@@ -42,21 +58,23 @@ public class ProjectSettings {
 		}
 	}
 	
-	public static final void load(String pathname) throws IOException {
+	private void load(String pathname) throws IOException {
 		try(FileInputStream fs = new FileInputStream(pathname)) {
 			Properties prop = new Properties();
 			prop.load(fs);
-			instance.loadValues(prop);
+			loadValues(prop);
 		} catch(IOException e) {
 			LOGGER.error("Failed to load the config: '{}'", pathname);
 			throw e;
+		} catch(Throwable e) {
+			e.printStackTrace();
 		}
 	}
 	
-	public static final void save(String pathname) throws IOException {
+	private void save(String pathname) throws IOException {
 		try(FileOutputStream fs = new FileOutputStream(pathname)) {
 			Properties prop = new Properties();
-			instance.storeValues(prop);
+			storeValues(prop);
 			prop.store(fs, "");
 		} catch(IOException e) {
 			LOGGER.error("Failed to load the config: '{}'", pathname);
@@ -83,7 +101,7 @@ public class ProjectSettings {
 	
 	public static void setRenderDistance(int distance) {
 		if(distance < 1 || distance > 128) throw new RuntimeException("Invalid render distance: " + distance);
-		getProperty(RenderDistance).setObjectValue(distance);
+		setKeyValue(RenderDistance, distance);
 	}
 	
 	public static int getMaxFps() {
@@ -92,7 +110,7 @@ public class ProjectSettings {
 	
 	public static void setMaxFps(int fps) {
 		if(fps < 1) throw new RuntimeException("Invalid fps: " + fps);
-		getProperty(MaxFps).setObjectValue(fps);
+		setKeyValue(MaxFps, fps);
 	}
 	
 	public static boolean useTransparentTextures() {
@@ -100,7 +118,7 @@ public class ProjectSettings {
 	}
 	
 	public static void useTransparentTextures(boolean enable) {
-		getProperty(AllowTransparentTextures).setObjectValue(enable);
+		setKeyValue(AllowTransparentTextures, enable);
 	}
 	
 	public static boolean getRenderShadows() {
@@ -108,11 +126,26 @@ public class ProjectSettings {
 	}
 	
 	public static void setRenderShadows(boolean enable) {
-		getProperty(RenderShadows).setObjectValue(enable);
+		setKeyValue(RenderShadows, enable);
 	}
 	
+	/**
+	 * Set the value of specified key
+	 * 
+	 * @param key the setting key
+	 * @param value the new value of the setting
+	 * @throws NullPointerException	If {@code key} or {@code value} was {@code null}
+	 */
 	public static void setKeyValue(SettingKey key, Object value) {
-		getProperty(key).setObjectValue(value);
+		if(key == null || value == null)
+			throw new NullPointerException("key or value must not be null");
+		
+		try {
+			getProperty(key).setObjectValue(value);
+			ProjectSettings.save();
+		} catch(SettingException e) {
+			LOGGER.throwing(e);
+		}
 	}
 	
 	public static Object getKeyValue(SettingKey key) {

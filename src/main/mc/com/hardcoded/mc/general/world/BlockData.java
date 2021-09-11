@@ -131,7 +131,8 @@ public class BlockData implements IBlockData {
 	
 	@Override
 	public boolean isOpaque() {
-		return occluding
+		return occluding;
+		/*
 			|| id == Blocks.WATER.getBlockId()
 			|| id == Blocks.LAVA.getBlockId()
 			
@@ -237,6 +238,7 @@ public class BlockData implements IBlockData {
 //			|| id == Blocks.OAK_LEAVES.getBlockId()
 //			|| id == Blocks.SPRUCE_LEAVES.getBlockId()
 		;
+		*/
 	}
 	
 	@Override

@@ -24,10 +24,10 @@ public class FastModelRenderer {
 	private static final Set<IBlockData> has_elements = new HashSet<>();
 	private static final Set<IBlockData> has_translucency = new HashSet<>();
 	
-	private static final float[] LIT_100 = { 1.0f, 1.0f, 1.0f };
-	private static final float[] LIT_90 = { 0.9f, 0.9f, 0.9f };
-	private static final float[] LIT_70 = { 0.7f, 0.7f, 0.7f };
-	private static final float[] LIT_50 = { 0.5f, 0.5f, 0.5f };
+	private static final float[] LIT_100 = { 1.0f, 1.0f, 1.0f, 1.0f };
+	private static final float[] LIT_90 = { 0.9f, 0.9f, 0.9f, 1.0f };
+	private static final float[] LIT_70 = { 0.7f, 0.7f, 0.7f, 1.0f };
+	private static final float[] LIT_50 = { 0.5f, 0.5f, 0.5f, 1.0f };
 	
 	public static float[] getFaceColor(Direction face) {
 		switch(face.getFlags()) {
@@ -47,19 +47,19 @@ public class FastModelRenderer {
 	public static float[] getDebugFaceColor(Direction face) {
 		switch(face) {
 			case UP:
-				return new float[] { 0.3f, 1.0f, 0.3f };
+				return new float[] { 0.3f, 1.0f, 0.3f, 1.0f };
 			case DOWN:
-				return new float[] { 0.1f, 0.5f, 0.1f };
+				return new float[] { 0.1f, 0.5f, 0.1f, 1.0f };
 			case EAST:
-				return new float[] { 1.0f, 0.3f, 0.3f };
+				return new float[] { 1.0f, 0.3f, 0.3f, 1.0f };
 			case WEST:
-				return new float[] { 0.5f, 0.1f, 0.1f };
+				return new float[] { 0.5f, 0.1f, 0.1f, 1.0f };
 			case NORTH:
-				return new float[] { 0.3f, 0.3f, 1.0f };
+				return new float[] { 0.3f, 0.3f, 1.0f, 1.0f };
 			case SOUTH:
-				return new float[] { 0.1f, 0.1f, 0.5f };
+				return new float[] { 0.1f, 0.1f, 0.5f, 1.0f };
 			default:
-				return new float[] { 0.0f, 0.0f, 0.0f };
+				return new float[] { 0.0f, 0.0f, 0.0f, 1.0f };
 		}
 	}
 	
@@ -199,13 +199,13 @@ public class FastModelRenderer {
 							color = color.clone();
 							
 							if(isRedstone) {
-								for(int vi = 0, len = color.length; vi < len; vi += 3) {
+								for(int vi = 0, len = color.length; vi < len; vi += 4) {
 									color[vi    ] = 0.3f + (level / 15.0f) * 0.7f;
 									color[vi + 1] = 0.0f;
 									color[vi + 2] = 0.0f;
 								}
 							} else {
-								for(int vi = 0, len = color.length; vi < len; vi += 3) {
+								for(int vi = 0, len = color.length; vi < len; vi += 4) {
 									color[vi    ] = ((rgb >> 16) & 0xff) / 255.0f;
 									color[vi + 1] = ((rgb >>  8) & 0xff) / 255.0f;
 									color[vi + 2] = ((rgb      ) & 0xff) / 255.0f;

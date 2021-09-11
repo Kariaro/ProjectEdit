@@ -51,8 +51,6 @@ public class LwjglSettingsWindow {
 		
 		addSettingsTab(tabbedPane);
 		addResourcePackTab(tabbedPane);
-		
-		frame.setVisible(true);
 	}
 	
 	private void addSettingsTab(JTabbedPane tabbedPane) {
@@ -69,7 +67,7 @@ public class LwjglSettingsWindow {
 			} else if(key.getFieldType() == float.class) {
 				addFloatField(panel, key);
 			} else {
-				LOGGER.warn("Unknown setting type '{}'", key.getFieldType());
+//				LOGGER.warn("Unknown setting type '{}'", key.getFieldType());
 			}
 		}
 	}
@@ -81,6 +79,8 @@ public class LwjglSettingsWindow {
 		if(!packs.isBlank()) {
 			list_paths.addAll(Arrays.asList(packs.split("\\|")));
 		}
+		
+//		ProjectSettings.setKeyValue(SettingKey.MaxFps, -12304);
 		
 		final JList<String> list;
 		final JButton btnAddPath = new JButton("Add Path");
@@ -145,7 +145,11 @@ public class LwjglSettingsWindow {
 					filters.put(stack.UTF8("*.zip"));
 					filters.flip();
 					
-					String pathString = TinyFileDialogs.tinyfd_openFileDialog("Add ResourcePack", "", filters, "Resource Pack", true);
+					String currentPath = (String)ProjectSettings.getKeyValue(SettingKey.LastResourcePackPath);
+					if(!currentPath.isBlank()) {
+						currentPath += File.separatorChar;
+					}
+					String pathString = TinyFileDialogs.tinyfd_openFileDialog("Add ResourcePack", currentPath, filters, "Resource Pack", true);
 					
 					if(pathString != null && !pathString.isBlank()) {
 						String[] results = pathString.split("\\|");
@@ -154,6 +158,11 @@ public class LwjglSettingsWindow {
 							if(!list_paths.contains(resourcePack)) {
 								list_paths.add(resourcePack);
 							}
+						}
+						
+						if(results.length > 0) {
+							String firstPath = new File(results[0]).getParentFile().getAbsolutePath();
+							ProjectSettings.setKeyValue(SettingKey.LastResourcePackPath, firstPath);
 						}
 						
 						int index = list.getSelectedIndex();

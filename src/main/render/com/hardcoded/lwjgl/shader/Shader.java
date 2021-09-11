@@ -18,6 +18,11 @@ import org.lwjgl.system.MemoryStack;
  * @author HardCoded
  */
 public abstract class Shader {
+	/** Used to undefine a variable */
+	protected static final Object UNDEFINE = new Object();
+	/** Used to define an empty variable */
+	protected static final Object DEFINE = "";
+	
 	private Map<String, Integer> uniforms = new HashMap<>();
 	
 	protected final int programId;
@@ -57,9 +62,15 @@ public abstract class Shader {
 		String result = code;
 		
 		for(String key : defines.keySet()) {
-			String pattern = "#define " + key + " [^\\r\\n]";
+			String pattern = "#define " + key + "[^\\r\\n]*";
 			Object value = defines.get(key);
-			result = result.replaceFirst(pattern, "#define " + key + " " + value);
+			
+			if(value == UNDEFINE) {
+				// Remove the valuee of the string value is blank
+				result = result.replaceFirst(pattern, "");
+			} else {
+				result = result.replaceFirst(pattern, "#define " + key + " " + value);
+			}
 		}
 		
 		return result;
@@ -213,4 +224,13 @@ public abstract class Shader {
 			glDeleteProgram(programId);
 		}
 	}
+	
+	
+	// Could be implemented
+	
+	public void setViewMatrix(Matrix4f matrix) {}
+	public void setTranslationMatrix(Matrix4f matrix) {}
+	public void setProjectionMatrix(Matrix4f matrix) {}
+	public void setColor3f(float r, float g, float b) {}
+	public void setColor4f(float r, float g, float b, float a) {}
 }

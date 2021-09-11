@@ -47,7 +47,6 @@ public class RegionChunk {
 		for(NBTTagCompound entry : sections) {
 			int y = ((NBTTagByte)entry.get("Y")).getValue();
 			
-			if(y < 0) continue;
 			this.sections.put(y, new SubChunk(entry, y));
 		}
 		

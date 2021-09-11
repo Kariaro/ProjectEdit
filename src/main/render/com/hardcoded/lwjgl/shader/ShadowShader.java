@@ -29,7 +29,7 @@ public class ShadowShader extends ShaderObjectImpl {
 		load_mvpMatrix = getUniformLocation("mvpMatrix");
 	}
 	
-	public void setMvpMatrix(Matrix4f mvpMatrix) {
+	public void setProjectionMatrix(Matrix4f mvpMatrix) {
 		setMatrix4f(load_mvpMatrix, mvpMatrix);
 	}
 }

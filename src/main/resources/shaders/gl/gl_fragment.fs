@@ -34,7 +34,7 @@ void main() {
 	if(useOnlyColors) {
 		dif = vec4(1, 1, 1, 1);
 	} else {
-		dif = texture(dif_tex, pass_Uv);
+		dif = texture2D(dif_tex, pass_Uv);
 	}
 	
 	if(hasShadows) {

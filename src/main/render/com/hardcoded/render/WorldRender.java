@@ -19,6 +19,7 @@ import com.hardcoded.main.ProjectEdit;
 import com.hardcoded.mc.constants.Direction;
 import com.hardcoded.mc.general.files.*;
 import com.hardcoded.mc.general.world.*;
+import com.hardcoded.render.RenderUtil.DepthFunc;
 import com.hardcoded.render.generator.FastModelRenderer;
 import com.hardcoded.render.generator.MeshBuilder;
 import com.hardcoded.render.util.MeshBuffer;
@@ -107,6 +108,7 @@ public class WorldRender {
 			float col_r = ((rgb >> 16) & 0xff) / 255.0f;
 			float col_g = ((rgb >>  8) & 0xff) / 255.0f;
 			float col_b = ((rgb      ) & 0xff) / 255.0f;
+			float[] col = new float[] { col_r * 0.6f, col_g * 0.6f, col_b * 2, 1.0f };
 			
 			for(int vi = 0, len = top.length; vi < len; vi += 3) {
 				float ax = (top[vi] / 16.0f) + xp;
@@ -114,7 +116,7 @@ public class WorldRender {
 				float az = (top[vi + 2] / 16.0f) + zp;
 				
 				builder.translucent.pos(ax, ay, az);
-				builder.translucent.color(col_r * 0.6f, col_g * 0.6f, col_b * 2);
+				builder.translucent.color(col);
 			}
 		}
 	}
@@ -189,11 +191,11 @@ public class WorldRender {
 		}
 		
 		private ChunkSectionBlob[] loadSections() {
-			ChunkSectionBlob[] sections = new ChunkSectionBlob[16];
-			for(int y = 0; y < 16; y++) {
-				IChunkSection section = chunk.getSection(y);
+			ChunkSectionBlob[] sections = new ChunkSectionBlob[32];
+			for(int y = 0; y < 32; y++) {
+				IChunkSection section = chunk.getSection(y - 16);
 				if(section != null) {
-					sections[y] = new ChunkSectionBlob(world, chunk, pos.offset(0, y * 16, 0), section);
+					sections[y] = new ChunkSectionBlob(world, chunk, pos.offset(0, (y - 16) * 16, 0), section);
 				}
 			}
 			
@@ -210,7 +212,7 @@ public class WorldRender {
 				// No calls to GL in here
 				builder.reset();
 				
-				for(int y = 0; y < 16; y++) {
+				for(int y = 0; y < 32; y++) {
 					if(unloaded) return;
 					ChunkSectionBlob section = sections[y];
 					if(section != null && section.doesRender()) {
@@ -405,10 +407,13 @@ public class WorldRender {
 			boolean frustumCulling = (flags & FRUSTUM_CULLING) != 0;
 			long loaded = load_limit;
 			
+			Vector3f aa = new Vector3f();
+			Vector3f bb = new Vector3f();
+			
 			FrustumIntersection intersect = new FrustumIntersection(projectionView);
 			for(int i = xs + 1; i < xe; i++) {
 				for(int j = zs + 1; j < ze; j++) {
-					if(frustumCulling && !intersect.testAab(new Vector3f(i * 16, 0, j * 16), new Vector3f(i * 16 + 16, 256, j * 16 + 16))) {
+					if(frustumCulling && !intersect.testAab(aa.set(i * 16, -256, j * 16), bb.set(i * 16 + 16, 256, j * 16 + 16))) {
 						continue;
 					}
 					
@@ -440,12 +445,12 @@ public class WorldRender {
 			}
 			
 			if(shader instanceof MeshShader) {
-				((MeshShader)shader).setProjectionView(camera.getProjectionMatrixTest());
+				shader.setProjectionMatrix(camera.getProjectionMatrixTest());
 			}
 			
 			for(int i = xs + 1; i < xe; i++) {
 				for(int j = zs + 1; j < ze; j++) {
-					if(frustumCulling && !intersect.testAab(new Vector3f(i * 16, 0, j * 16), new Vector3f(i * 16 + 16, 256, j * 16 + 16))) {
+					if(frustumCulling && !intersect.testAab(aa.set(i * 16, -256, j * 16), bb.set(i * 16 + 16, 256, j * 16 + 16))) {
 						continue;
 					}
 					
@@ -460,10 +465,9 @@ public class WorldRender {
 			
 			if((flags & DRAW_TRANSLUCENT) != 0) {
 				GL11.glEnable(GL11.GL_BLEND);
-//				GL11.glDepthMask(false);
 				for(int i = xs + 1; i < xe; i++) {
 					for(int j = zs + 1; j < ze; j++) {
-						if(frustumCulling && !intersect.testAab(new Vector3f(i * 16, 0, j * 16), new Vector3f(i * 16 + 16, 256, j * 16 + 16))) {
+						if(frustumCulling && !intersect.testAab(aa.set(i * 16, -256, j * 16), bb.set(i * 16 + 16, 256, j * 16 + 16))) {
 							continue;
 						}
 						
@@ -475,16 +479,16 @@ public class WorldRender {
 						}
 					}
 				}
-//				GL11.glDepthMask(true);
 				GL11.glDisable(GL11.GL_BLEND);
-				GL11.glDisable(GL11.GL_DEPTH_TEST);
-				GL11.glEnable(GL11.GL_DEPTH_TEST);
-				GL11.glDepthFunc(GL11.GL_LEQUAL);
+				RenderUtil.disableDepthTest();
+				RenderUtil.enableDepthTest();
+				RenderUtil.setDepthFunc(DepthFunc.LEQUAL);
 			}
 		}
 	}
 	
+	private static Matrix4f chunkMatrix = new Matrix4f();
 	private static Matrix4f getChunkMatrix(int x, int z) {
-		return new Matrix4f().translate(x * 16, 0, z * 16);
+		return chunkMatrix.identity().translate(x * 16, 0, z * 16);
 	}
 }

@@ -8,11 +8,27 @@ import com.hardcoded.mc.general.world.IBlockState;
 import com.hardcoded.mc.general.world.IBlockState.States;
 
 public class Blocks {
+	public static IBlockData MISSING_BLOCK = get("projectedit:missing", true, 0x000000);
+	
+	public static IBlockData AIR = get("minecraft:air", true, 0x000000);
+	public static IBlockData VOID_AIR = get("minecraft:void_air", true, 0x000000);
+	public static IBlockData CAVE_AIR = get("minecraft:cave_air", true, 0x000000);
+	public static IBlockData WATER = get("minecraft:water", false, 0x4040ff, List.of(States.av));
+	public static IBlockData LAVA = get("minecraft:lava", false, 0xff0000, List.of(States.av));
+	public static IBlockData REDSTONE_WIRE = get("minecraft:redstone_wire", true, 0x000000, List.of(States.W, States.X, States.az, States.Y, States.Z));
+	
 	public static void init() {
+		MISSING_BLOCK = get("projectedit:missing", true, 0x000000);
 		
+		AIR = get("minecraft:air", true, 0x000000);
+		VOID_AIR = get("minecraft:void_air", true, 0x000000);
+		CAVE_AIR = get("minecraft:cave_air", true, 0x000000);
+		WATER = get("minecraft:water", false, 0x4040ff, List.of(States.av));
+		LAVA = get("minecraft:lava", false, 0xff0000, List.of(States.av));
+		REDSTONE_WIRE = get("minecraft:redstone_wire", true, 0x000000, List.of(States.W, States.X, States.az, States.Y, States.Z));
 	}
 	
-	public static final IBlockData AIR = get("minecraft:air", true, 0x000000);
+	/*
 	public static final IBlockData STONE = get("minecraft:stone", false, 0x707070);
 	public static final IBlockData GRANITE = get("minecraft:granite", false, 0x707070);
 	public static final IBlockData POLISHED_GRANITE = get("minecraft:polished_granite", false, 0x707070);
@@ -38,8 +54,6 @@ public class Blocks {
 	public static final IBlockData ACACIA_SAPLING = get("minecraft:acacia_sapling", true, 0x007c00, List.of(States.aA));
 	public static final IBlockData DARK_OAK_SAPLING = get("minecraft:dark_oak_sapling", true, 0x007c00, List.of(States.aA));
 	public static final IBlockData BEDROCK = get("minecraft:bedrock", false, 0x707070);
-	public static final IBlockData WATER = get("minecraft:water", false, 0x4040ff, List.of(States.av));
-	public static final IBlockData LAVA = get("minecraft:lava", false, 0xff0000, List.of(States.av));
 	public static final IBlockData SAND = get("minecraft:sand", false, 0xf7e9a3);
 	public static final IBlockData RED_SAND = get("minecraft:red_sand", false, 0xf7e9a3);
 	public static final IBlockData GRAVEL = get("minecraft:gravel", false, 0xf7e9a3);
@@ -160,7 +174,6 @@ public class Blocks {
 	public static final IBlockData SPAWNER = get("minecraft:spawner", false, 0x707070);
 	public static final IBlockData OAK_STAIRS = get("minecraft:oak_stairs", false, 0x8f7748, List.of(States.O, States.ab, States.aL, States.C));
 	public static final IBlockData CHEST = get("minecraft:chest", false, 0x8f7748, List.of(States.O, States.aF, States.C));
-	public static final IBlockData REDSTONE_WIRE = get("minecraft:redstone_wire", true, 0x000000, List.of(States.W, States.X, States.az, States.Y, States.Z));
 	public static final IBlockData DIAMOND_ORE = get("minecraft:diamond_ore", false, 0x707070);
 	public static final IBlockData DIAMOND_BLOCK = get("minecraft:diamond_block", false, 0xa7a7a7);
 	public static final IBlockData CRAFTING_TABLE = get("minecraft:crafting_table", false, 0x8f7748);
@@ -636,8 +649,6 @@ public class Blocks {
 	public static final IBlockData BAMBOO_SAPLING = get("minecraft:bamboo_sapling", false, 0x8f7748);
 	public static final IBlockData BAMBOO = get("minecraft:bamboo", false, 0x8f7748, List.of(States.ae, States.aN, States.aA));
 	public static final IBlockData POTTED_BAMBOO = get("minecraft:potted_bamboo", false, 0x000000);
-	public static final IBlockData VOID_AIR = get("minecraft:void_air", true, 0x000000);
-	public static final IBlockData CAVE_AIR = get("minecraft:cave_air", true, 0x000000);
 	public static final IBlockData BUBBLE_COLUMN = get("minecraft:bubble_column", false, 0x4040ff, List.of(States.e));
 	public static final IBlockData POLISHED_GRANITE_STAIRS = get("minecraft:polished_granite_stairs", false, 0x707070, List.of(States.O, States.ab, States.aL, States.C));
 	public static final IBlockData SMOOTH_RED_SANDSTONE_STAIRS = get("minecraft:smooth_red_sandstone_stairs", false, 0x707070, List.of(States.O, States.ab, States.aL, States.C));
@@ -775,12 +786,13 @@ public class Blocks {
 	public static final IBlockData CHISELED_NETHER_BRICKS = get("minecraft:chiseled_nether_bricks", false, 0x707070);
 	public static final IBlockData CRACKED_NETHER_BRICKS = get("minecraft:cracked_nether_bricks", false, 0x707070);
 	public static final IBlockData QUARTZ_BRICKS = get("minecraft:quartz_bricks", false, 0x707070);
+	*/
 	
 	private static final IBlockData get(String name, boolean occluding, int rgb) {
-		return BlockDataManager.getState(name, occluding, rgb, List.of());
+		return BlockDataManager.addOrGetState(name, occluding, rgb, List.of());
 	}
 	
 	private static final IBlockData get(String name, boolean occluding, int rgb, List<IBlockState> states) {
-		return BlockDataManager.getState(name, occluding, rgb, states);
+		return BlockDataManager.addOrGetState(name, occluding, rgb, states);
 	}
 }

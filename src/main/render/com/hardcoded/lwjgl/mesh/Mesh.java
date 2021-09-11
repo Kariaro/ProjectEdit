@@ -8,6 +8,8 @@ import java.util.List;
 import org.lwjgl.opengl.*;
 import org.lwjgl.system.MemoryUtil;
 
+import com.hardcoded.render.util.FloatArray;
+
 public class Mesh {
 	protected final int vaoId;
 	protected final List<Integer> vboIdList;
@@ -19,6 +21,33 @@ public class Mesh {
 			uvs,
 			createEmptyFloatArray(vertexs.length, 1.0f)
 		);
+	}
+	
+	public Mesh(FloatArray vert, FloatArray uv, FloatArray col) {
+		this(
+			vert.toArray(),
+			uv.toArray(),
+			col.toArray(),
+			vert.size() / 3
+		);
+	}
+	
+	public Mesh(float[] vert, float[] uv, float[] col, int triangles) {
+		this(
+			vert,
+			resizeArray(uv, triangles, 2),
+			resizeArray(col, triangles, 4)
+		);
+	}
+	
+	protected static float[] resizeArray(float[] array, int count, int size) {
+		final int length = count * size;
+		if(array.length == length)
+			return array;
+		
+		float[] fixed = new float[length];
+		System.arraycopy(array, 0, fixed, 0, Math.min(array.length, length));
+		return fixed;
 	}
 	
 	public Mesh(float[] vertexs, float[] uvs, float[] colors) {
@@ -58,7 +87,7 @@ public class Mesh {
 			colBuffer.put(colors).flip();
 			GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vboId);
 			GL15.glBufferData(GL15.GL_ARRAY_BUFFER, colBuffer, GL15.GL_STATIC_DRAW);
-			GL20.glVertexAttribPointer(2, 3, GL11.GL_FLOAT, false, 0, 0);
+			GL20.glVertexAttribPointer(2, 4, GL11.GL_FLOAT, false, 0, 0);
 			
 			GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
 			GL30.glBindVertexArray(0);

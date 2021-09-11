@@ -8,7 +8,10 @@ public enum SettingKey {
 	RenderDistance("render_distance", 8, NumberRange.of(1, 128)),
 	RenderShadows("render_shadows", true),
 	AllowTransparentTextures("allow_transparent_textures", false),
-	ResourcePacks("resource_packs", "")
+	
+	ResourcePacks("resource_packs", ""),
+	LastResourcePackPath("last_resource_path", ""),
+	LastWorldPath("last_world_path", ""),
 	;
 	
 	private static final Set<SettingKey> keys = Collections.unmodifiableSet(new LinkedHashSet<>(Arrays.asList(values())));

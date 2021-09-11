@@ -86,17 +86,44 @@ public class Camera {
 		x += xx * speed;
 		y += yy * speed;
 		z += zz * speed;
+		
+		if(y > far) y = far;
 	}
 	
+	private Vector3f position = new Vector3f();
+	private Matrix4f viewMatrix = new Matrix4f();
+	private Matrix4f projectionAndTranslationMatrix = new Matrix4f();
+	private Matrix4f projectionMatrixTest = new Matrix4f();
 	public Vector3f getPosition() {
-		return new Vector3f((float)x, (float)y, (float)z);
+		return position.set(x, y, z);
 	}
 	
+	private Matrix4f translationMatrix = new Matrix4f();
+	private Matrix4f projectionMatrix = new Matrix4f();
+
 	public Matrix4f getViewMatrix() {
-		return new Matrix4f()
+		return viewMatrix.identity()
 			.rotate(MathUtils.toRadians(rx), 1, 0, 0)
 			.rotate(MathUtils.toRadians(ry), 0, 1, 0)
 			.rotate(MathUtils.toRadians(rz), 0, 0, 1)
+			.translate((float)-x, (float)-y, (float)-z);
+	}
+	
+	public Matrix4f getProjectionAndTranslationMatrix() {
+		float width = LwjglWindow.getWidth();
+		float height = LwjglWindow.getHeight();
+		
+		projectionAndTranslationMatrix.identity();
+		projectionAndTranslationMatrix.setPerspective(MathUtils.toRadians(ProjectSettings.getFov()), width / height, near, far);
+		return projectionAndTranslationMatrix
+			.rotate(MathUtils.toRadians(ry), 1, 0, 0)
+			.rotate(MathUtils.toRadians(rx), 0, 1, 0)
+			.rotate(MathUtils.toRadians(rz), 0, 0, 1)
+			.translate((float)-x, (float)-y, (float)-z);
+	}
+	
+	public Matrix4f getTranslationMatrix() {
+		return translationMatrix.identity()
 			.translate((float)-x, (float)-y, (float)-z);
 	}
 	
@@ -104,22 +131,22 @@ public class Camera {
 		float width = LwjglWindow.getWidth();
 		float height = LwjglWindow.getHeight();
 		
-		Matrix4f projectionMatrix = new Matrix4f();
+		projectionMatrix.identity();
 		projectionMatrix.setPerspective(MathUtils.toRadians(ProjectSettings.getFov()), width / height, near, far);
 		return projectionMatrix
 			.rotate(MathUtils.toRadians(ry), 1, 0, 0)
 			.rotate(MathUtils.toRadians(rx), 0, 1, 0)
-			.rotate(MathUtils.toRadians(rz), 0, 0, 1)
-			.translate((float)-x, (float)-y, (float)-z);
+			.rotate(MathUtils.toRadians(rz), 0, 0, 1);
 	}
-	
+
 	public Matrix4f getProjectionMatrixTest() {
 		float width = LwjglWindow.getWidth();
 		float height = LwjglWindow.getHeight();
 		
-		Matrix4f projectionMatrix = new Matrix4f();
-		projectionMatrix.setPerspective(MathUtils.toRadians(ProjectSettings.getFov()), width / height, near, far);
-		return projectionMatrix
+		projectionMatrixTest.identity();
+		projectionMatrixTest.setPerspective(MathUtils.toRadians(ProjectSettings.getFov()), width / height, near, far);
+		return projectionMatrixTest
+				.translate(0, 0, 0)
 			.rotate(MathUtils.toRadians(ry), 1, 0, 0)
 			.rotate(MathUtils.toRadians(rx), 0, 1, 0)
 			.rotate(MathUtils.toRadians(rz), 0, 0, 1)
@@ -138,19 +165,6 @@ public class Camera {
 		
 		int coord = (int)((value - 1) / 16) * 16;
 		return (float)(value - coord - 16);
-	}
-	
-	public Matrix4f getChunkMatrix(int x, int z) {
-		float width = LwjglWindow.getWidth();
-		float height = LwjglWindow.getHeight();
-		
-		Matrix4f projectionMatrix = new Matrix4f();
-		projectionMatrix.setPerspective(MathUtils.toRadians(ProjectSettings.getFov()), width / height, near, far);
-		return projectionMatrix
-			.rotate(MathUtils.toRadians(ry), 1, 0, 0)
-			.rotate(MathUtils.toRadians(rx), 0, 1, 0)
-			.rotate(MathUtils.toRadians(rz), 0, 0, 1)
-			.translate((float)(-this.x + x), (float)-y, (float)(-this.z + z));
 	}
 	
 	/**

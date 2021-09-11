@@ -7,7 +7,7 @@ import org.lwjgl.opengl.GL11;
 
 import com.hardcoded.mc.constants.Direction;
 
-public class RenderUtil {
+public class RenderDrawingUtil {
 	public static Vector3f getRay(Matrix4f matrix, int width, int height, float x, float y) {
 		return matrix.unproject(x, height - y, 1, new int[] { 0, 0, width, height }, new Vector3f());
 	}

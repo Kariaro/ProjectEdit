@@ -10,7 +10,7 @@ import org.lwjgl.opengl.*;
 import com.hardcoded.api.IResource;
 import com.hardcoded.lwjgl.data.TextureAtlas.AtlasUv;
 
-public class TextureAtlasMipmap extends IResource {
+public class TextureAtlasMipmap extends IResource implements TextureResource {
 	protected final int width;
 	protected final int height;
 	
@@ -64,16 +64,12 @@ public class TextureAtlasMipmap extends IResource {
 		GL20.glActiveTexture(GL20.GL_TEXTURE0);
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, textureId);
 		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL12.GL_TEXTURE_MAX_LEVEL, 4);
-		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL14.GL_GENERATE_MIPMAP, GL11.GL_TRUE);
 		
 		fixImage(mipmap.image);
 		GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA, mipmap.getWidth(), mipmap.getHeight(), 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, Texture.loadBuffer(mipmap.image));
-		
 		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
-//		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
 		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST_MIPMAP_NEAREST);
-		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP);
-		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP);
+		GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
 		
 		GL11.glTexParameterf(GL11.GL_TEXTURE_2D, GL14.GL_TEXTURE_LOD_BIAS, -1);
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0);
@@ -100,8 +96,9 @@ public class TextureAtlasMipmap extends IResource {
 			g.drawImage(bi,  0, -i, null);
 			g.drawImage(bi,  i,  0, null);
 			g.drawImage(bi,  0,  i, null);
-			g.drawImage(bi,  0,  0, null);
+			g.drawImage(bi, -i,  0, null);
 		}
+		g.drawImage(bi,  0,  0, null);
 		g.dispose();
 		
 		for(int y = 0; y < h; y++) {
@@ -130,6 +127,7 @@ public class TextureAtlasMipmap extends IResource {
 		return atlas;
 	}
 	
+	@Override
 	public int getTextureId() {
 		if(atlas == null)
 			return 0;

@@ -12,7 +12,6 @@ import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL13;
 
 import com.hardcoded.lwjgl.Camera;
 import com.hardcoded.lwjgl.LwjglWindow;
@@ -20,16 +19,20 @@ import com.hardcoded.lwjgl.framebuffer.Framebuffer;
 import com.hardcoded.lwjgl.framebuffer.ShadowFramebuffer;
 import com.hardcoded.lwjgl.icon.TextureManager;
 import com.hardcoded.lwjgl.input.Input;
+import com.hardcoded.lwjgl.mesh.DynamicMeshBuffer;
 import com.hardcoded.lwjgl.mesh.Mesh;
 import com.hardcoded.lwjgl.shader.MeshShader;
-import com.hardcoded.lwjgl.shader.ShadowShader;
+import com.hardcoded.lwjgl.shader.Shaders;
 import com.hardcoded.main.ProjectEdit;
 import com.hardcoded.mc.general.files.*;
 import com.hardcoded.mc.general.world.World;
+import com.hardcoded.mc.reflection.ReflectionUtil;
+import com.hardcoded.mc.versions.MinecraftVersion;
+import com.hardcoded.mc.versions.MinecraftVersions;
+import com.hardcoded.render.RenderUtil.DepthFunc;
 import com.hardcoded.render.gui.GuiRender;
 import com.hardcoded.render.menubar.MenuBar;
-import com.hardcoded.render.util.MeshBuffer;
-import com.hardcoded.render.util.RenderUtil;
+import com.hardcoded.render.util.RenderDrawingUtil;
 import com.hardcoded.settings.ProjectSettings;
 import com.hardcoded.util.MathUtils;
 
@@ -45,15 +48,15 @@ public class LwjglRender {
 	protected WorldRender world_render;
 	protected GuiRender gui;
 	
-	public ShadowShader shadowShader;
-	public MeshShader meshShader;
-	
 	private World last_world;
 	// Initialized from ProjectEdit.getInstance().getCamera()
 	private Camera camera;
 	
 	public LwjglRender(long window, int width, int height) {
 		this.window = window;
+		
+		// Initialize the shaders
+		Shaders.init();
 		
 		camera = ProjectEdit.getInstance().getCamera();
 		gui = new GuiRender();
@@ -62,6 +65,7 @@ public class LwjglRender {
 		world_render = new WorldRender();
 		
 		resourceLoader = new LwjglResourceLoader(this);
+		
 		
 		setViewport(width, height);
 		
@@ -75,19 +79,12 @@ public class LwjglRender {
 	
 	public void setViewport(int width, int height) {
 		GL11.glViewport(0, 0, width, height);
-		GL11.glLoadIdentity();
-		GL11.glMatrixMode(GL11.GL_PROJECTION_MATRIX);
-		GL11.glOrtho(0, width, height, 0, 1, -1);
-		GL11.glMatrixMode(GL11.GL_MODELVIEW_MATRIX);
 	}
 	
 	private void init() {
 		Blocks.init();
 		
 		try {
-			shadowShader = new ShadowShader();
-			meshShader = new MeshShader();
-			
 			ShadowFramebuffer shadow = new ShadowFramebuffer(8192, 8192);
 			shadowBuffer = shadow;
 			textureShadowMap = shadow.getShadowMap();
@@ -104,6 +101,26 @@ public class LwjglRender {
 			LOGGER.trace(e);
 			e.printStackTrace();
 		}
+		
+		/*
+		final Thread current = Thread.currentThread();
+		
+		Thread debug = new Thread(() -> {
+			String last_trace = "";
+			
+			while(true) {
+				StackTraceElement[] trace = current.getStackTrace();
+				if(trace == null) break;
+				
+				String trace_string = String.join("\n", List.of(trace).stream().map(i -> i.toString()).collect(Collectors.toList()));
+				if(!last_trace.equals(trace_string)) {
+					last_trace = trace_string;
+					System.out.println(new StringBuilder().append("----------------------------------------\n").append(trace_string).toString());
+				}
+			}
+		});
+		debug.start();
+		*/
 	}
 	
 	public void update() {
@@ -142,6 +159,7 @@ public class LwjglRender {
 				world_render.unloadCache();
 				
 				if(world != null) {
+//					regions_mesh = null;
 					regions_mesh = null;
 					resourceLoader.loadWorld(world);
 					
@@ -157,10 +175,18 @@ public class LwjglRender {
 //		ProjectSettings.setRenderShadows(true);
 //		ProjectSettings.setMaxFps(2400);
 		
+		/*
+		camera.x = -27.487;
+		camera.y = 77.44867+1;
+		camera.z = 18.913;
+		camera.rx = -146.8 + 180;
+		camera.ry = 41.6;
+		*/
+		
 		if(resourceLoader.shouldRender()) {
 			if(Input.isKeyDown(GLFW.GLFW_KEY_U) || camera_pos == null) {
 				camera_pos = camera.getPosition();
-				camera_view = camera.getProjectionMatrix();
+				camera_view = camera.getProjectionAndTranslationMatrix();
 			}
 			
 			if(Input.isControlDown()) {
@@ -174,11 +200,12 @@ public class LwjglRender {
 				}
 				
 				if(Input.isKeyDown(GLFW.GLFW_KEY_1)) {
-					camera.x = 135;
-					camera.y = 331;
-					camera.z = 67;
-					camera.ry = 90;
-					camera.rx = 180;
+//					camera.x = 135;
+//					camera.y = 331;
+//					camera.z = 67;
+//					camera.ry = 90;
+//					camera.rx = 180;
+					camera.x=-6.801223f;camera.y=331.729810f;camera.z=-126.773783f;camera.rx=0.000000f;camera.ry=90.000000f;
 				}
 				
 				if(Input.isKeyDown(GLFW.GLFW_KEY_2)) {
@@ -202,7 +229,7 @@ public class LwjglRender {
 			
 			
 			if(world != null) {
-				Matrix4f projectionView = camera.getProjectionMatrix();
+				Matrix4f projectionView = camera.getProjectionAndTranslationMatrix();
 				
 				int mvp_scale = (int)(Math.sqrt(Math.max(camera.y / 16 - 8, 0)));
 				if(mvp_scale < 1) mvp_scale = 1;
@@ -238,88 +265,79 @@ public class LwjglRender {
 				
 				int radius = ProjectSettings.getRenderDistance();
 				
-				GL11.glEnable(GL11.GL_DEPTH_TEST);
-				GL11.glDepthFunc(GL11.GL_LEQUAL);
+				RenderUtil.enableDepthTest();
+				RenderUtil.setDepthFunc(DepthFunc.LEQUAL);
 				
-				GL11.glEnable(GL11.GL_CULL_FACE);
-				GL11.glEnable(GL11.GL_TEXTURE_2D);
-				GL11.glDisable(GL11.GL_ALPHA_TEST);
+				RenderUtil.enableCullFace();
 				
 				if(updateShadowMap || world_render.new_chunk_loaded) {
 					world_render.new_chunk_loaded = false;
-					shadowShader.bind();
-					shadowShader.setMvpMatrix(mvpMatrix);
+					
+					RenderUtil.setShader(Shaders::getShadowShader);
+					RenderUtil.setProjectionMatrix(mvpMatrix);
 					
 					shadowBuffer.bind();
 					if(ProjectSettings.getRenderShadows()) {
-						world_render.renderWorld(world, shadowShader, camera, projectionView, radius, 0);
+						world_render.renderWorld(world, Shaders.getShadowShader(), camera, projectionView, radius, 0);
 					}
-					shadowShader.unbind();
 					shadowBuffer.unbind();
 				}
 				
-				GL13.glActiveTexture(GL13.GL_TEXTURE1);
-				GL11.glBindTexture(GL11.GL_TEXTURE_2D, textureShadowMap);
-				GL13.glActiveTexture(GL13.GL_TEXTURE0);
-				textureManager.getBlockAtlas().bind();
-				
-				if(ProjectSettings.useTransparentTextures()) {
-					
-				}
-				
-				GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
-				GL11.glDisable(GL11.GL_BLEND);
-				
 				{
-					meshShader.bind();
+					RenderUtil.setShader(Shaders::getMeshShader);
+					RenderUtil.bindTexture(1, textureShadowMap);
+					RenderUtil.bindTexture(0, textureManager.getBlockAtlas());
+					
+					GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+					GL11.glDisable(GL11.GL_BLEND);
+					
+					RenderUtil.setProjectionMatrix(projectionView);
+					RenderUtil.setTranslationMatrix(new Matrix4f());
+					RenderUtil.setColor4f(1, 1, 1, 1);
+					
+					MeshShader meshShader = Shaders.getMeshShader();
 					meshShader.setShadowMapSpace(MathUtils.getShadowSpaceMatrix(mvpMatrix));
-					meshShader.setProjectionView(projectionView);
-					meshShader.setTranslationMatrix(new Matrix4f());
-					
-					meshShader.setUseShadows(false);
-					meshShader.setUseOnlyColors(true);
-//					GL11.glDisable(GL11.GL_CULL_FACE);
-					drawLoadedChunks(world);
-					GL11.glEnable(GL11.GL_CULL_FACE);
-					
+
 					meshShader.setUseShadows(true);
 					meshShader.setUseOnlyColors(false);
 					world_render.renderWorld(world, meshShader, camera, projectionView, radius,
 						WorldRender.FRUSTUM_CULLING |
 						WorldRender.DRAW_TRANSLUCENT
 					);
-					
-					meshShader.unbind();
-				}
 
-				GL11.glDisable(GL11.GL_CULL_FACE);
-				GL11.glDisable(GL11.GL_BLEND);
+					
+					meshShader.setUseShadows(false);
+					meshShader.setUseOnlyColors(true);
+					GL11.glDisable(GL11.GL_BLEND);
+					
+					RenderUtil.setShader(Shaders::getPositionColorShader);
+					RenderUtil.setProjectionMatrix(camera.getProjectionMatrix());
+					RenderUtil.setTranslationMatrix(camera.getTranslationMatrix().translate(0, -64, 0, new Matrix4f()));
+					RenderUtil.setColor4f(1, 1, 1, 1);
+					RenderUtil.disableCullFace();
+					RenderUtil.bindTexture(1, 0);
+					RenderUtil.bindTexture(0, 0);
+					
+					drawLoadedChunks(world);
+					
+					
+					RenderUtil.disableCullFace();
+				}
 				
-				GL13.glActiveTexture(GL13.GL_TEXTURE1);
-				GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0);
+				{
+					float size = 256;
+					float height = 200;
+					
+					RenderUtil.setProjectionMatrix(camera.getProjectionMatrix());
+					RenderUtil.setTranslationMatrix(camera.getTranslationMatrix());
+					RenderUtil.setColor4f(1, 1, 1, 1);
+					RenderUtil.bindTexture(0, textureManager.getBlockAtlas());
+					
+					ShapeRender.drawDebugTextureRect(-size, -size, size, size, height);
+				}
 				
-				
-				GL11.glPushMatrix();
-				GL11.glLoadMatrixf(projectionView.get(new float[16]));
-				
-//				{
-//					float size = 256;
-//					float height = 200;
-//					
-//					GL11.glColor3f(1, 1, 1);
-//					GL11.glBegin(GL11.GL_TRIANGLE_FAN);
-//						GL11.glTexCoord2i(0, 0); GL11.glVertex3f(-size, height, -size);
-//						GL11.glTexCoord2i(0, 1); GL11.glVertex3f(-size, height,  size);
-//						GL11.glTexCoord2i(1, 1); GL11.glVertex3f( size, height,  size);
-//						GL11.glTexCoord2i(1, 0); GL11.glVertex3f( size, height, -size);
-//					GL11.glEnd();
-//				}
-				GL13.glActiveTexture(GL13.GL_TEXTURE0);
-				GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0);
+				RenderUtil.bindTexture(0, 0);
 //				drawFrustumChunks(world, camera_view, camera_pos, radius);
-				GL11.glPopMatrix();
-				
-				GL11.glPushMatrix();
 				
 //				{
 //					Position pos = WorldUtils.raycastBlock(world, camera.getPosition().sub(0, 0.9f, 0, new Vector3f()), new Vector3f(0, 1, 0), 0.5f);
@@ -344,19 +362,47 @@ public class LwjglRender {
 //						}
 //					}
 //				}
-				gui.render();
-				GL11.glPopMatrix();
+				
+				//gui.render();
 			}
 		}
 		
-		GL11.glPushMatrix();
+		/*
+		{
+			RenderUtil.setShader(Shaders::getPositionShader);
+			Matrix4f projectionMatrix = new Matrix4f().ortho(0, LwjglWindow.getWidth(), LwjglWindow.getHeight(), 0, -10, 1000);
+			Matrix4f translationMatrix = new Matrix4f();
+
+			RenderUtil.setProjectionMatrix(projectionMatrix);
+			RenderUtil.setTranslationMatrix(translationMatrix);
+			RenderUtil.setColor4f(1, 0, 1, 1);
+			ShapeRender.drawRect(0, 0, 100, 100, 0.0f, 1, 0, 1, 1);
+		}
+		*/
+		
+		
+		RenderUtil.setShader(Shaders::getPositionUvShader);
+		{
+			
+			float width = LwjglWindow.getWidth();
+			float height = LwjglWindow.getHeight();
+			
+			Matrix4f projectionMatrix = new Matrix4f().ortho(0, width, height, 0, -10, 1000);
+			Matrix4f translationMatrix = new Matrix4f();
+
+			RenderUtil.setProjectionMatrix(projectionMatrix);
+			RenderUtil.setTranslationMatrix(translationMatrix);
+			RenderUtil.setColor4f(1, 1, 1, 1);
+		}
+		
 		menuBar.render();
-		GL11.glPopMatrix();
 	}
 	
 	private Mesh regions_mesh;
 	private void drawLoadedChunks(World world) {
 		if(regions_mesh == null) {
+			System.out.println("Reload chunk mesh");
+			
 			File regions = new File(world.getFolder(), "region");
 			if(!regions.isDirectory()) return;
 			
@@ -372,24 +418,25 @@ public class LwjglRender {
 				copy.add(region);
 			}
 			
-			MeshBuffer buffer = new MeshBuffer();
+			DynamicMeshBuffer buffer = new DynamicMeshBuffer();
 			drawRegionGeometry(buffer, copy);
 			for(IRegion region : copy) {
 				if(!(region instanceof Region)) continue;
 				((Region)region).unloadRegion();
 			}
 			
-			regions_mesh = buffer.build();
+			regions_mesh = buffer.buildStaticMesh();
+			buffer.cleanup();
 		}
 		
 		regions_mesh.render();
 	}
 	
-	void drawRegionGeometry(MeshBuffer buffer, List<IRegion> copy) {
+	void drawRegionGeometry(DynamicMeshBuffer buffer, List<IRegion> copy) {
 		float yo = -0.1f;
-		
-		float[] color_odd  = { 0.7f, 0.7f, 0.7f, 0.7f, 0.7f, 0.7f, 0.7f, 0.7f, 0.7f, 0.7f, 0.7f, 0.7f, 0.7f, 0.7f, 0.7f, 0.7f, 0.7f, 0.7f }; 
-		float[] color_even = { 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f }; 
+
+		float[] color_odd  = { 0.7f, 0.7f, 0.7f, 1.0f, 0.7f, 0.7f, 0.7f, 1.0f, 0.7f, 0.7f, 0.7f, 1.0f, 0.7f, 0.7f, 0.7f, 1.0f, 0.7f, 0.7f, 0.7f, 1.0f, 0.7f, 0.7f, 0.7f, 1.0f };
+		float[] color_even = { 0.5f, 0.5f, 0.5f, 1.0f, 0.5f, 0.5f, 0.5f, 1.0f, 0.5f, 0.5f, 0.5f, 1.0f, 0.5f, 0.5f, 0.5f, 1.0f, 0.5f, 0.5f, 0.5f, 1.0f, 0.5f, 0.5f, 0.5f, 1.0f };
 		for(IRegion region : copy) {
 			if(region.getStatus() != Status.LOADED) continue;
 			
@@ -405,16 +452,17 @@ public class LwjglRender {
 				int gz = rz + z * 16;
 				
 				if(region.hasChunk(x, z)) {
-					buffer.color(((x ^ z) & 1) == 0 ? color_even:color_odd);
-					buffer.uv(new float[12]);
+					buffer.col(((x ^ z) & 1) == 0 ? color_even:color_odd);
 					
-					buffer.pos(gx     , yo, gz     );
-					buffer.pos(gx     , yo, gz + 16);
-					buffer.pos(gx + 16, yo, gz + 16);
+					buffer.pos(
+						gx     , yo, gz     ,
+						gx     , yo, gz + 16,
+						gx + 16, yo, gz + 16,
 					
-					buffer.pos(gx     , yo, gz     );
-					buffer.pos(gx + 16, yo, gz + 16);
-					buffer.pos(gx + 16, yo, gz     );
+						gx     , yo, gz     ,
+						gx + 16, yo, gz + 16,
+						gx + 16, yo, gz
+					);
 				}
 			}
 		}
@@ -430,7 +478,7 @@ public class LwjglRender {
 		
 		FrustumIntersection intersect = new FrustumIntersection(projectionView);
 		
-		RenderUtil.drawFrustum(projectionView, camera, LwjglWindow.getWidth(), LwjglWindow.getHeight(), 20, 100);
+		RenderDrawingUtil.drawFrustum(projectionView, camera, LwjglWindow.getWidth(), LwjglWindow.getHeight(), 20, 100);
 		
 		GL11.glLineWidth(1.0f);
 		for(int i = xs; i <= xe; i++) {
@@ -447,7 +495,7 @@ public class LwjglRender {
 				for(int k = 0; k < 16; k++) {
 					if(intersect.testAab(new Vector3f(i * 16, k * 16, j * 16), new Vector3f((i + 1) * 16, (k + 1) * 16, (j + 1) * 16))) {
 						if(chunk.getStatus() != Status.LOADED) {
-							RenderUtil.drawWireBlock(i * 16, 0, j * 16, 16, 16, 16);
+							RenderDrawingUtil.drawWireBlock(i * 16, 0, j * 16, 16, 16, 16);
 							break;
 						}
 						
@@ -458,7 +506,7 @@ public class LwjglRender {
 							continue;
 						}
 						
-						RenderUtil.drawWireBlock(i * 16, k * 16, j * 16, 16, 16, 16);
+						RenderDrawingUtil.drawWireBlock(i * 16, k * 16, j * 16, 16, 16, 16);
 					}
 				}
 			}

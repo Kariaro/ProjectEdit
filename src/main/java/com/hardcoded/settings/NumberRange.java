@@ -30,7 +30,7 @@ public interface NumberRange<T> {
 			
 			@Override
 			public String toString() {
-				return String.format("NumberRange<int>[min: %d, max: %d]", min, max);
+				return String.format("(%d, %d)", min, max);
 			}
 		};
 	}
@@ -59,7 +59,7 @@ public interface NumberRange<T> {
 			
 			@Override
 			public String toString() {
-				return String.format("NumberRange<float>[min: %.2f, max: %.2f]", min, max);
+				return String.format("(%.2f, %.2f)", min, max);
 			}
 		};
 	}

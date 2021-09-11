@@ -72,7 +72,7 @@ public class ChunkProvider {
 		return regions.values();
 	}
 	
-	private synchronized IRegion loadRegion(int x, int z) {
+	private IRegion loadRegion(int x, int z) {
 		File file = new File(world.getFolder(), "region/r." + x + "." + z + ".mca");
 		
 		Region region = new Region(file, x, z);

@@ -6,7 +6,6 @@ import java.util.List;
 
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.GLFW;
-import org.lwjgl.opengl.GL11;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.util.tinyfd.TinyFileDialogs;
 
@@ -17,10 +16,13 @@ import com.hardcoded.lwjgl.input.Input;
 import com.hardcoded.lwjgl.input.InputMask;
 import com.hardcoded.main.ProjectEdit;
 import com.hardcoded.mc.general.world.World;
+import com.hardcoded.render.ShapeRender;
 import com.hardcoded.render.gui.GuiListener;
 import com.hardcoded.render.gui.GuiListener.GuiEvent.*;
 import com.hardcoded.render.menubar.IMenuGroup.IMenuEntry;
 import com.hardcoded.render.menubar.MenuGraphics.ButtonTexture;
+import com.hardcoded.settings.ProjectSettings;
+import com.hardcoded.settings.SettingKey;
 
 public class MenuBar extends IResource implements GuiListener {
 	private final List<IMenuGroup> groups;
@@ -67,12 +69,14 @@ public class MenuBar extends IResource implements GuiListener {
 					PointerBuffer filters = stack.mallocPointer(1);
 					filters.put(stack.UTF8("*.dat"));
 					filters.flip();
-					
-					String result = TinyFileDialogs.tinyfd_openFileDialog("Open world", "", filters, "Minecraft World", false);
+
+					String currentPath = (String)ProjectSettings.getKeyValue(SettingKey.LastWorldPath);
+					String result = TinyFileDialogs.tinyfd_openFileDialog("Open world", currentPath, filters, "Minecraft World", false);
 					
 					if(result != null) {
 						File worldFolder = new File(result).getParentFile();
 						ProjectEdit.getInstance().loadWorld(worldFolder);
+						ProjectSettings.setKeyValue(SettingKey.LastWorldPath, worldFolder.getAbsolutePath());
 					}
 				}
 			}, GLFW.GLFW_KEY_O, GLFW.GLFW_MOD_CONTROL),
@@ -228,6 +232,7 @@ public class MenuBar extends IResource implements GuiListener {
 			selectedMenuIndex = -1;
 		}
 		
+		menuGraphics.bind();
 		drawMenuBar();
 		
 		int sel = selectedMenuIndex;
@@ -239,6 +244,8 @@ public class MenuBar extends IResource implements GuiListener {
 				drawPopupMenu(selected, x, 18);
 			}
 		}
+		
+		menuGraphics.unbind();
 	}
 	
 	public void drawPopupMenu(IMenuGroup menu, int x, int y) {
@@ -246,21 +253,15 @@ public class MenuBar extends IResource implements GuiListener {
 		
 		int pw = menu.getPopupWidth();
 		int ph = menu.getPopupHeight() + 2;
-		setColor(MenuGraphics.POPUP_MENU_OUTLINE);
-		fillRect(x, y, pw, ph);
-		
-		setColor(MenuGraphics.POPUP_MENU_FILL);
-		fillRect(x+1, y+1, pw - 2, ph - 2);
-		
-		setColor(MenuGraphics.POPUP_NORMAL_EXTRA);
-		fillRect(x+3, y+3, 28, ph-6);
-		
 		InputMask.addEventMask(x, y, pw, ph, menu, this);
+		
+		fillRect(x, y, pw, ph, MenuGraphics.POPUP_MENU_OUTLINE);
+		fillRect(x+1, y+1, pw - 2, ph - 2, MenuGraphics.POPUP_MENU_FILL);
+		fillRect(x+3, y+3, 28, ph-6, MenuGraphics.POPUP_NORMAL_EXTRA);
 		
 		// (35, 3)
 		float xp = x + 3;
 		float yp = y + 3;
-		menuGraphics.bind();
 		for(IMenuItem item : menu.list) {
 			ButtonTexture tex = item.tex;
 			
@@ -281,39 +282,21 @@ public class MenuBar extends IResource implements GuiListener {
 			}
 			
 			InputMask.addEventMask(xp, yp, w, h, item, this);
-			
-			GL11.glColor4f(1, 1, 1, 1);
-			GL11.glBegin(GL11.GL_TRIANGLE_FAN);
-				GL11.glTexCoord2f(uv.x1, uv.y1); GL11.glVertex2f(xp  , yp  );
-				GL11.glTexCoord2f(uv.x2, uv.y1); GL11.glVertex2f(xp+w, yp  );
-				GL11.glTexCoord2f(uv.x2, uv.y2); GL11.glVertex2f(xp+w, yp+h);
-				GL11.glTexCoord2f(uv.x1, uv.y2); GL11.glVertex2f(xp  , yp+h);
-			GL11.glEnd();
+			drawUvRect(uv, xp, yp, w, h);
 			
 			yp += 22;
 		}
-		menuGraphics.unbind();
 	}
 	
 	private void drawMenuBar() {
-		setColor(0xcccccc);
-		fillRect(0, 0, LwjglWindow.getWidth(), 19);
-		
-		setColor(0xffffff);
-		fillRect(0, 0, LwjglWindow.getWidth(), 18);
-		
-		GL11.glEnable(GL11.GL_TEXTURE_2D);
-		GL11.glDisable(GL11.GL_DEPTH_TEST);
-		GL11.glEnable(GL11.GL_BLEND);
-		GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+		fillRect(0, 0, LwjglWindow.getWidth(), 19, 0xcccccc);
+		fillRect(0, 0, LwjglWindow.getWidth(), 18, 0xffffff);
 		
 		float xp = 0;
 		float yp = 0;
 		
-		menuGraphics.bind();
 		for(int i = 0, len = groups.size(); i < len; i++) {
 			IMenuGroup group = groups.get(i);
-			
 			ButtonTexture tex = group.tex;
 			
 			boolean hover = isInside(xp, 0, tex.width, 18);
@@ -334,24 +317,23 @@ public class MenuBar extends IResource implements GuiListener {
 				}
 			}
 			
-			GL11.glColor4f(1, 1, 1, 1);
-			GL11.glBegin(GL11.GL_TRIANGLE_FAN);
-				GL11.glTexCoord2f(uv.x1, uv.y1); GL11.glVertex2f(xp  , yp  );
-				GL11.glTexCoord2f(uv.x2, uv.y1); GL11.glVertex2f(xp+w, yp  );
-				GL11.glTexCoord2f(uv.x2, uv.y2); GL11.glVertex2f(xp+w, yp+h);
-				GL11.glTexCoord2f(uv.x1, uv.y2); GL11.glVertex2f(xp  , yp+h);
-			GL11.glEnd();
+
+			drawUvRect(uv, xp, yp, w, h);
 			
 			xp += tex.width;
 		}
-		menuGraphics.unbind();
 	}
 	
-	private void setColor(int rgb) {
-		GL11.glColor3f(
+	private void drawUvRect(AtlasUv uv, float xp, float yp, float w, float h) {
+		ShapeRender.drawTextureRect(xp, yp, w, h, 0, uv.x1, uv.y1, uv.x2, uv.y2, 1, 1, 1, 1);
+	}
+	
+	private void fillRect(int x, int y, int w, int h, int rgb) {
+		ShapeRender.drawRect(x, y, w, h, 0,
 			((rgb >> 16) & 0xff) / 255.0f,
 			((rgb >> 8) & 0xff) / 255.0f,
-			(rgb & 0xff) / 255.0f
+			(rgb & 0xff) / 255.0f,
+			1.0f
 		);
 	}
 	
@@ -359,14 +341,5 @@ public class MenuBar extends IResource implements GuiListener {
 		float mx = Input.getMouseX();
 		float my = Input.getMouseY();
 		return !(mx <= x || my <= y || mx > x + w || my > y + h);
-	}
-	
-	private void fillRect(int x, int y, int w, int h) {
-		GL11.glBegin(GL11.GL_TRIANGLE_FAN);
-			GL11.glVertex2i(x  , y  );
-			GL11.glVertex2i(x+w, y  );
-			GL11.glVertex2i(x+w, y+h);
-			GL11.glVertex2i(x  , y+h);
-		GL11.glEnd();
 	}
 }

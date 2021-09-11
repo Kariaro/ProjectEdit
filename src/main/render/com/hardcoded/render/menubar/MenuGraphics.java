@@ -122,7 +122,7 @@ public class MenuGraphics {
 		return tex;
 	}
 	
-	public void reload(){
+	public void reload() {
 		gui_atlas.unload();
 		buttons.clear();
 	}

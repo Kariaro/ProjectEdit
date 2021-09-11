@@ -12,8 +12,11 @@ import org.lwjgl.opengl.*;
 import com.hardcoded.api.IResource;
 import com.hardcoded.lwjgl.LwjglWindow;
 import com.hardcoded.lwjgl.data.TextureAtlas;
+import com.hardcoded.lwjgl.mesh.DynamicMeshBuffer;
+import com.hardcoded.lwjgl.shader.Shaders;
 import com.hardcoded.mc.general.world.BlockDataManager;
 import com.hardcoded.mc.general.world.IBlockData;
+import com.hardcoded.render.RenderUtil;
 import com.hardcoded.render.generator.FastModelRenderer;
 import com.hardcoded.render.util.MeshBuffer;
 import com.hardcoded.util.MathUtils;
@@ -106,9 +109,6 @@ public class IconGenerator extends IResource {
 		// Set States
 		GL11.glEnable(GL11.GL_CULL_FACE);
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
-		GL11.glEnable(GL11.GL_TEXTURE_2D);
-		GL11.glEnable(GL11.GL_ALPHA_TEST);
-		GL11.glAlphaFunc(GL11.GL_GREATER, 0);
 		
 		GL11.glEnable(GL11.GL_BLEND);
 		GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
@@ -193,8 +193,9 @@ public class IconGenerator extends IResource {
 		
 		Matrix4f projView = projMat.mul(viewMat, new Matrix4f());
 		
-		GL11.glPushMatrix();
-		GL11.glLoadMatrixf(projView.get(new float[16]));
+		RenderUtil.setShader(Shaders::getMeshShader);
+		RenderUtil.setProjectionMatrix(projView);
+		RenderUtil.setTranslationMatrix(new Matrix4f());
 		
 		MeshBuffer buffer = new MeshBuffer();
 		FastModelRenderer.renderModel(data, 0, 0, 0, buffer, -1);
@@ -203,17 +204,20 @@ public class IconGenerator extends IResource {
 		float[] verts = buffer.verts.toArray();
 		float[] uv = buffer.uvs.toArray();
 		
-		manager.getBlockAtlas().bind();
-		GL11.glBegin(GL11.GL_TRIANGLES);
-		for(int vi = 0, ui = 0, len = buffer.verts.size(); vi < len; vi += 3, ui += 2) {
-			GL11.glTexCoord2f(uv[ui], uv[ui + 1]);
-			GL11.glColor3f(color[vi], color[vi + 1], color[vi + 2]);
-			GL11.glVertex3f(verts[vi] / 16.0f, verts[vi + 1] / 16.0f, verts[vi + 2] / 16.0f);
-		}
-		GL11.glEnd();
-		manager.getBlockAtlas().unbind();
+		RenderUtil.bindTexture(0, manager.getBlockAtlas());
 		
-		GL11.glPopMatrix();
+		DynamicMeshBuffer dynamic_buffer = new DynamicMeshBuffer();
+		
+		dynamic_buffer.uv(uv);
+		dynamic_buffer.col(color);
+		for(int vi = 0, len = buffer.verts.size(); vi < len; vi += 3) {
+			dynamic_buffer.pos(verts[vi] / 16.0f, verts[vi + 1] / 16.0f, verts[vi + 2] / 16.0f);
+		}
+		
+		dynamic_buffer.render();
+		dynamic_buffer.cleanup();
+		
+		RenderUtil.bindTexture(0, 0);
 	}
 	
 	@Override

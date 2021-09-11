@@ -16,6 +16,10 @@ public class BiomeReader {
 		
 		for(int i = 0; i < array.length; ++i) {
 			Biome biome = Biomes.getFromId(array[i]);
+			
+			// XXX: DEBUG
+			if(i >= biomes.length) break;
+			
 			biomes[i] = biome;
 			if(biome == null) {
 				biomes[i] = Biomes.PLAINS;

@@ -9,7 +9,7 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.lwjgl.glfw.*;
-import org.lwjgl.opengl.GL;
+import org.lwjgl.opengl.*;
 
 import com.hardcoded.api.LoadingException;
 import com.hardcoded.lwjgl.data.Texture;
@@ -76,11 +76,33 @@ public class LwjglWindow implements Runnable {
 		this.width = width;
 		this.height = height;
 		
+		
 		glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
 		glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
+		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
+		glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
+		glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_FALSE);
+		glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
+		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
+//		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
+//		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+		
+		glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
+		glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
+		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
+		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+		
 		window = glfwCreateWindow(width, height, "ProjectEdit - viewer", NULL, NULL);
 		if(window == NULL) {
 			throw new LoadingException("Failed to initialize the window: window == NULL");
+		}
+		
+		{
+			int major = glfwGetWindowAttrib(window, GLFW_CONTEXT_VERSION_MAJOR);
+			int minor = glfwGetWindowAttrib(window, GLFW_CONTEXT_VERSION_MINOR);
+			
+			System.out.printf("OpenGL: %d, %d\n", major, minor);
 		}
 		
 		GLFWVidMode vidmode = glfwGetVideoMode(glfwGetPrimaryMonitor());
@@ -103,6 +125,8 @@ public class LwjglWindow implements Runnable {
 		});
 		
 		glfwMakeContextCurrent(window);
+		GL.createCapabilities();
+		GLUtil.setupDebugMessageCallback();
 		
 		try {
 			WindowIcons icons = ProjectEdit.getInstance().getTextureManager().getWindowIcons();
@@ -121,8 +145,6 @@ public class LwjglWindow implements Runnable {
 			LOGGER.error(e);
 			e.printStackTrace();
 		}
-		
-		GL.createCapabilities();
 		
 		long hwnd = GLFWNativeWin32.glfwGetWin32Window(window);
 		window_hwnd = hwnd;
@@ -198,6 +220,7 @@ public class LwjglWindow implements Runnable {
 					frames++;
 				} catch(Exception e) {
 					LOGGER.error(e);
+					e.printStackTrace();
 				}
 				
 				long now = System.currentTimeMillis();
@@ -223,8 +246,10 @@ public class LwjglWindow implements Runnable {
 		render.cleanup();
 		glfwDestroyWindow(window);
 		glfwTerminate();
-		
+
+		ProjectSettings.save();
 		ProjectEdit.shutdown();
+		
 	}
 	
 	private static boolean capture_mouse = false;

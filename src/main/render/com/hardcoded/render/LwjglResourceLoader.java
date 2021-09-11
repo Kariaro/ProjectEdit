@@ -2,17 +2,26 @@ package com.hardcoded.render;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.BiConsumer;
 
 import javax.imageio.ImageIO;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.lwjgl.opengl.GL11;
 
 import com.hardcoded.lwjgl.LwjglWindow;
 import com.hardcoded.mc.general.Minecraft;
+import com.hardcoded.mc.general.files.Blocks;
+import com.hardcoded.mc.general.world.BlockDataManager;
+import com.hardcoded.mc.general.world.IBlockState;
+import com.hardcoded.mc.general.world.IBlockState.States;
 import com.hardcoded.mc.general.world.World;
+import com.hardcoded.mc.objects.MinecraftBlock;
+import com.hardcoded.mc.objects.MinecraftBlockState;
+import com.hardcoded.mc.versions.MinecraftVersion;
+import com.hardcoded.mc.versions.MinecraftVersions;
 import com.hardcoded.render.generator.FastModelJsonLoader;
 import com.hardcoded.render.generator.FastModelRenderer;
 import com.hardcoded.render.generator.VersionResourceReader;
@@ -27,7 +36,7 @@ public class LwjglResourceLoader {
 		STATE_START,
 		STATE_GL_OBJECTS,
 		STATE_GL_LOAD_ICONS,
-		STATE_RENDER,;
+		STATE_RENDER;
 	}
 	
 	private final BiConsumer<Integer, Integer> loadingCallback;
@@ -53,35 +62,84 @@ public class LwjglResourceLoader {
 		int w = LwjglWindow.getWidth() - x * 2;
 		
 		float p = w * loadingPercentage;
-		GL11.glColor4f(0.6f, 0.3f, 0, 1);
-		GL11.glBegin(GL11.GL_TRIANGLE_FAN);
-			GL11.glVertex2f(x  -3, y  +3);
-			GL11.glVertex2f(x  -3, y+h+3);
-			GL11.glVertex2f(x+p-3, y+h+3);
-			GL11.glVertex2f(x+p-3, y  +3);
-		GL11.glEnd();
 		
-		GL11.glColor4f(0.1f, 0.1f, 0.1f, 1);
-		GL11.glBegin(GL11.GL_TRIANGLE_FAN);
-			GL11.glVertex2f(x  , y  );
-			GL11.glVertex2f(x  , y+h);
-			GL11.glVertex2f(x+w, y+h);
-			GL11.glVertex2f(x+w, y  );
-		GL11.glEnd();
-		
-		GL11.glColor4f(0.9f, 0.4f, 0.1f, 1);
-		GL11.glBegin(GL11.GL_TRIANGLE_FAN);
-			GL11.glVertex2f(x  , y  );
-			GL11.glVertex2f(x  , y+h);
-			GL11.glVertex2f(x+p, y+h);
-			GL11.glVertex2f(x+p, y  );
-		GL11.glEnd();
+		ShapeRender.drawRect(x, y, p, h, 0, 0.6f, 0.3f, 0, 1);
+		ShapeRender.drawRect(x, y, w, h, 0, 0.1f, 0.1f, 0.1f, 1);
+		ShapeRender.drawRect(x, y, p, h, 0, 0.9f, 0.4f, 0.1f, 1);
 		
 		loadResources();
 	}
 	
 	public void loadWorld(World world) {
-		File version_jar = new File(Minecraft.getVersionFolder(world.getVersion()), world.getVersion() + ".jar");
+		MinecraftVersion version = MinecraftVersions.getVersion(world.getVersion());
+		//version = MinecraftVersions.getVersion("1.18 experimental snapshot 7");
+		
+		if(version == null) {
+			LOGGER.info("Could not find a preset loader for the specified version '{}'", world.getVersion());
+			return;
+		}
+		
+		File version_jar = new File(new File(Minecraft.getMinecraftPath(), "versions"), version.getVersionJarPath());
+		try {
+			// Unload all blocks
+			BlockDataManager.unloadBlocks();
+			Blocks.init();
+			
+			List<MinecraftBlock> blocks = version.getBlocks();
+			
+			for(MinecraftBlock block : blocks) {
+				List<IBlockState> block_states = new ArrayList<>();
+				
+				for(MinecraftBlockState state : block.getStates()) {
+					block_states.add(States.find(state.name, state.values));
+				}
+				
+				// Add the state
+				BlockDataManager.addOrGetState(block.getId().toString(), block.isOpaque(), block.getMapColor(), block_states);
+			}
+		} catch(Exception e) {
+			e.printStackTrace();
+		}
+		
+		//String name = world.getVersion().replaceFirst(" ", "_").replace(' ', '-');
+		//File version_jar = new File(Minecraft.getVersionFolder(name), name + ".jar");
+		LOGGER.info("Version file: '{}'", version_jar);
+		
+		try {
+			if(reader != null) {
+				reader.cleanup();
+				reader = null;
+			}
+		} catch(Exception e) {
+			e.printStackTrace();
+		}
+		
+		String[] packs = {
+//			"CubedPack.5.0.2.2.Dev.Old.Font.zip",
+//			"VanillaBDcraft 128x MC116.zip",
+//			"PureBDcraft 16x MC116.zip"
+		};
+		
+		try {
+			File resourcepackFolder = new File(Minecraft.getMinecraftPath(), "resourcepacks");
+			
+			File[] resourcePacks = new File[packs.length];
+			for(int i = 0; i < packs.length; i++) {
+				resourcePacks[i] = new File(resourcepackFolder, packs[i]);
+			}
+			
+			reader = new VersionResourceReader(version_jar, resourcePacks);
+		} catch(IOException e) {
+			e.printStackTrace();
+		}
+		
+		loadingState = LoadingState.STATE_START;
+	}
+	
+	@Deprecated
+	public void loadWorld_OLD(World world) {
+		String name = world.getVersion().replaceFirst(" ", "_").replace(' ', '-');
+		File version_jar = new File(Minecraft.getVersionFolder(name), name + ".jar");
 		LOGGER.info("Version file: '{}'", version_jar);
 		
 		try {
