@@ -1,6 +1,5 @@
 package com.hardcoded.render.generator;
 
-import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.lang.Math;
@@ -20,6 +19,7 @@ import com.hardcoded.mc.constants.Direction;
 import com.hardcoded.render.generator.FastModelJsonLoader.FastModel.*;
 import com.hardcoded.util.MathUtils;
 import com.hardcoded.util.Maths;
+import com.hardcoded.util.math.box.BoxFace;
 import com.hardcoded.util.math.box.BoxShape;
 
 public class FastModelJsonLoader {
@@ -438,8 +438,8 @@ public class FastModelJsonLoader {
 		int atlas_height = atlas.getHeight();
 		AtlasUv atlas_uv = atlas.getUv(face.textureId);
 		
-		int wi = (int)Math.ceil((atlas_uv.x2 - atlas_uv.x1) * atlas_width); // 16;
-		int he = (int)Math.ceil((atlas_uv.y2 - atlas_uv.y1) * atlas_height); // 16;
+		int wi = (int)Math.ceil((atlas_uv.x1 - atlas_uv.x0) * atlas_width); // 16;
+		int he = (int)Math.ceil((atlas_uv.y1 - atlas_uv.y0) * atlas_height); // 16;
 		
 		float[] next_uv;
 		switch(face_type.getFlags()) {
@@ -556,6 +556,7 @@ public class FastModelJsonLoader {
 					face.uv = model_face.uv.clone();
 				}
 				
+				face.box_face = model_face.box_face;
 				element.faces.put(face_type, face);
 			}
 			
@@ -584,6 +585,7 @@ public class FastModelJsonLoader {
 				shape.from.z = shape.to.z;
 				shape.to.z = tmp;
 			}
+			
 			model.shapes.add(shape);
 		}
 		
@@ -669,6 +671,8 @@ public class FastModelJsonLoader {
 			public Direction cullface;
 			public float[] vertex;
 			public float[] uv;
+			
+			public BoxFace box_face;
 		}
 		
 		public static ModelObject createModelObject(JsonModelObject json) {
@@ -679,6 +683,7 @@ public class FastModelJsonLoader {
 				model.elements.add(element);
 				
 				if(!element.hasNon90Rotation) {
+					//model.shapes.add(new BoxShape(json_element.from, json_element.to));
 					model.shapes.add(new BoxShape(json_element.from, json_element.to));
 				}
 			}
@@ -727,28 +732,9 @@ public class FastModelJsonLoader {
 					if(json.texture.contains("leaves")) {
 						int width = image.getWidth();
 						int height = image.getHeight();
-						float r = 0;
-						float g = 0;
-						float b = 0;
-						
-						for(int y = 0; y < height; y++) {
-							for(int x = 0; x < width; x++) {
-								int rgba = image.getRGB(x, y);
-								
-								r += ((rgba >> 16) & 0xff) / 255.0f;
-								g += ((rgba >>  8) & 0xff) / 255.0f;
-								b += ((rgba      ) & 0xff) / 255.0f;
-							}
-						}
-						
-						r /= (width * height + 0.0);
-						g /= (width * height + 0.0);
-						b /= (width * height + 0.0);
 						
 						BufferedImage copy = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
 						Graphics2D gr = copy.createGraphics();
-						gr.setColor(new Color(r, g, b));
-						gr.fillRect(0, 0, width, height);
 						gr.drawImage(image, 0, 0, null);
 						gr.dispose();
 						
@@ -769,6 +755,30 @@ public class FastModelJsonLoader {
 			
 			face.uv = json.built_uv.clone();
 			atlas.transformModelUv(id, face.uv);
+			
+			// face.vertex
+			// (x0, y0), ., (x1, y1)
+			{
+				Direction direction = type;
+				Vector3f from = element.from;
+				Vector3f to = element.to;
+				
+				AtlasUv uv = atlas.getUv(id);
+				switch(type) {
+					case SOUTH: // back
+					case NORTH: // front
+						face.box_face = new BoxFace(from.x, from.y, to.x, to.y, uv, direction.getAxisDirection() < 0 ? from.z:to.z, direction);
+						break;
+					case EAST: // right
+					case WEST: // left
+						face.box_face = new BoxFace(from.z, from.y, to.z, to.y, uv, direction.getAxisDirection() < 0 ? from.x:to.x, direction);
+						break;
+					case UP: // up
+					case DOWN: // down
+						face.box_face = new BoxFace(from.x, from.z, to.x, to.z, uv, direction.getAxisDirection() < 0 ? from.y:to.y, direction);
+						break;
+				}
+			}
 			
 			return face;
 		}

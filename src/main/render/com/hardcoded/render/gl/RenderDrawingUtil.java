@@ -1,4 +1,4 @@
-package com.hardcoded.render.util;
+package com.hardcoded.render.gl;
 
 import org.joml.Matrix4f;
 import org.joml.Vector3f;

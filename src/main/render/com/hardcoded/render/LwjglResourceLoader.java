@@ -25,6 +25,7 @@ import com.hardcoded.mc.versions.MinecraftVersions;
 import com.hardcoded.render.generator.FastModelJsonLoader;
 import com.hardcoded.render.generator.FastModelRenderer;
 import com.hardcoded.render.generator.VersionResourceReader;
+import com.hardcoded.render.gl.ShapeRender;
 import com.hardcoded.util.TimerUtils;
 
 public class LwjglResourceLoader {
@@ -83,6 +84,7 @@ public class LwjglResourceLoader {
 		try {
 			// Unload all blocks
 			BlockDataManager.unloadBlocks();
+			States.unloadStates();
 			Blocks.init();
 			
 			List<MinecraftBlock> blocks = version.getBlocks();
@@ -118,43 +120,7 @@ public class LwjglResourceLoader {
 //			"CubedPack.5.0.2.2.Dev.Old.Font.zip",
 //			"VanillaBDcraft 128x MC116.zip",
 //			"PureBDcraft 16x MC116.zip"
-		};
-		
-		try {
-			File resourcepackFolder = new File(Minecraft.getMinecraftPath(), "resourcepacks");
-			
-			File[] resourcePacks = new File[packs.length];
-			for(int i = 0; i < packs.length; i++) {
-				resourcePacks[i] = new File(resourcepackFolder, packs[i]);
-			}
-			
-			reader = new VersionResourceReader(version_jar, resourcePacks);
-		} catch(IOException e) {
-			e.printStackTrace();
-		}
-		
-		loadingState = LoadingState.STATE_START;
-	}
-	
-	@Deprecated
-	public void loadWorld_OLD(World world) {
-		String name = world.getVersion().replaceFirst(" ", "_").replace(' ', '-');
-		File version_jar = new File(Minecraft.getVersionFolder(name), name + ".jar");
-		LOGGER.info("Version file: '{}'", version_jar);
-		
-		try {
-			if(reader != null) {
-				reader.cleanup();
-				reader = null;
-			}
-		} catch(Exception e) {
-			e.printStackTrace();
-		}
-		
-		String[] packs = {
-//			"CubedPack.5.0.2.2.Dev.Old.Font.zip",
-//			"VanillaBDcraft 128x MC116.zip",
-//			"PureBDcraft 16x MC116.zip"
+//			"VanillaTweaks_r776400.zip"
 		};
 		
 		try {
@@ -229,7 +195,7 @@ public class LwjglResourceLoader {
 				loadingState = LoadingState.STATE_GL_LOAD_ICONS;
 			}
 			case STATE_GL_LOAD_ICONS: {
-				if(render.textureManager.getIconGenerator().loadIconsPartwise(100, loadingCallback)) {
+				//if(render.textureManager.getIconGenerator().loadIconsPartwise(100, loadingCallback)) {
 					// We need to init the gui because otherwise it wont reload icons
 					render.gui.init();
 					render.biome_blend.load(reader);
@@ -241,7 +207,7 @@ public class LwjglResourceLoader {
 					LOGGER.info("Took: {} ms to reload all textures", all_nanos / 1000000.0);
 					
 					loadingState = LoadingState.STATE_RENDER;
-				}
+				//}
 			}
 		}
 	}

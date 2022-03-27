@@ -134,7 +134,7 @@ public class RegionChunk {
 				
 				int value = (int)((data[index >> 6] >>> offset) & mask);
 				if(value >= block_palette.length) {
-					array[i] = Blocks.AIR;
+					array[i] = Blocks.get(Blocks.AIR);
 					wrongMethod = true;
 				} else {
 					array[i] = block_palette[value];

@@ -7,7 +7,7 @@ import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.system.MemoryUtil;
 
-public class UniversalShader extends Shader {
+public final class UniversalShader extends Shader {
 	public static final int HAS_TEXTURE = 1;
 	public static final int HAS_COLOR = 2;
 	

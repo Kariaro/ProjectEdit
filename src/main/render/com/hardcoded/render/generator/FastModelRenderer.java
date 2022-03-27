@@ -3,6 +3,7 @@ package com.hardcoded.render.generator;
 import java.util.*;
 
 import com.hardcoded.lwjgl.data.TextureAtlas;
+import com.hardcoded.lwjgl.mesh.MeshBuffer;
 import com.hardcoded.main.ProjectEdit;
 import com.hardcoded.mc.constants.Direction;
 import com.hardcoded.mc.general.files.Blocks;
@@ -14,7 +15,6 @@ import com.hardcoded.render.generator.FastModelJsonLoader.FastModel;
 import com.hardcoded.render.generator.FastModelJsonLoader.FastModel.ModelElement;
 import com.hardcoded.render.generator.FastModelJsonLoader.FastModel.ModelFace;
 import com.hardcoded.render.generator.FastModelJsonLoader.FastModel.ModelObject;
-import com.hardcoded.render.util.MeshBuffer;
 import com.hardcoded.util.math.box.BitArrayShape;
 import com.hardcoded.util.math.box.BlockShape;
 
@@ -163,10 +163,10 @@ public class FastModelRenderer {
 	public static void renderModelFastBiome(IBlockData bs, Biome biome, float x, float y, float z, MeshBuffer builder, int faces) {
 		List<ModelObject> model_objects = getModelsForBlock(bs);
 		
-		boolean isRedstone = bs.getBlockId() == Blocks.REDSTONE_WIRE.getBlockId();
+		boolean isRedstone = bs.getBlockId() == Blocks.get(Blocks.REDSTONE_WIRE).getBlockId();
 		int level = 0;
 		if(isRedstone) {
-			Object power = bs.getStateList().getState(IBlockState.States.az);
+			Object power = bs.getStateList().getState(IBlockState.States._power);
 			if(power != null) {
 				try {
 					level = Integer.parseInt(power.toString());

@@ -13,21 +13,21 @@ import com.hardcoded.lwjgl.Camera;
 import com.hardcoded.lwjgl.data.TextureAtlas;
 import com.hardcoded.lwjgl.data.TextureAtlas.AtlasUv;
 import com.hardcoded.lwjgl.mesh.Mesh;
+import com.hardcoded.lwjgl.mesh.MeshBuffer;
+import com.hardcoded.lwjgl.mesh.MeshBuilder;
 import com.hardcoded.lwjgl.shader.MeshShader;
-import com.hardcoded.lwjgl.shader.ShaderObjectImpl;
+import com.hardcoded.lwjgl.shader.Shader;
 import com.hardcoded.main.ProjectEdit;
 import com.hardcoded.mc.constants.Direction;
 import com.hardcoded.mc.general.files.*;
 import com.hardcoded.mc.general.world.*;
-import com.hardcoded.render.RenderUtil.DepthFunc;
+import com.hardcoded.mc.general.world.IBlockState.States;
 import com.hardcoded.render.generator.FastModelRenderer;
-import com.hardcoded.render.generator.MeshBuilder;
-import com.hardcoded.render.util.MeshBuffer;
 import com.hardcoded.util.math.box.BlockShape;
 
 public class WorldRender {
 	private static void renderBlockWithBiome(World world, IBlockData block, Biome biome, Position pos, float x, float y, float z, MeshBuilder builder, int faces) {
-		if(block.getBlockId() == Blocks.WATER.getBlockId()) {
+		if(block.getBlockId() == Blocks.get(Blocks.WATER).getBlockId()) {
 			renderLiquid(world, block, biome, pos, x, y, z, builder, faces);
 			return;
 		}
@@ -55,6 +55,7 @@ public class WorldRender {
 		float y1 = (8 - getWaterHeight(world, (int)x    , (int)y, (int)z    )) * 2 - 1.5f;
 		float y2 = (8 - getWaterHeight(world, (int)x    , (int)y, (int)z - 1)) * 2 - 1.5f;
 		float y3 = (8 - getWaterHeight(world, (int)x - 1, (int)y, (int)z - 1)) * 2 - 1.5f;
+		
 		float[] top = {
 			 0, y0, 16, // 0
 			16, y1, 16, // 1
@@ -74,17 +75,17 @@ public class WorldRender {
 		};
 		
 		IBlockData above = world.getBlock((int)x, (int)y + 1, (int)z);
-		if(above.getBlockId() != Blocks.WATER.getBlockId()) {
+		if(above.getBlockId() != Blocks.get(Blocks.WATER).getBlockId()) {
 			TextureAtlas atlas = ProjectEdit.getInstance().getTextureManager().getBlockAtlas().getMain();
 			int uv_id = atlas.getImageId("block/water_still");
 			if(uv_id < 0) uv_id = 0;
 			
 			AtlasUv uv = atlas.getUv(uv_id);
 			
-			float uv_x = uv.x1;
-			float uv_y = uv.y1;
-			float uv_w = uv.x1 + 16 / (float)atlas.getWidth();
-			float uv_h = uv.y1 + 16 / (float)atlas.getHeight();
+			float uv_x = uv.x0;
+			float uv_y = uv.y0;
+			float uv_w = uv.x0 + 16 / (float)atlas.getWidth();
+			float uv_h = uv.y0 + 16 / (float)atlas.getHeight();
 			
 			float[] array = new float[] {
 				uv_x, uv_h, // 0
@@ -121,16 +122,34 @@ public class WorldRender {
 		}
 	}
 	
+	private static Object getWaterlogged(IBlockData block) {
+		IBlockState waterlogged = States.findByName("waterlogged");
+		
+		Object is_waterlogged = block.getStateList().getState(waterlogged);
+		if(is_waterlogged == null
+		|| !Boolean.parseBoolean(Objects.toString(is_waterlogged))) return null;
+		
+		return 0;
+	}
+	
 	private static int getWaterHeight(World world, int x, int y, int z) {
 		IBlockData b00 = world.getBlock(x    , y, z    );
 		IBlockData b10 = world.getBlock(x + 1, y, z    );
 		IBlockData b01 = world.getBlock(x    , y, z + 1);
 		IBlockData b11 = world.getBlock(x + 1, y, z + 1);
 		
-		Object s00 = b00.getStateList().getState(IBlockState.States.av);
-		Object s10 = b10.getStateList().getState(IBlockState.States.av);
-		Object s01 = b01.getStateList().getState(IBlockState.States.av);
-		Object s11 = b11.getStateList().getState(IBlockState.States.av);
+		
+		Object s00 = b00.getStateList().getState(IBlockState.States._level);
+		Object s10 = b10.getStateList().getState(IBlockState.States._level);
+		Object s01 = b01.getStateList().getState(IBlockState.States._level);
+		Object s11 = b11.getStateList().getState(IBlockState.States._level);
+		
+		{
+			if(s00 == null) s00 = getWaterlogged(b00);
+			if(s10 == null) s10 = getWaterlogged(b10);
+			if(s01 == null) s01 = getWaterlogged(b01);
+			if(s11 == null) s11 = getWaterlogged(b11);
+		}
 
 		int count = (s00 != null ? 1:0)
 				  + (s10 != null ? 1:0)
@@ -168,7 +187,7 @@ public class WorldRender {
 	}
 	
 	private ChunkList list;
-	public void renderWorld(World world, ShaderObjectImpl shader, Camera camera, Matrix4f projectionView, int radius, int flags) {
+	public void renderWorld(World world, Shader shader, Camera camera, Matrix4f projectionView, int radius, int flags) {
 		if(list == null) {
 			list = new ChunkList();
 		}
@@ -353,7 +372,7 @@ public class WorldRender {
 		
 		// TODO: Chunks coordinates should be local to the camera. +- 512 blocks. Never larger or smaller than that.
 		// Otherwise we get weird floating point jumps
-		public void render(World world, ShaderObjectImpl shader, Camera camera, Matrix4f projectionView, int radius, int flags) {
+		public void render(World world, Shader shader, Camera camera, Matrix4f projectionView, int radius, int flags) {
 			long now = System.currentTimeMillis();
 			
 			int x = Math.floorDiv((int)camera.x, 16);
@@ -480,9 +499,6 @@ public class WorldRender {
 					}
 				}
 				GL11.glDisable(GL11.GL_BLEND);
-				RenderUtil.disableDepthTest();
-				RenderUtil.enableDepthTest();
-				RenderUtil.setDepthFunc(DepthFunc.LEQUAL);
 			}
 		}
 	}

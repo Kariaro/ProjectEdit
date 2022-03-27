@@ -14,10 +14,10 @@ public class ChunkSection implements IChunkSection {
 	
 	@Override
 	public IBlockData getBlock(int x, int y, int z) {
-		if(!isLoaded()) return Blocks.AIR;
+		if(!isLoaded()) return Blocks.get(Blocks.AIR);
 		
 		IBlockData block = blocks[(x) | (z << 4) | (y << 8)];
-		return (block == null) ? Blocks.AIR:block;
+		return (block == null) ? Blocks.get(Blocks.AIR):block;
 	}
 	
 	@Override

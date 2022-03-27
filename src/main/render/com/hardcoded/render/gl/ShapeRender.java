@@ -1,4 +1,4 @@
-package com.hardcoded.render;
+package com.hardcoded.render.gl;
 
 import com.hardcoded.lwjgl.mesh.DynamicMeshBuffer;
 import com.hardcoded.lwjgl.shader.Shaders;

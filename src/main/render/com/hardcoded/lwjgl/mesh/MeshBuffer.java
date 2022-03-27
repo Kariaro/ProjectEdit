@@ -1,6 +1,6 @@
-package com.hardcoded.render.util;
+package com.hardcoded.lwjgl.mesh;
 
-import com.hardcoded.lwjgl.mesh.Mesh;
+import com.hardcoded.render.util.FloatArray;
 
 public class MeshBuffer {
 	// 6 sides *

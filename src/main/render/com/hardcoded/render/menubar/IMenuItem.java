@@ -2,6 +2,7 @@ package com.hardcoded.render.menubar;
 
 import com.hardcoded.render.menubar.MenuGraphics.ButtonTexture;
 
+@Deprecated
 public class IMenuItem {
 	ButtonTexture tex;
 	Runnable action;

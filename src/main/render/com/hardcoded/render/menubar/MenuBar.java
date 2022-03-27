@@ -16,7 +16,7 @@ import com.hardcoded.lwjgl.input.Input;
 import com.hardcoded.lwjgl.input.InputMask;
 import com.hardcoded.main.ProjectEdit;
 import com.hardcoded.mc.general.world.World;
-import com.hardcoded.render.ShapeRender;
+import com.hardcoded.render.gl.ShapeRender;
 import com.hardcoded.render.gui.GuiListener;
 import com.hardcoded.render.gui.GuiListener.GuiEvent.*;
 import com.hardcoded.render.menubar.IMenuGroup.IMenuEntry;
@@ -24,6 +24,13 @@ import com.hardcoded.render.menubar.MenuGraphics.ButtonTexture;
 import com.hardcoded.settings.ProjectSettings;
 import com.hardcoded.settings.SettingKey;
 
+/**
+ * TODO: Instead of creating a menubar using OpenGL try figure out a way to use the native
+ *       windowbar instead. This would make cross platform graphics look better.
+ *
+ * @author HardCoded
+ */
+@Deprecated
 public class MenuBar extends IResource implements GuiListener {
 	private final List<IMenuGroup> groups;
 	protected MenuGraphics menuGraphics;
@@ -325,7 +332,7 @@ public class MenuBar extends IResource implements GuiListener {
 	}
 	
 	private void drawUvRect(AtlasUv uv, float xp, float yp, float w, float h) {
-		ShapeRender.drawTextureRect(xp, yp, w, h, 0, uv.x1, uv.y1, uv.x2, uv.y2, 1, 1, 1, 1);
+		ShapeRender.drawTextureRect(xp, yp, w, h, 0, uv.x0, uv.y0, uv.x1, uv.y1, 1, 1, 1, 1);
 	}
 	
 	private void fillRect(int x, int y, int w, int h, int rgb) {

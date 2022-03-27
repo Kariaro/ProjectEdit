@@ -13,12 +13,12 @@ import com.hardcoded.api.IResource;
 import com.hardcoded.lwjgl.LwjglWindow;
 import com.hardcoded.lwjgl.data.TextureAtlas;
 import com.hardcoded.lwjgl.mesh.DynamicMeshBuffer;
+import com.hardcoded.lwjgl.mesh.MeshBuffer;
 import com.hardcoded.lwjgl.shader.Shaders;
 import com.hardcoded.mc.general.world.BlockDataManager;
 import com.hardcoded.mc.general.world.IBlockData;
-import com.hardcoded.render.RenderUtil;
 import com.hardcoded.render.generator.FastModelRenderer;
-import com.hardcoded.render.util.MeshBuffer;
+import com.hardcoded.render.gl.RenderUtil;
 import com.hardcoded.util.MathUtils;
 
 public class IconGenerator extends IResource {

@@ -307,25 +307,27 @@ public class TextureAtlas extends IResource {
 	
 	public class AtlasUv {
 		public final int id;
-		public float x1, y1;
-		public float x2, y2;
+		public float x0;
+		public float y0;
+		public float x1;
+		public float y1;
 		
 		private final float wi;
 		private final float he;
 		private final float size;
-		public AtlasUv(int id, float x1, float y1, float x2, float y2) {
+		public AtlasUv(int id, float x0, float y0, float x1, float y1) {
 			this.id = id;
+			this.x0 = x0;
+			this.y0 = y0;
 			this.x1 = x1;
 			this.y1 = y1;
-			this.x2 = x2;
-			this.y2 = y2;
 
 			// Calculate the pixel difference.
 			// 1: 16px
 			// 2: 32px
 			// 3: ...
-			this.wi = (x2 - x1) * WIDTH / 16.0f;
-			this.he = (y2 - y1) * HEIGHT / 16.0f;
+			this.wi = (x1 - x0) * WIDTH / 16.0f;
+			this.he = (y1 - y0) * HEIGHT / 16.0f;
 			this.size = Math.min(wi, he);
 		}
 
@@ -337,12 +339,16 @@ public class TextureAtlas extends IResource {
 				float x = uvs[i];
 				float y = uvs[i + 1];
 				
-				x = (x * size) / (WIDTH + 0.0f) + x1;
-				y = (y * size) / (HEIGHT + 0.0f) + y1;
+				x = (x * size) / (WIDTH + 0.0f) + x0;
+				y = (y * size) / (HEIGHT + 0.0f) + y0;
 				
 				uvs[i] = x;
 				uvs[i + 1] = y;
 			}
+		}
+		
+		public TextureAtlas getParent() {
+			return TextureAtlas.this;
 		}
 	}
 	
@@ -380,5 +386,13 @@ public class TextureAtlas extends IResource {
 		}
 		
 		return false;
+	}
+
+	public boolean isTransparent(int x, int y, int xa, int ya) {
+		if(x < 0 || x >= WIDTH
+		|| y < 0 || y >= HEIGHT) return false;
+		
+		int idx = (x + y * WIDTH);
+		return (image_alpha_buffer[idx] >>> 24) == 0x00;
 	}
 }

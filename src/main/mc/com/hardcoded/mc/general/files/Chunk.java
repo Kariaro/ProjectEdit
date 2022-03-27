@@ -35,7 +35,7 @@ public class Chunk implements IChunk {
 	@Override
 	public IBlockData getBlock(int x, int y, int z) {
 		IChunkSection section = sections.get(Math.floorDiv(y, 16));
-		if(section == null) return Blocks.VOID_AIR;
+		if(section == null) return Blocks.get(Blocks.AIR);
 		
 		return section.getBlock(x & 15, y & 15, z & 15);
 	}

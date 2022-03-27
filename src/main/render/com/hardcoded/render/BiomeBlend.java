@@ -32,6 +32,6 @@ public class BiomeBlend {
 		int x = (int)((1 - temperature) * 255);
 		int y = (int)((1 - humidity) * 255);
 		int k = y << 8 | x;
-		return k > colorBuffer.length ? 0xffff00ff : colorBuffer[k];
+		return k >= colorBuffer.length ? 0xffff00ff : colorBuffer[k];
 	}
 }

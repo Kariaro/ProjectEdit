@@ -76,18 +76,11 @@ public class LwjglWindow implements Runnable {
 		this.width = width;
 		this.height = height;
 		
-		
 		glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
 		glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
 		glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
-		glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_FALSE);
-		glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
-		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
-//		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
-//		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-		
 		glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
 		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
@@ -96,13 +89,6 @@ public class LwjglWindow implements Runnable {
 		window = glfwCreateWindow(width, height, "ProjectEdit - viewer", NULL, NULL);
 		if(window == NULL) {
 			throw new LoadingException("Failed to initialize the window: window == NULL");
-		}
-		
-		{
-			int major = glfwGetWindowAttrib(window, GLFW_CONTEXT_VERSION_MAJOR);
-			int minor = glfwGetWindowAttrib(window, GLFW_CONTEXT_VERSION_MINOR);
-			
-			System.out.printf("OpenGL: %d, %d\n", major, minor);
 		}
 		
 		GLFWVidMode vidmode = glfwGetVideoMode(glfwGetPrimaryMonitor());
@@ -146,8 +132,7 @@ public class LwjglWindow implements Runnable {
 			e.printStackTrace();
 		}
 		
-		long hwnd = GLFWNativeWin32.glfwGetWin32Window(window);
-		window_hwnd = hwnd;
+		window_hwnd = GLFWNativeWin32.glfwGetWin32Window(window);
 		
 		render = new LwjglRender(window, width, height);
 		glfwShowWindow(window);

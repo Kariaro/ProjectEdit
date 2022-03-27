@@ -63,15 +63,15 @@ public class TextureAtlasMipmap extends IResource implements TextureResource {
 		
 		GL20.glActiveTexture(GL20.GL_TEXTURE0);
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, textureId);
-		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL12.GL_TEXTURE_MAX_LEVEL, 4);
 		
 		fixImage(mipmap.image);
 		GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA, mipmap.getWidth(), mipmap.getHeight(), 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, Texture.loadBuffer(mipmap.image));
 		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
-		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST_MIPMAP_NEAREST);
-		GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
+		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST_MIPMAP_LINEAR);
 		
-		GL11.glTexParameterf(GL11.GL_TEXTURE_2D, GL14.GL_TEXTURE_LOD_BIAS, -1);
+		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL12.GL_TEXTURE_MAX_LEVEL, 4);
+		GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
+		GL11.glTexParameterf(GL11.GL_TEXTURE_2D, GL14.GL_TEXTURE_LOD_BIAS, -2);
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0);
 		
 		this.atlas = new Texture(textureId, 0);

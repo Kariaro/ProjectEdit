@@ -16,9 +16,9 @@ import com.hardcoded.mc.general.files.Position;
 import com.hardcoded.mc.general.world.IBlockData;
 import com.hardcoded.mc.general.world.World;
 import com.hardcoded.mc.general.world.WorldUtils;
+import com.hardcoded.render.gl.RenderDrawingUtil;
 import com.hardcoded.render.gui.GuiListener;
 import com.hardcoded.render.gui.GuiListener.GuiEvent.*;
-import com.hardcoded.render.util.RenderDrawingUtil;
 import com.hardcoded.render.gui.GuiRender;
 
 public class GuiToolSelection extends GuiTool implements GuiListener {
@@ -64,7 +64,7 @@ public class GuiToolSelection extends GuiTool implements GuiListener {
 		
 		IBlockData selected = gui.selectedBlock;
 		if(selected == null) {
-			selected = Blocks.AIR;
+			selected = Blocks.get(Blocks.AIR);
 		}
 		
 		int x1 = pos1.getBlockX();

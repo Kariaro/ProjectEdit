@@ -6,6 +6,7 @@ import java.util.List;
 import com.hardcoded.render.menubar.IMenuItem.IPopupEntry;
 import com.hardcoded.render.menubar.MenuGraphics.ButtonTexture;
 
+@Deprecated
 public class IMenuGroup {
 	MenuBar menuBar;
 	List<IMenuItem> list;

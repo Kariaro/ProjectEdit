@@ -20,11 +20,11 @@ public class BlockShape {
 		}
 	};
 	
-	private static final double TOLERANCE = 1 / 1024.0f;
+	protected static final double TOLERANCE = 1 / 1024.0f;
 	
 	protected final Map<Direction, Set<BoxFace>> faces;
 	
-	public BlockShape(List<ModelObject> list) {
+	protected BlockShape(List<ModelObject> list) {
 		List<BoxShape> shapes = list.stream().flatMap(i -> i.getShapes().stream()).collect(Collectors.toList());
 		
 		this.faces = new HashMap<>();
@@ -53,7 +53,7 @@ public class BlockShape {
 		}
 	}
 	
-	private BlockShape() {
+	protected BlockShape() {
 		this.faces = null;
 	}
 	

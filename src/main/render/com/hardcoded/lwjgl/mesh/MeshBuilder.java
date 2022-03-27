@@ -1,7 +1,4 @@
-package com.hardcoded.render.generator;
-
-import com.hardcoded.lwjgl.mesh.Mesh;
-import com.hardcoded.render.util.MeshBuffer;
+package com.hardcoded.lwjgl.mesh;
 
 public class MeshBuilder {
 	public static final int _OPAQUE = 0;

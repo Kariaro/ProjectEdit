@@ -13,10 +13,11 @@ import com.hardcoded.mc.general.world.World;
 /**
  * Utility class for rescaling and simplifying meshes
  */
+@Deprecated
 public class LodUtils {
 	public static IBlockData getCommonBlock(IChunkSection section, int x, int y, int z, int size) {
 		if(!section.isLoaded()) {
-			return Blocks.VOID_AIR;
+			return Blocks.get(Blocks.VOID_AIR);
 		}
 		
 		if(size == 1) {
@@ -42,7 +43,7 @@ public class LodUtils {
 		}
 		
 		if(map.isEmpty()) {
-			return Blocks.AIR;
+			return Blocks.get(Blocks.AIR);
 		}
 		
 		int id = -1;
@@ -55,7 +56,7 @@ public class LodUtils {
 			}
 		}
 		
-		if(id < 0) return Blocks.AIR;
+		if(id < 0) return Blocks.get(Blocks.AIR);
 		
 		IBlockData data = BlockDataManager.getStateFromInternalId(id);
 		
@@ -63,13 +64,13 @@ public class LodUtils {
 			return data;
 		}
 		
-		return Blocks.AIR;
+		return Blocks.get(Blocks.AIR);
 	}
 	
 	public static IBlockData getCommonBlock(World world, int x, int y, int z, int size) {
 		IChunk chunk = world.getChunk(Math.floorDiv(x, 16), Math.floorDiv(z, 16));
 		if(chunk.getStatus() != Status.LOADED) {
-			return Blocks.VOID_AIR;
+			return Blocks.get(Blocks.VOID_AIR);
 		}
 		
 		return getCommonBlock(chunk.getSection(y / 16), x & 15, y & 15, z & 15, size);

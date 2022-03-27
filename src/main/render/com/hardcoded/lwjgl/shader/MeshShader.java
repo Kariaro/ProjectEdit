@@ -8,7 +8,7 @@ import org.lwjgl.opengl.GL20;
  * 
  * @author HardCoded
  */
-public class MeshShader extends ShaderObjectImpl {
+public class MeshShader extends Shader {
 	protected int load_toShadowMapSpace;
 	protected int load_projectionView;
 	protected int load_translationMatrix;
@@ -31,8 +31,6 @@ public class MeshShader extends ShaderObjectImpl {
 	
 	@Override
 	protected void loadUniforms() {
-		super.loadUniforms();
-		
 		load_toShadowMapSpace = getUniformLocation("toShadowMapSpace");
 		load_projectionView = getUniformLocation("projectionView");
 		load_translationMatrix = getUniformLocation("translationMatrix");

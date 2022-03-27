@@ -1,9 +1,8 @@
-package com.hardcoded.render;
+package com.hardcoded.render.gl;
 
 import java.util.function.Supplier;
 
 import org.joml.Matrix4f;
-import org.joml.Matrix4fStack;
 import org.joml.Vector4f;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
@@ -13,7 +12,6 @@ import com.hardcoded.lwjgl.shader.Shader;
 
 public class RenderUtil {
 	private static Shader shader;
-	private static Matrix4fStack matrixStack = new Matrix4fStack();
 	private static Matrix4f projectionMatrix = new Matrix4f();
 	private static Matrix4f translationMatrix = new Matrix4f();
 	private static Vector4f color = new Vector4f(1, 1, 1, 1);
@@ -60,16 +58,6 @@ public class RenderUtil {
 		shader.setTranslationMatrix(matrix);
 		RenderUtil.translationMatrix = matrix;
 	}
-	
-	public static void pushMatrix() {
-		matrixStack.pushMatrix();
-		// matrixStack.set(RenderUtility.projectionMatrix);
-	}
-	
-	public static void popMatrix() {
-		matrixStack.popMatrix();
-		setProjectionMatrix(matrixStack);
-	}
 
 	public static void bindTexture(int activeId, TextureResource texture) {
 		bindTexture(activeId, texture.getTextureId());
@@ -80,7 +68,6 @@ public class RenderUtil {
 		GL13.glBindTexture(GL11.GL_TEXTURE_2D, textureId);
 	}
 	
-	// Enable
 	public static void enableCullFace() {
 		GL11.glEnable(GL11.GL_CULL_FACE);
 	}

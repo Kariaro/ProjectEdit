@@ -95,10 +95,10 @@ public class TextureAtlasDebugger extends TextureAtlas {
 			for(int id_v : atlas_path_to_id.values()) {
 				AtlasUv id_uv = getUv(id_v);
 				
-				int id_x = (int)(id_uv.x1 * WIDTH);
-				int id_y = (int)(id_uv.y1 * HEIGHT);
-				int id_w = (int)((id_uv.x2 - id_uv.x1) * WIDTH);
-				int id_h = (int)((id_uv.y2 - id_uv.y1) * HEIGHT);
+				int id_x = (int)(id_uv.x0 * WIDTH);
+				int id_y = (int)(id_uv.y0 * HEIGHT);
+				int id_w = (int)((id_uv.x1 - id_uv.x0) * WIDTH);
+				int id_h = (int)((id_uv.y1 - id_uv.y0) * HEIGHT);
 				gr.drawRect(id_x + 5, id_y + 5, id_w, id_h);
 			}
 			

@@ -102,10 +102,10 @@ public class GuiLabel extends GuiComponent {
 			AtlasUv uv = text_atlas.getUv(id);
 			
 			GL11.glBegin(GL11.GL_TRIANGLE_FAN);
-				GL11.glTexCoord2f(uv.x1, uv.y1); GL11.glVertex2f(xo   , yo   );
-				GL11.glTexCoord2f(uv.x2, uv.y1); GL11.glVertex2f(xo+fs, yo   );
-				GL11.glTexCoord2f(uv.x2, uv.y2); GL11.glVertex2f(xo+fs, yo+fs);
-				GL11.glTexCoord2f(uv.x1, uv.y2); GL11.glVertex2f(xo   , yo+fs);
+				GL11.glTexCoord2f(uv.x0, uv.y0); GL11.glVertex2f(xo   , yo   );
+				GL11.glTexCoord2f(uv.x1, uv.y0); GL11.glVertex2f(xo+fs, yo   );
+				GL11.glTexCoord2f(uv.x1, uv.y1); GL11.glVertex2f(xo+fs, yo+fs);
+				GL11.glTexCoord2f(uv.x0, uv.y1); GL11.glVertex2f(xo   , yo+fs);
 			GL11.glEnd();
 		}
 		

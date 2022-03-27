@@ -1,6 +1,6 @@
 package com.hardcoded.lwjgl.shader;
 
-public class Shaders {
+public final class Shaders {
 	private static ShadowShader shadow_shader;
 	private static MeshShader mesh_shader;
 	

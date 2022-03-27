@@ -13,7 +13,7 @@ import com.hardcoded.render.generator.FastModelJsonLoader.FastModel.ModelObject;
  * @author HardCoded
  */
 public class BitArrayShape extends BlockShape {
-	private static final int SIDE = 32;
+	protected static final int SIDE = 32;
 	private static final int BITS_ARRAY = SIDE >> 1;
 	private static final float BLOCK_TO_BITS = SIDE / (float)16;
 	

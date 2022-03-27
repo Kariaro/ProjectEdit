@@ -35,7 +35,7 @@ public class World {
 	@Nonnull
 	public IBlockData getBlock(int x, int y, int z) {
 		IChunk chunk = getChunk(Math.floorDiv(x, 16), Math.floorDiv(z, 16));
-		if(chunk == null) return Blocks.VOID_AIR;
+		if(chunk == null) return Blocks.get(Blocks.VOID_AIR);
 		return chunk.getBlock(x & 15, y, z & 15);
 	}
 	
